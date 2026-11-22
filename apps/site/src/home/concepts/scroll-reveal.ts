@@ -4,10 +4,11 @@ import {
   type MotionValue,
   motionValue,
   useScroll,
+  useMotionValueEvent,
   useSpring,
   useTransform,
 } from "motion/react";
-import { createContext, type RefObject, use } from "react";
+import { createContext, type RefObject, use, useState } from "react";
 
 const STEP_STAGGER = 0.16;
 const STEP_SPAN = 0.36;
@@ -38,6 +39,18 @@ export function useRowProgress(
 
 export function stepStart(step: number): number {
   return step * STEP_STAGGER;
+}
+
+const RETOUCH_STEP = 3;
+export const RETOUCH_AT = stepStart(RETOUCH_STEP);
+
+export function useRetouched(): boolean {
+  const progress = use(RowProgress);
+  const [retouched, setRetouched] = useState(false);
+  useMotionValueEvent(progress, "change", (value) => {
+    setRetouched(value >= RETOUCH_AT);
+  });
+  return retouched;
 }
 
 export function useRise(step: number): RiseProps {

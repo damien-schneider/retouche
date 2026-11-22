@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Retouche } from "retouche";
 
 import config from "../../retouche.config";
+import { FAVICON } from "../logo";
 import ogImage from "../og-image.png?url";
 
 import styles from "../styles.css?url";
@@ -12,7 +13,7 @@ const INTER_VARIABLE =
   "https://rsms.me/inter/font-files/InterVariable.woff2?v=4.1";
 const TITLE = "Retouche — typography overrides, marked in place";
 const DESCRIPTION =
-  "A React dev overlay that marks every call site overriding your design system's typography, right where it renders.";
+  "A React dev overlay that marks every call site overriding your design system's typography, and every nested corner that doesn't fit, right where it renders.";
 const SITE = import.meta.env.SITE_URL;
 
 export const Route = createRootRoute({
@@ -28,6 +29,7 @@ export const Route = createRootRoute({
       },
       { href: INTER, rel: "stylesheet" },
       { href: styles, rel: "stylesheet" },
+      { href: FAVICON, rel: "icon", type: "image/svg+xml" },
     ],
     meta: [
       { charSet: "utf-8" },

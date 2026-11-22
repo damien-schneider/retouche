@@ -3,6 +3,8 @@ import { CodeHead, useSourceFile } from "../../code/code-panel";
 import { SourcePath } from "../../code/source-path";
 import { type CodeMarks, readSource } from "../../code/source-reading";
 import { SourceView } from "../../code/source-view";
+import { LineText } from "../../code/syntax/line-text";
+import { syntaxLines } from "../../code/syntax/syntax-lines";
 import type { SourceRequest } from "../../route/dev-route";
 import type { DevRouteState } from "../../route/use-dev-route";
 import { spliceAllowEntry } from "./allow-splice";
@@ -16,6 +18,11 @@ const CONFIG_REQUEST: SourceRequest = {
 const ADDED: CodeMarks = { change: "added", scope: "element", tokens: [] };
 
 function EntrySnippet({ entry }: { entry: string }) {
+  const indented = entry.split("\n").map((line) => ` ${line}`);
+  const lines = syntaxLines(
+    ["allow: [", ...indented, "]"].join("\n"),
+    CONFIG_FILE
+  );
   return (
     <>
       <div className="dt-code-head">
@@ -24,20 +31,25 @@ function EntrySnippet({ entry }: { entry: string }) {
       <div className="dt-code-frame">
         <pre className="dt-code">
           <code className="dt-code-lines">
-            <span className="dt-line">
-              <span className="dt-line-number" />
-              <span>allow: [</span>
-            </span>
-            {entry.split("\n").map((line) => (
-              <span className="dt-line" data-marked="true" key={line}>
-                <span className="dt-line-number">+</span>
-                <span> {line}</span>
-              </span>
-            ))}
-            <span className="dt-line">
-              <span className="dt-line-number" />
-              <span>]</span>
-            </span>
+            {lines.map((line, index) => {
+              const isEntry = index > 0 && index < lines.length - 1;
+              return (
+                <span
+                  className="dt-line"
+                  data-marked={isEntry ? "true" : undefined}
+                  key={index}
+                >
+                  <span className="dt-line-number">{isEntry ? "+" : null}</span>
+                  <span>
+                    <LineText
+                      change={ADDED.change}
+                      line={line}
+                      pattern={null}
+                    />
+                  </span>
+                </span>
+              );
+            })}
           </code>
         </pre>
       </div>

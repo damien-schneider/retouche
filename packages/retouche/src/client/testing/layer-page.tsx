@@ -1,4 +1,11 @@
-import { within } from "@testing-library/react";
+import {
+  fireEvent,
+  getDefaultNormalizer,
+  type MatcherFunction,
+  render,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { type Mock, vi } from "vitest";
 
@@ -11,6 +18,7 @@ const PICK_NAME = /pick/i;
 const OVERRIDE_LINE = 12;
 const SOURCE_LINES = 30;
 const CONFIG_FILE = "retouche.config.ts";
+const TEXT_FILE = "layer-page";
 
 export const config = { components: ["Text"] };
 
@@ -85,6 +93,23 @@ export function pointAt(element: Element): void {
   });
 }
 
+export async function startPicking(page: ReactNode): Promise<{
+  layer: HTMLElement;
+  panel: HTMLElement;
+}> {
+  render(page);
+  const panel = await waitFor(overlay);
+  fireEvent.click(pickButton(panel));
+  const layer = within(panel).getByRole("application", { name: PICK_NAME });
+  return { layer, panel };
+}
+
+export function clickOn(layer: HTMLElement, element: Element): void {
+  pointAt(element);
+  fireEvent.pointerMove(layer, { clientX: 10, clientY: 10 });
+  fireEvent.click(layer, { clientX: 10, clientY: 10 });
+}
+
 export function codeStep(panel: HTMLElement, name: RegExp): HTMLElement {
   const code = within(panel).getByRole("region", { name: /code/i });
   const step = within(code).getByRole("heading", { name }).closest("li");
@@ -92,6 +117,16 @@ export function codeStep(panel: HTMLElement, name: RegExp): HTMLElement {
     throw new Error(`No code step for ${name}`);
   }
   return step;
+}
+
+export function byWholeText(text: string | RegExp): MatcherFunction {
+  const normalize = getDefaultNormalizer();
+  const shows = (element: Element): boolean => {
+    const shown = normalize(element.textContent);
+    return text instanceof RegExp ? text.test(shown) : shown === text;
+  };
+  return (_content, element) =>
+    element !== null && shows(element) && ![...element.children].some(shows);
 }
 
 export function captureClipboard(): Mock<Clipboard["writeText"]> {
@@ -114,21 +149,15 @@ export function giveElementsSize(): void {
   Element.prototype.scrollIntoView = () => {};
 }
 
-export function serveDevRoute(
-  options: {
-    config?: string;
-    elementLength?: number;
-    length?: number;
-    refusedFile?: string;
-  } = {}
-): void {
-  const { elementLength = 1, length = SOURCE_LINES } = options;
+function sourceFile(options: { elementLength: number; length: number }) {
+  const { elementLength, length } = options;
   const elementEnd = OVERRIDE_LINE + elementLength - 1;
   const lines = Array.from({ length }, () => "const filler = 1;");
+  lines[0] = "const firstLine = 1;";
   lines[elementEnd - 1] = "</Section>";
   lines[OVERRIDE_LINE - 1] = '<Text className="text-lg">Pricing</Text>';
   lines[length - 1] = "const lastLine = 1;";
-  const file = {
+  return {
     absolutePath: "/repo/src/pricing.tsx",
     code: lines.join("\n"),
     column: 0,
@@ -136,8 +165,21 @@ export function serveDevRoute(
     line: OVERRIDE_LINE,
     path: "src/pricing.tsx",
   };
+}
+
+export function serveDevRoute(
+  options: {
+    config?: string;
+    elementLength?: number;
+    length?: number;
+    refusedFile?: string;
+    textPath?: string;
+  } = {}
+): void {
+  const { elementLength = 1, length = SOURCE_LINES } = options;
+  const file = sourceFile({ elementLength, length });
   vi.stubGlobal("fetch", (url: string) => {
-    const { config, refusedFile } = options;
+    const { config, refusedFile, textPath } = options;
     if (refusedFile !== undefined && url.includes(refusedFile)) {
       return Response.json(
         { error: "Retouche does not read files inside node_modules." },
@@ -155,6 +197,13 @@ export function serveDevRoute(
             line: null,
             path: CONFIG_FILE,
           });
+    }
+    if (textPath !== undefined && url.includes(TEXT_FILE)) {
+      return Response.json({
+        ...file,
+        absolutePath: `/repo/${textPath}`,
+        path: textPath,
+      });
     }
     const body = url.includes(ENDPOINTS.status)
       ? { editor: "vscode", marker: STATUS_MARKER }
@@ -193,6 +242,10 @@ export function stubViewport(isInReach: (element: Element) => boolean) {
       queueMicrotask(this.#report);
     }
 
+    unobserve(target: Element): void {
+      this.#targets.delete(target);
+    }
+
     disconnect(): void {
       this.#targets.clear();
       reports.delete(this.#report);
@@ -205,5 +258,16 @@ export function stubViewport(isInReach: (element: Element) => boolean) {
         report();
       }
     },
+  };
+}
+
+export function holdExits(): () => void {
+  const { promise: finished, resolve } = Promise.withResolvers<null>();
+  Object.defineProperty(HTMLElement.prototype, "getAnimations", {
+    configurable: true,
+    value: () => [{ finished }],
+  });
+  return () => {
+    resolve(null);
   };
 }

@@ -1,6 +1,5 @@
 import {
   type Fiber,
-  getFiberFromHostInstance,
   isFiber,
   type Props,
   type ServerComponentInfo,
@@ -97,7 +96,7 @@ function ownFiber(node: Node, keyPrefixes: readonly string[]): Fiber | null {
 }
 
 export function fiberOfNode(node: Node): Fiber | null {
-  return ownFiber(node, FIBER_KEY_PREFIXES) ?? getFiberFromHostInstance(node);
+  return ownFiber(node, FIBER_KEY_PREFIXES);
 }
 
 function currentOfRoot(hostRoot: Fiber): Fiber | null {

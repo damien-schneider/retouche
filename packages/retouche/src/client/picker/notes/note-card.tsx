@@ -8,6 +8,7 @@ import {
 
 import { onPageLayoutChange } from "../../dots/page-layout";
 import { presence } from "../../motion/presence";
+import { settledSize } from "../../motion/settled-size";
 import { ArrowUpIcon, CopyIcon, TrashIcon } from "../../shell/icons";
 import { startsInWidget } from "../../shell/widget-events";
 import { cardPlacement } from "../aim/card-position";
@@ -49,7 +50,10 @@ function useCardPlacement({
       const { left, maxHeight, maxWidth, side, top } = cardPlacement(
         element.getBoundingClientRect(),
         visibleViewport(),
-        { height: form.offsetHeight, width: form.offsetWidth }
+        {
+          settled: settledSize(form),
+          shown: { height: form.offsetHeight, width: form.offsetWidth },
+        }
       );
       form.style.maxHeight = `${maxHeight}px`;
       form.style.maxWidth = `${maxWidth}px`;
@@ -247,6 +251,7 @@ export function NoteCard(props: CardProps) {
         <CardActions {...props} />
       </div>
       <ElementCode
+        components={picker.components}
         element={card.element}
         onInspect={() => {
           picker.inspect(card.element);

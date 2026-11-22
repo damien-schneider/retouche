@@ -25,10 +25,11 @@ const LOADING: InstanceSites = {
 };
 
 async function creationOf(
-  source: OverrideInstance | Element
+  source: OverrideInstance | Element,
+  components: readonly string[]
 ): Promise<ReactOwner | null> {
   if (source instanceof Element) {
-    return await appOwnerOf(source).catch(
+    return await appOwnerOf(source, components).catch(
       () => fiberOfNode(source)?._debugOwner ?? null
     );
   }
@@ -38,9 +39,10 @@ async function creationOf(
 }
 
 export async function locateSites(
-  source: OverrideInstance | Element
+  source: OverrideInstance | Element,
+  components: readonly string[]
 ): Promise<InstanceSites> {
-  const creation = await creationOf(source);
+  const creation = await creationOf(source, components);
   const node = source instanceof Element ? source : source.node;
   const [callSite, component] = await Promise.all([
     creation ? creationSite(creation).catch(() => MISSING_SITE) : MISSING_SITE,
@@ -52,13 +54,14 @@ export async function locateSites(
 }
 
 export function useInstanceSites(
-  source: OverrideInstance | Element
+  source: OverrideInstance | Element,
+  components: readonly string[]
 ): InstanceSites {
   const [sites, setSites] = useState(LOADING);
   useEffect(() => {
     let isCurrent = true;
     const show = async () => {
-      const found = await locateSites(source);
+      const found = await locateSites(source, components);
       if (isCurrent) {
         setSites(found);
       }
@@ -67,6 +70,6 @@ export function useInstanceSites(
     return () => {
       isCurrent = false;
     };
-  }, [source]);
+  }, [source, components]);
   return sites;
 }

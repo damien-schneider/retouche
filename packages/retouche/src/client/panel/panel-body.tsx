@@ -1,4 +1,4 @@
-import type { WatchedGroup } from "../../rules/class-groups";
+import type { CornerFinding } from "../corners/measure/measure-corners";
 import type { CallSite } from "../fiber/call-sites";
 import type { OverrideInstance } from "../fiber/scan-overrides";
 import { Inspector } from "../inspector/inspector";
@@ -8,17 +8,21 @@ import type { DevRouteState } from "../route/use-dev-route";
 import type { Selection } from "../selection";
 import type { LayerConfig } from "../use-layer-config";
 import { ConfigIssues } from "./config-issues";
-import { OverridesList } from "./overrides-list";
+import { OverridesList } from "./list/overrides-list";
+import type { Lens } from "./property-lenses";
 
 interface PanelBodyProps {
+  corners: CornerFinding[];
   element: Element | null;
   hoveredKey: string | null;
   isHolding: boolean;
+  isOpen: boolean;
   layerConfig: LayerConfig;
   onHoldChange: (isHolding: boolean) => void;
   onHover: (instance: OverrideInstance | null) => void;
+  onInspect: (element: Element) => void;
   onSelect: (instance: OverrideInstance) => void;
-  propertyFilter: WatchedGroup | null;
+  propertyFilter: Lens | null;
   route: DevRouteState;
   selectedSite: CallSite | null;
   selection: Selection | null;
@@ -35,8 +39,10 @@ export function PanelBody(props: PanelBodyProps) {
   if (selection?.kind === "live") {
     return (
       <Inspector
+        components={config.components}
         instance={selection.instance}
         isHolding={props.isHolding}
+        isOpen={props.isOpen}
         key={selection.instance.id}
         number={
           selectedSite ? props.siteNumbers.get(selectedSite.key) : undefined
@@ -51,14 +57,23 @@ export function PanelBody(props: PanelBodyProps) {
     return <OverrideRemoved next={selection.next} onSelect={onSelect} />;
   }
   if (element) {
-    return <ElementView element={element} route={route} />;
+    return (
+      <ElementView
+        components={config.components}
+        element={element}
+        route={route}
+      />
+    );
   }
   return (
     <OverridesList
       components={config.components}
+      corners={props.corners}
       filter={props.propertyFilter}
       hoveredKey={props.hoveredKey}
+      isShown={props.isOpen}
       onHover={props.onHover}
+      onInspect={props.onInspect}
       onSelect={onSelect}
       siteNumbers={props.siteNumbers}
       sites={sites}

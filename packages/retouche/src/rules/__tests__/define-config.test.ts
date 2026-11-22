@@ -45,4 +45,15 @@ describe("checking a config written by hand or by an agent", () => {
       )
     ).toMatchObject([["allow.0", expect.any(String)]]);
   });
+
+  it("accepts an allow entry that keeps a component's corners", () => {
+    expect(
+      issuesOf(
+        retoucheConfigSchema.safeParse({
+          allow: [{ component: "Avatar", corners: true }],
+          components: ["Button"],
+        })
+      )
+    ).toStrictEqual([]);
+  });
 });

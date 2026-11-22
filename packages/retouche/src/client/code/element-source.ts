@@ -14,6 +14,7 @@ import {
   fiberOfNode,
   findDescendant,
   isSameFiber,
+  ownerName,
   type ReactOwner,
   rootFiberOf,
   writtenPlace,
@@ -214,7 +215,21 @@ function wrapsDirectly(writer: ReactOwner, part: ReactOwner): boolean {
   return fiber !== null;
 }
 
-export async function appOwnerOf(node: Element): Promise<ReactOwner | null> {
+function ownsPart(options: {
+  components: readonly string[];
+  part: ReactOwner;
+  writer: ReactOwner;
+}): boolean {
+  const { components, part, writer } = options;
+  return (
+    components.includes(ownerName(writer) ?? "") || wrapsDirectly(writer, part)
+  );
+}
+
+export async function appOwnerOf(
+  node: Element,
+  components: readonly string[]
+): Promise<ReactOwner | null> {
   const host = fiberOfNode(node);
   const owner = host?._debugOwner ?? null;
   if (!host || !owner || !(await isLibraryWritten(host))) {
@@ -225,7 +240,7 @@ export async function appOwnerOf(node: Element): Promise<ReactOwner | null> {
     const writer: ReactOwner | null =
       (isFiber(part) ? part._debugOwner : part.owner) ?? null;
     if (!(await isLibraryWritten(part))) {
-      return writer && wrapsDirectly(writer, part) ? writer : part;
+      return writer && ownsPart({ components, part, writer }) ? writer : part;
     }
     part = writer;
   }

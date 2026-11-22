@@ -4,6 +4,10 @@ import type { OverrideInstance } from "../fiber/scan-overrides";
 import { presence } from "../motion/presence";
 import { PROPERTY_NAMES, PropertyIcon } from "../shell/property-icons";
 
+export const CORNER_LENS = "corners";
+
+export type Lens = WatchedGroup | typeof CORNER_LENS;
+
 interface PropertySummary {
   count: number;
   group: WatchedGroup;
@@ -22,7 +26,7 @@ export function propertiesOf(instance: OverrideInstance): WatchedGroup[] {
 
 function summarizeProperties(
   sites: CallSite[],
-  active: WatchedGroup | null
+  active: Lens | null
 ): PropertySummary[] {
   return WATCHED_GROUPS.map((group) => ({
     count: sites.filter(({ lead }) => changesProperty(lead, group)).length,
@@ -50,6 +54,34 @@ function wheelSideways(
   return () => {
     strip.removeEventListener("wheel", onWheel);
   };
+}
+
+function CornerLens({
+  count,
+  isActive,
+  onPress,
+}: {
+  count: number;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  if (count === 0 && !isActive) {
+    return null;
+  }
+  return (
+    <li ref={presence}>
+      <button
+        aria-pressed={isActive}
+        className="dt-lens"
+        data-idle={count === 0}
+        onClick={onPress}
+        type="button"
+      >
+        Corners
+        <b>{count}</b>
+      </button>
+    </li>
+  );
 }
 
 function PropertyLens({
@@ -80,13 +112,39 @@ function PropertyLens({
   );
 }
 
+function AllLens({
+  count,
+  isActive,
+  onPress,
+}: {
+  count: number;
+  isActive: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <li>
+      <button
+        aria-pressed={isActive}
+        className="dt-lens"
+        onClick={onPress}
+        type="button"
+      >
+        All
+        <b>{count}</b>
+      </button>
+    </li>
+  );
+}
+
 export function PropertyLenses({
   active,
+  corners,
   onFilter,
   sites,
 }: {
-  active: WatchedGroup | null;
-  onFilter: (group: WatchedGroup | null) => void;
+  active: Lens | null;
+  corners: number;
+  onFilter: (lens: Lens | null) => void;
   sites: CallSite[];
 }) {
   const summaries = summarizeProperties(sites, active);
@@ -97,19 +155,13 @@ export function PropertyLenses({
         className="dt-lens-strip"
         ref={wheelSideways}
       >
-        <li>
-          <button
-            aria-pressed={active === null}
-            className="dt-lens"
-            onClick={() => {
-              onFilter(null);
-            }}
-            type="button"
-          >
-            All
-            <b>{sites.length}</b>
-          </button>
-        </li>
+        <AllLens
+          count={sites.length + corners}
+          isActive={active === null}
+          onPress={() => {
+            onFilter(null);
+          }}
+        />
         {summaries.map((summary) => (
           <PropertyLens
             isActive={summary.group === active}
@@ -120,6 +172,13 @@ export function PropertyLenses({
             summary={summary}
           />
         ))}
+        <CornerLens
+          count={corners}
+          isActive={active === CORNER_LENS}
+          onPress={() => {
+            onFilter(CORNER_LENS);
+          }}
+        />
       </ul>
     </div>
   );

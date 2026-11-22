@@ -70,7 +70,7 @@ export function BarArrow() {
     <svg
       aria-hidden="true"
       className={cn(
-        "pointer-events-none fixed z-20 overflow-visible text-orange-500 transition-opacity duration-200",
+        "text-brand pointer-events-none fixed z-20 overflow-visible transition-opacity duration-200",
         isRetired && "opacity-0"
       )}
       fill="none"

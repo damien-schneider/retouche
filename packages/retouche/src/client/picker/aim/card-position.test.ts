@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { cardPlacement } from "./card-position";
 
 const CARD = { height: 220, width: 340 };
+const STILL = { settled: CARD, shown: CARD };
 const EDGE_GAP = 12;
 
 function shownSpan(room: { left: number; width: number }) {
@@ -13,7 +14,7 @@ function shownSpan(room: { left: number; width: number }) {
     top: 100,
   };
   const view = { ...room, height: 768, top: 0 };
-  const { left, maxWidth } = cardPlacement(picked, view, CARD);
+  const { left, maxWidth } = cardPlacement(picked, view, STILL);
   return { left, right: left + Math.min(CARD.width, maxWidth) };
 }
 
@@ -38,9 +39,15 @@ describe("where a note card shows", () => {
     const view = { height: 768, left: 0, top: 0, width: 1009 };
     const natural = { height: 900, width: 340 };
 
-    const { maxHeight } = cardPlacement(picked, view, natural);
+    const { maxHeight } = cardPlacement(picked, view, {
+      settled: natural,
+      shown: natural,
+    });
     const shown = { ...natural, height: Math.min(natural.height, maxHeight) };
-    const { side, top } = cardPlacement(picked, view, shown);
+    const { side, top } = cardPlacement(picked, view, {
+      settled: shown,
+      shown,
+    });
 
     expect(maxHeight).toBeGreaterThan(view.height - picked.bottom);
     expect(side).toBe("above");
@@ -53,9 +60,48 @@ describe("where a note card shows", () => {
       cardPlacement(
         picked,
         { height: view, left: 0, top: 0, width: 1009 },
-        CARD
+        STILL
       ).maxHeight;
 
     expect(height(1400)).toBeGreaterThan(height(768));
+  });
+});
+
+describe("a note card gliding to a new size", () => {
+  const view = { height: 768, left: 0, top: 0, width: 1009 };
+
+  it("takes the side it lands on and grows from the picked element", () => {
+    const picked = { bottom: 640, left: 10, right: 200, top: 600 };
+    const settled = { height: 500, width: 340 };
+    const shown = { height: 100, width: 340 };
+
+    const landing = cardPlacement(picked, view, { settled, shown: settled });
+    const gliding = cardPlacement(picked, view, { settled, shown });
+
+    expect(gliding.side).toBe("above");
+    expect(gliding.top + shown.height).toBe(landing.top + settled.height);
+  });
+
+  it("widens near the right edge without sliding", () => {
+    const picked = { bottom: 140, left: 800, right: 990, top: 100 };
+    const settled = { height: 220, width: 640 };
+    const shown = { height: 220, width: 432 };
+
+    const landing = cardPlacement(picked, view, { settled, shown: settled });
+    const gliding = cardPlacement(picked, view, { settled, shown });
+
+    expect(gliding.left).toBe(landing.left);
+  });
+
+  it("widens on the left while its right edge stays beside the picked element", () => {
+    const picked = { bottom: 700, left: 700, right: 1000, top: 100 };
+    const settled = { height: 300, width: 640 };
+    const shown = { height: 300, width: 432 };
+
+    const landing = cardPlacement(picked, view, { settled, shown: settled });
+    const gliding = cardPlacement(picked, view, { settled, shown });
+
+    expect(gliding.side).toBe("left");
+    expect(gliding.left + shown.width).toBe(landing.left + settled.width);
   });
 });

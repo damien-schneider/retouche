@@ -12,6 +12,7 @@ import {
   useIsAt,
   useStoryEase,
 } from "../story-timeline";
+import { placeTokens, SyntaxText } from "./fake-syntax";
 import { ScrollEdges } from "./scroll-edges";
 
 const REMOVED =
@@ -235,7 +236,7 @@ function HoldButton() {
       className={cn(
         "flex h-8 items-center justify-center rounded-full px-3 text-[13px] font-medium transition-[background-color,color,box-shadow,scale] duration-[120ms]",
         isPressed
-          ? "bg-rt-accent scale-[0.96] text-white"
+          ? "bg-rt-accent text-rt-accent-text scale-[0.96]"
           : "bg-rt-card text-rt-text shadow-[inset_0_0_0_1px_var(--rt-border),0_1px_1px_rgb(0_0_0/0.03)]"
       )}
       data-cursor="compare"
@@ -247,8 +248,11 @@ function HoldButton() {
 
 function Parts({ parts }: { parts: readonly Part[] }) {
   const isComparing = useIsAt("compare");
-  return parts.map((part, index) =>
-    isMarked(part) ? (
+  const texts = parts.map((part) => (isMarked(part) ? part.text : part));
+  const tokens = placeTokens(texts.join(""));
+  return parts.map((part, index) => {
+    const start = texts.slice(0, index).join("").length;
+    return isMarked(part) ? (
       <span
         className={cn(
           "-mx-px rounded-[3px] p-px",
@@ -259,9 +263,14 @@ function Parts({ parts }: { parts: readonly Part[] }) {
         {part.text}
       </span>
     ) : (
-      part
-    )
-  );
+      <SyntaxText
+        key={`${index}-${part}`}
+        start={start}
+        text={part}
+        tokens={tokens}
+      />
+    );
+  });
 }
 
 function LineCode({ line }: { line: CodeLine }) {

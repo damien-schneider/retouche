@@ -12,7 +12,7 @@ export interface OverrideFacts {
   readings: ComputedReading[];
 }
 
-function locationOf(callSite: SourceRequest | null): string {
+export function locationOf(callSite: SourceRequest | null): string {
   if (!callSite || isServerFrame(callSite.fileName)) {
     return "";
   }

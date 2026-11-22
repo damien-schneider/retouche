@@ -202,7 +202,7 @@ describe("a design system installed as a package", () => {
   });
 });
 
-function designSystemSelect() {
+function designSystemSelect({ isWrapped = false } = {}) {
   const trigger = document.createElement("button");
   const form = fakeFiber({
     createdAt: site("/repo/src/app.tsx", 4),
@@ -214,10 +214,19 @@ function designSystemSelect() {
     parent: form,
     type: SelectTrigger,
   });
+  const row = isWrapped
+    ? fakeFiber({
+        createdAt: site("/repo/src/ui/select.tsx", 138),
+        node: document.createElement("span"),
+        owner: designSystem,
+        parent: designSystem,
+        type: "span",
+      })
+    : designSystem;
   const part = fakeFiber({
     createdAt: site("/repo/src/ui/select.tsx", 139),
     owner: designSystem,
-    parent: designSystem,
+    parent: row,
     type: LibrarySelectTrigger,
   });
   fakeFiber({
@@ -269,7 +278,7 @@ describe("the component a picked element belongs to", () => {
   it("names the design system component around a library part, where the app uses it", async () => {
     const { designSystem, trigger } = designSystemSelect();
 
-    await expect(appOwnerOf(trigger)).resolves.toBe(designSystem);
+    await expect(appOwnerOf(trigger, [])).resolves.toBe(designSystem);
     expect(lineOf(await creationSite(designSystem))).toBe(
       "/repo/src/settings-form.tsx:54"
     );
@@ -278,10 +287,18 @@ describe("the component a picked element belongs to", () => {
     ).toBe("/repo/src/ui/select.tsx:139");
   });
 
+  it("names a listed component that wraps a library part in its own markup, where the app uses it", async () => {
+    const { designSystem, trigger } = designSystemSelect({ isWrapped: true });
+
+    await expect(appOwnerOf(trigger, ["SelectTrigger"])).resolves.toBe(
+      designSystem
+    );
+  });
+
   it("names the library component a page places, not the page around it", async () => {
     const { button, libraryButton } = libraryButtonOnPage();
 
-    await expect(appOwnerOf(button)).resolves.toBe(libraryButton);
+    await expect(appOwnerOf(button, [])).resolves.toBe(libraryButton);
   });
 
   it("keeps the component that writes the element, even when a router renders it", async () => {
@@ -298,7 +315,7 @@ describe("the component a picked element belongs to", () => {
       type: "h1",
     });
 
-    await expect(appOwnerOf(heading)).resolves.toBe(route);
+    await expect(appOwnerOf(heading, [])).resolves.toBe(route);
   });
 });
 

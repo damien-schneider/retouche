@@ -1,12 +1,12 @@
 import { allFinish, animationsOf } from "./followers";
 
-export async function growHeight(
+export async function glideHeight(
   element: HTMLElement,
   before: number
 ): Promise<void> {
   element.style.height = "";
   const after = element.getBoundingClientRect().height;
-  if (after <= before) {
+  if (after === before) {
     return;
   }
   element.style.height = `${before}px`;

@@ -1,14 +1,11 @@
-import { instrument } from "bippy";
 import { useEffect, useRef, useState } from "react";
 
 import {
   type OverrideInstance,
   type ScanOptions,
   scanOverrides,
-} from "./scan-overrides";
-
-const RESCAN_MS = 1000;
-const COMMIT_SETTLE_MS = 80;
+} from "../scan-overrides";
+import { onPageCommits } from "./page-commits";
 
 function isSameInstance(a: OverrideInstance, b: OverrideInstance): boolean {
   return (
@@ -49,7 +46,6 @@ export function useOverrideScan(options: {
     if (!scan || isPaused) {
       return;
     }
-    let settleTimer = 0;
     // A no-op setState stays queued with its closure until the next render: never send one.
     const rescan = () => {
       const next = keepUnchanged(published.current, scanOverrides(scan));
@@ -59,18 +55,7 @@ export function useOverrideScan(options: {
       }
     };
     rescan();
-    const interval = window.setInterval(rescan, RESCAN_MS);
-    const unsubscribe = instrument({
-      onCommitFiberRoot: () => {
-        window.clearTimeout(settleTimer);
-        settleTimer = window.setTimeout(rescan, COMMIT_SETTLE_MS);
-      },
-    });
-    return () => {
-      unsubscribe();
-      window.clearInterval(interval);
-      window.clearTimeout(settleTimer);
-    };
+    return onPageCommits(rescan);
   }, [isPaused, scan]);
 
   return scan ? instances : [];

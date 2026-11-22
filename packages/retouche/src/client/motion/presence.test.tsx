@@ -8,20 +8,9 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 
-import { openButton, overlay, Page } from "../testing/layer-page";
+import { holdExits, openButton, overlay, Page } from "../testing/layer-page";
 
 const PRICING = /Pricing/;
-
-function holdExits(): () => void {
-  const { promise: finished, resolve } = Promise.withResolvers<null>();
-  Object.defineProperty(HTMLElement.prototype, "getAnimations", {
-    configurable: true,
-    value: () => [{ finished }],
-  });
-  return () => {
-    resolve(null);
-  };
-}
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = () => {};

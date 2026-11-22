@@ -6,14 +6,17 @@ const allowEntrySchema = z
   .object({
     classes: z.array(z.string().min(1)).optional(),
     component: z.string().min(1).optional(),
+    corners: z.literal(true).optional(),
     properties: z.array(z.enum(WATCHED_GROUPS)).optional(),
   })
   .refine(
     (entry) =>
-      (entry.classes ?? []).length > 0 || (entry.properties ?? []).length > 0,
+      (entry.classes ?? []).length > 0 ||
+      (entry.properties ?? []).length > 0 ||
+      entry.corners === true,
     {
       message:
-        "An allow entry needs `classes` or `properties` to let anything through.",
+        "An allow entry needs `classes`, `properties` or `corners` to let anything through.",
     }
   );
 

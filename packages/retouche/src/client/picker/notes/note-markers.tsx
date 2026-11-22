@@ -8,11 +8,11 @@ import {
 import { flushSync } from "react-dom";
 
 import { ElementOutline } from "../../dots/element-outline";
-import { onPageLayoutChange } from "../../dots/page-layout";
+import { onPageLayoutChange, useIsScrolling } from "../../dots/page-layout";
 import { type ClipCache, clippedBox } from "../../dots/visible-box";
 import { presence } from "../../motion/presence";
 import { claimLostFocus } from "../../shell/focused-element";
-import { hoverTarget } from "../../shell/hover-target";
+import { useHeldWhileHovered } from "../../shell/hover-target";
 import { visibleViewport } from "../aim/visible-viewport";
 import type { Picker } from "../use-picker";
 import type { Note } from "./use-notes";
@@ -140,35 +140,50 @@ function markerStyle({ isClipped, x, y }: MarkerAnchor): CSSProperties {
   };
 }
 
+function useFocusAfterEditing(
+  isEditing: boolean,
+  isPicking: boolean
+): RefObject<HTMLButtonElement | null> {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(isEditing);
+  useEffect(() => {
+    if (wasEditing.current && !isEditing && !isPicking) {
+      claimLostFocus(buttonRef.current);
+    }
+    wasEditing.current = isEditing;
+  }, [isEditing, isPicking]);
+  return buttonRef;
+}
+
 function Marker({
   anchor,
+  isOut,
   note,
   number,
   picker,
   onHover,
 }: {
   anchor: MarkerAnchor;
+  isOut: boolean;
   note: Note;
   number: number;
   onHover: (note: Note | null) => void;
   picker: Picker;
 }) {
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const isEditing = picker.notes.card?.noteId === note.id;
-  const wasEditing = useRef(isEditing);
-  useEffect(() => {
-    if (wasEditing.current && !isEditing && !picker.isPicking) {
-      claimLostFocus(buttonRef.current);
-    }
-    wasEditing.current = isEditing;
-  }, [isEditing, picker.isPicking]);
+  const buttonRef = useFocusAfterEditing(isEditing, picker.isPicking);
+  const [place, hover] = useHeldWhileHovered(anchor, (isHovered) => {
+    onHover(isHovered ? note : null);
+  });
 
   return (
     <span
       className="dt-marker"
+      data-out={isOut}
       data-wide={number >= WIDE_FROM}
+      inert={isOut}
       ref={presence}
-      style={markerStyle(anchor)}
+      style={markerStyle({ ...anchor, x: place.x, y: place.y })}
     >
       <button
         aria-expanded={isEditing}
@@ -177,9 +192,7 @@ function Marker({
         onClick={() => {
           picker.notes.open({ element: note.element, noteId: note.id });
         }}
-        {...hoverTarget((isHovered) => {
-          onHover(isHovered ? note : null);
-        })}
+        {...hover}
         ref={buttonRef}
         type="button"
       >
@@ -201,6 +214,7 @@ export function NoteMarkers({
 }) {
   const { card, list } = picker.notes;
   const anchors = useMarkerAnchors(layerRef, list);
+  const isScrolling = useIsScrolling();
   const [hovered, setHovered] = useState<Note | null>(null);
   const shownHover =
     hovered && list.includes(hovered) && hovered.element !== card?.element
@@ -222,6 +236,7 @@ export function NoteMarkers({
           note && (
             <Marker
               anchor={anchor}
+              isOut={isScrolling(note.element)}
               key={note.id}
               note={note}
               number={index + 1}

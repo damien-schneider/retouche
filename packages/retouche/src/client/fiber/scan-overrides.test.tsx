@@ -356,15 +356,15 @@ describe("a page rendered after React stops recording creation stacks", () => {
     const [rows, footer] = sites;
     const [starter, team, scale] = await Promise.all(
       (rows?.instances ?? []).map(
-        async (instance) => await locateSites(instance)
+        async (instance) => await locateSites(instance, COMPONENTS)
       )
     );
     const [pickedStarter, pickedScale] = await Promise.all(
       ["Starter", "Scale"].map(
-        async (name) => await locateSites(screen.getByText(name))
+        async (name) => await locateSites(screen.getByText(name), COMPONENTS)
       )
     );
-    const lone = footer ? await locateSites(footer.lead) : null;
+    const lone = footer ? await locateSites(footer.lead, COMPONENTS) : null;
 
     expect(sites.map(({ instances }) => instances.length)).toStrictEqual([
       3, 1,
@@ -415,7 +415,7 @@ describe("a library re-rendering elements after React stops recording creation s
     const sites = callSitesOf(scanOverrides(options));
     const [billing, team] = await Promise.all(
       ["Billing", "Team"].map(
-        async (name) => await locateSites(screen.getByText(name))
+        async (name) => await locateSites(screen.getByText(name), COMPONENTS)
       )
     );
 

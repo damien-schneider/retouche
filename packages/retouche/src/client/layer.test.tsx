@@ -10,6 +10,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import Layer from "./layer";
 import {
+  byWholeText,
   captureClipboard,
   codeStep,
   config,
@@ -122,11 +123,17 @@ describe("stepping through overrides in the inspector", () => {
     await within(diff).findByText("text-lg");
 
     const next = within(panel).getByRole("button", { name: /next/i });
+    const properties = () =>
+      within(within(panel).getByRole("list", { name: /propert/i }));
     fireEvent.click(next);
-    await expect(within(panel).findByText("font-bold")).resolves.toBeTruthy();
+    await expect(
+      waitFor(() => properties().getByText("font-bold"))
+    ).resolves.toBeTruthy();
 
     fireEvent.keyDown(next, { key: "k" });
-    await expect(within(panel).findByText("text-lg")).resolves.toBeTruthy();
+    await expect(
+      waitFor(() => properties().getByText("text-lg"))
+    ).resolves.toBeTruthy();
   });
 
   it("counts the overrides in the stepper only, and goes back from the title", async () => {
@@ -313,7 +320,9 @@ describe("resolving an override where it is written", () => {
     render(<Page headline="text-lg" />);
     const panel = await waitFor(overlay);
     await inspectPricing(panel);
-    const entry = within(codeStep(panel, /config/i)).getByText(/"text-lg"/);
+    const entry = within(codeStep(panel, /config/i)).getByText(
+      byWholeText(/"text-lg"/)
+    );
 
     for (const name of [/call site/i, /component/i, /config/i]) {
       fireEvent.click(within(codeStep(panel, name)).getByRole("button"));
@@ -383,14 +392,14 @@ describe("reading the code behind an override", () => {
     });
 
     expect(within(code).getAllByText(/Pricing/).length).toBeGreaterThan(0);
-    expect(within(code).queryByText("1")).toBeNull();
+    expect(within(code).queryByText(/firstLine/)).toBeNull();
     expect(within(code).queryByText(/lastLine/)).toBeNull();
 
     for (const button of above) {
       fireEvent.click(button);
     }
 
-    expect(within(code).getAllByText("1")).toHaveLength(above.length);
+    expect(within(code).getAllByText(/firstLine/)).toHaveLength(above.length);
     expect(within(code).queryByRole("button", { name: /above/i })).toBeNull();
 
     const below = within(code).getAllByRole("button", { name: /below/i });

@@ -58,7 +58,10 @@ function committed(
   return [...list, { context, element, id: nextNoteId++, text }];
 }
 
-export function useNotes(instances: OverrideInstance[]): Notes {
+export function useNotes(
+  instances: OverrideInstance[],
+  components: readonly string[]
+): Notes {
   const [list, setList] = useState<Note[]>([]);
   const [card, setCard] = useState<OpenCard | null>(null);
   const [draft, setDraft] = useState("");
@@ -86,7 +89,7 @@ export function useNotes(instances: OverrideInstance[]): Notes {
     list,
     open: (target) => {
       const kept = draft.trim() ? commit() : list;
-      locate(target.element);
+      locate(target.element, components);
       setCard({ ...target, opening: takeOpening() });
       setDraft(kept.find(({ id }) => id === target.noteId)?.text ?? "");
     },

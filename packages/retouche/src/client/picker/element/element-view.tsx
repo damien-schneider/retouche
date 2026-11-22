@@ -1,3 +1,4 @@
+import { CornerFit } from "../../corners/corner-fit";
 import { CodeSection } from "../../inspector/code-section";
 import { useInstanceSites } from "../../inspector/use-instance-sites";
 import { presence } from "../../motion/presence";
@@ -6,13 +7,15 @@ import { useComponentName } from "../notes/element-context";
 import { ElementTypography } from "./element-typography";
 
 export function ElementView({
+  components,
   element,
   route,
 }: {
+  components: readonly string[];
   element: Element;
   route: DevRouteState;
 }) {
-  const sites = useInstanceSites(element);
+  const sites = useInstanceSites(element, components);
   const tag = `<${element.localName}>`;
   const owner = useComponentName(element);
   return (
@@ -22,6 +25,12 @@ export function ElementView({
         {owner !== null && <span className="dt-chip">{tag}</span>}
       </header>
       <ElementTypography element={element} />
+      <CornerFit
+        components={components}
+        element={element}
+        route={route}
+        sites={sites}
+      />
       <CodeSection facts={null} isHolding={false} route={route} sites={sites} />
     </div>
   );

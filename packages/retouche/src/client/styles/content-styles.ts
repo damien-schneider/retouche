@@ -3,7 +3,7 @@ import { HOVER_CAPABLE } from "./tokens";
 export const CONTENT_STYLES = `
 .dt-num {
   display: inline-block; align-content: center; min-width: 20px; height: 20px; padding: 0 5px; flex: none;
-  border-radius: var(--rt-pill); background: var(--rt-accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%); color: #fff;
+  border-radius: var(--rt-pill); background: var(--rt-accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%); color: var(--rt-accent-text);
   font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: 0; line-height: 1; text-align: center; text-box: trim-both cap alphabetic;
 }
 .dt-token {
@@ -25,7 +25,7 @@ export const CONTENT_STYLES = `
   transition: background-color 120ms var(--rt-ease), color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
 }
 .dt-btn[data-variant="primary"] { background: var(--rt-primary); box-shadow: 0 1px 2px rgb(0 0 0 / 12%); color: var(--rt-primary-text); }
-.dt-btn[aria-pressed="true"] { background: var(--rt-accent); box-shadow: none; color: #fff; }
+.dt-btn[aria-pressed="true"] { background: var(--rt-accent); box-shadow: none; color: var(--rt-accent-text); }
 .dt-copy {
   display: inline-grid; justify-items: center; align-items: center; height: 32px; padding: 0 12px 0 10px;
   border-radius: var(--rt-pill); color: var(--rt-text); font-weight: 500; white-space: nowrap; user-select: none;

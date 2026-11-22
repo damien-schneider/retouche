@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from "react";
 
+import { GripIcon } from "../shell/icons";
 import type { ResizeProps } from "./gestures/use-panel-resize";
 import type { Dock } from "./use-dock";
 
@@ -45,7 +46,9 @@ export function Surface({
           title="Drag to resize, double-click to reset"
           type="button"
           {...resize}
-        />
+        >
+          <GripIcon />
+        </button>
       )}
     </div>
   );

@@ -8,7 +8,7 @@ import {
 import { flushSync } from "react-dom";
 
 import type { LineRange } from "../../protocol";
-import { growHeight } from "../motion/height-growth";
+import { glideHeight } from "../motion/height-glide";
 import { ChevronDownIcon, ChevronUpIcon } from "../shell/icons";
 import {
   type CodeMarks,
@@ -18,6 +18,7 @@ import {
   type SourceReading,
   shownLines,
 } from "./source-reading";
+import { LineText } from "./syntax/line-text";
 
 const NOTHING_REVEALED: Revealed = { above: false, below: false };
 
@@ -25,28 +26,6 @@ const EDGE_ICONS: Record<Edge, ReactNode> = {
   above: <ChevronUpIcon />,
   below: <ChevronDownIcon />,
 };
-
-function markTokens(
-  text: string,
-  options: { marks: CodeMarks; pattern: RegExp | null }
-): ReactNode {
-  if (!options.pattern) {
-    return text || " ";
-  }
-  const parts: ReactNode[] = [];
-  let cursor = 0;
-  for (const match of text.matchAll(options.pattern)) {
-    parts.push(
-      text.slice(cursor, match.index),
-      <mark data-change={options.marks.change} key={match.index}>
-        {match[0]}
-      </mark>
-    );
-    cursor = match.index + match[0].length;
-  }
-  parts.push(text.slice(cursor) || (cursor === 0 ? " " : ""));
-  return parts;
-}
 
 function useCenteredLine(viewRef: RefObject<HTMLPreElement | null>) {
   const targetRef = useRef<HTMLSpanElement>(null);
@@ -58,7 +37,9 @@ function useCenteredLine(viewRef: RefObject<HTMLPreElement | null>) {
       return;
     }
     const offset = line.top - view.getBoundingClientRect().top;
-    view.scrollTop += offset - (view.clientHeight - line.height) / 2;
+    const covered =
+      Number.parseFloat(getComputedStyle(view).scrollPaddingTop) || 0;
+    view.scrollTop += offset - (view.clientHeight + covered - line.height) / 2;
   }, [viewRef]);
 
   return targetRef;
@@ -89,7 +70,7 @@ function SourceLines({
   return (
     <pre className="dt-code" ref={viewRef}>
       <code className="dt-code-lines">
-        {lines.slice(shown.start - 1, shown.end).map((text, index) => {
+        {lines.slice(shown.start - 1, shown.end).map((line, index) => {
           const number = shown.start + index;
           const isMarked =
             marked !== null && number >= marked.start && number <= marked.end;
@@ -104,10 +85,11 @@ function SourceLines({
                 {lineLabel(number, inserted)}
               </span>
               <span>
-                {markTokens(text, {
-                  marks,
-                  pattern: isMarked || isFileWide ? pattern : null,
-                })}
+                <LineText
+                  change={marks.change}
+                  line={line}
+                  pattern={isMarked || isFileWide ? pattern : null}
+                />
               </span>
             </span>
           );
@@ -176,7 +158,7 @@ function useRevealedLines(
     if (!view) {
       return;
     }
-    void growHeight(view, before);
+    void glideHeight(view, before);
     if (edge === "above") {
       view.scrollTop = view.scrollHeight - fromBottom;
     }

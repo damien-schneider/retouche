@@ -2,8 +2,8 @@ import { useState } from "react";
 import { flushSync } from "react-dom";
 import { z } from "zod";
 
-import type { WatchedGroup } from "../rules/class-groups";
 import type { OverrideInstance } from "./fiber/scan-overrides";
+import type { Lens } from "./panel/property-lenses";
 import { type Picked, pickOf } from "./selection";
 import {
   type StoredPreference,
@@ -16,7 +16,7 @@ export interface LayerNavigation {
   back: () => void;
   close: () => void;
   element: Element | null;
-  filterProperty: (group: WatchedGroup | null) => void;
+  filterProperty: (lens: Lens | null) => void;
   follow: (picked: Picked) => void;
   inspectElement: (element: Element) => void;
   isOpen: boolean;
@@ -25,7 +25,7 @@ export interface LayerNavigation {
   open: (options: { resume: boolean }) => void;
   picked: Picked | null;
   placeId: string | null;
-  propertyFilter: WatchedGroup | null;
+  propertyFilter: Lens | null;
   select: (instance: OverrideInstance, instances: OverrideInstance[]) => void;
   step: (instance: OverrideInstance, instances: OverrideInstance[]) => void;
 }
@@ -81,9 +81,7 @@ function usePlace(): PlaceState {
   const [place, setPlace] = useState(OVERVIEW);
   const [inspection, setInspection] = useState(0);
   const [lastMove, setLastMove] = useState<PanelMove | null>(null);
-  const [propertyFilter, setPropertyFilter] = useState<WatchedGroup | null>(
-    null
-  );
+  const [propertyFilter, setPropertyFilter] = useState<Lens | null>(null);
   const isInspecting = place.element !== null || place.picked !== null;
   const move = (next: Place, nextMove: PanelMove | null) => {
     setPlace(next);
@@ -100,8 +98,8 @@ function usePlace(): PlaceState {
         move(OVERVIEW, "pop");
       },
       element: place.element,
-      filterProperty: (group) => {
-        setPropertyFilter(group);
+      filterProperty: (lens) => {
+        setPropertyFilter(lens);
         setLastMove("lens");
       },
       follow: (picked) => {

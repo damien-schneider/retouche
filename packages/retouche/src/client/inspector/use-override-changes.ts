@@ -13,20 +13,28 @@ export interface OverrideChanges {
   measurement: OverrideMeasurement | null;
 }
 
+interface MeasuredInstance {
+  instance: OverrideInstance;
+  measurement: OverrideMeasurement;
+}
+
 export function useOverrideChanges(
-  instance: OverrideInstance
+  instance: OverrideInstance,
+  isShown: boolean
 ): OverrideChanges {
-  const [measurement, setMeasurement] = useState<OverrideMeasurement | null>(
-    null
-  );
+  const [measured, setMeasured] = useState<MeasuredInstance | null>(null);
   useEffect(() => {
+    if (!isShown || measured?.instance === instance) {
+      return;
+    }
     const timer = window.setTimeout(() => {
-      setMeasurement(measureOverride(instance));
+      setMeasured({ instance, measurement: measureOverride(instance) });
     }, 0);
     return () => {
       window.clearTimeout(timer);
     };
-  }, [instance]);
+  }, [instance, isShown, measured]);
+  const measurement = measured?.measurement ?? null;
   const changes = propertyChanges({
     componentClasses: measurement?.beforeClasses ?? [],
     overrides: instance.overrides,

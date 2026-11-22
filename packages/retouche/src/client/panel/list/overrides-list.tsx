@@ -1,21 +1,21 @@
-import type { KeyboardEvent } from "react";
-
-import type { PropertyChange } from "../../rules/class-diff";
-import type { WatchedGroup } from "../../rules/class-groups";
-import type { CallSite } from "../fiber/call-sites";
-import type { OverrideInstance } from "../fiber/scan-overrides";
-import { RenderCount } from "../inspector/inspector";
-import { useOverrideChanges } from "../inspector/use-override-changes";
-import { presence } from "../motion/presence";
-import { hoverTarget } from "../shell/hover-target";
-import { PROPERTY_NAMES } from "../shell/property-icons";
-import { propertiesOf } from "./property-lenses";
+import {
+  type PropertyChange,
+  propertyChanges,
+} from "../../../rules/class-diff";
+import { CornerRows } from "../../corners/corner-rows";
+import type { CornerFinding } from "../../corners/measure/measure-corners";
+import type { CallSite } from "../../fiber/call-sites";
+import type { OverrideInstance } from "../../fiber/scan-overrides";
+import { RenderCount } from "../../inspector/inspector";
+import { presence } from "../../motion/presence";
+import { hoverTarget } from "../../shell/hover-target";
+import { PROPERTY_NAMES } from "../../shell/property-icons";
+import { readSheetClassGroups } from "../../stylesheets/sheet-class-groups";
+import { CORNER_LENS, type Lens, propertiesOf } from "../property-lenses";
+import { focusNeighbourRow } from "./row-keys";
+import { type BeforeClasses, useBeforeClasses } from "./use-before-classes";
 
 const SNIPPET_LENGTH = 48;
-const ROW_STEPS = new Map([
-  ["ArrowDown", 1],
-  ["ArrowUp", -1],
-]);
 
 function snippetOf(node: Element | null): string {
   const text = node?.textContent?.replaceAll(/\s+/g, " ").trim() ?? "";
@@ -40,23 +40,6 @@ export function groupByComponent(sites: CallSite[]): [string, CallSite[]][] {
   return [...groups.entries()];
 }
 
-function focusNeighbourRow(event: KeyboardEvent<HTMLButtonElement>): void {
-  const step = ROW_STEPS.get(event.key);
-  if (step === undefined) {
-    return;
-  }
-  const rows = [
-    ...(event.currentTarget
-      .closest(".dt-body")
-      ?.querySelectorAll<HTMLElement>(".dt-row") ?? []),
-  ];
-  const neighbour = rows[rows.indexOf(event.currentTarget) + step];
-  if (neighbour) {
-    event.preventDefault();
-    neighbour.focus();
-  }
-}
-
 function replacements(changes: PropertyChange[]): [string, string][] {
   const pairs = new Map<string, string[]>();
   for (const { added, removed } of changes) {
@@ -66,13 +49,24 @@ function replacements(changes: PropertyChange[]): [string, string][] {
   return Array.from(pairs, ([added, removed]) => [removed.join(" "), added]);
 }
 
-function RowChange({ instance }: { instance: OverrideInstance }) {
-  const { changes, measurement } = useOverrideChanges(instance);
-  const pairs = replacements(changes);
+function RowChange({
+  beforeClasses,
+  instance,
+}: {
+  beforeClasses: string[] | null | undefined;
+  instance: OverrideInstance;
+}) {
+  const pairs = replacements(
+    propertyChanges({
+      componentClasses: beforeClasses ?? [],
+      overrides: instance.overrides,
+      sheetGroups: readSheetClassGroups(),
+    })
+  );
   return (
     <span
       className="dt-row-change"
-      data-pending={measurement === null}
+      data-pending={beforeClasses === undefined}
       title={pairs
         .map(([removed, added]) => (removed ? `${removed} → ${added}` : added))
         .join(" · ")}
@@ -90,12 +84,14 @@ function RowChange({ instance }: { instance: OverrideInstance }) {
 }
 
 function OverrideRow({
+  beforeClasses,
   isHovered,
   number,
   onHover,
   onSelect,
   site,
 }: {
+  beforeClasses: string[] | null | undefined;
   isHovered: boolean;
   number: number | undefined;
   onHover: (instance: OverrideInstance | null) => void;
@@ -128,9 +124,18 @@ function OverrideRow({
             .join(" · ")}
         </span>
       </span>
-      <RowChange instance={lead} />
+      <RowChange beforeClasses={beforeClasses} instance={lead} />
     </button>
   );
+}
+
+function emptyTitleOf(filter: Lens | null): string {
+  if (filter === null) {
+    return "No overrides";
+  }
+  return filter === CORNER_LENS
+    ? "No corner misfits left"
+    : `No ${PROPERTY_NAMES[filter].toLowerCase()} overrides left`;
 }
 
 function EmptyOverrides({
@@ -138,40 +143,36 @@ function EmptyOverrides({
   filter,
 }: {
   components: string[];
-  filter: WatchedGroup | null;
+  filter: Lens | null;
 }) {
   return (
     <div className="dt-empty">
-      <p className="dt-empty-title">
-        {filter
-          ? `No ${PROPERTY_NAMES[filter].toLowerCase()} overrides left`
-          : "No overrides"}
-      </p>
-      {!filter && <p>Watching {components.join(", ")}.</p>}
+      <p className="dt-empty-title">{emptyTitleOf(filter)}</p>
+      {!filter && (
+        <p>
+          Watching {components.length}{" "}
+          {components.length === 1 ? "component" : "components"}.
+        </p>
+      )}
     </div>
   );
 }
 
-export function OverridesList({
-  components,
-  filter,
+function SiteGroups({
+  beforeClasses,
   hoveredKey,
   onHover,
   onSelect,
   siteNumbers,
   sites,
 }: {
-  components: string[];
-  filter: WatchedGroup | null;
+  beforeClasses: BeforeClasses;
   hoveredKey: string | null;
   onHover: (instance: OverrideInstance | null) => void;
   onSelect: (instance: OverrideInstance) => void;
   siteNumbers: Map<string, number>;
   sites: CallSite[];
 }) {
-  if (sites.length === 0) {
-    return <EmptyOverrides components={components} filter={filter} />;
-  }
   const groups = groupByComponent(sites);
   return groups.map(([component, group]) => (
     <section aria-label={component} key={component} ref={presence}>
@@ -185,6 +186,7 @@ export function OverridesList({
         {group.map((site) => (
           <li key={site.key} ref={presence}>
             <OverrideRow
+              beforeClasses={beforeClasses.get(site.lead)}
               isHovered={site.key === hoveredKey}
               number={siteNumbers.get(site.key)}
               onHover={onHover}
@@ -196,4 +198,35 @@ export function OverridesList({
       </ul>
     </section>
   ));
+}
+
+export function OverridesList({
+  components,
+  corners,
+  filter,
+  isShown,
+  onInspect,
+  ...sitesProps
+}: {
+  components: string[];
+  corners: CornerFinding[];
+  filter: Lens | null;
+  hoveredKey: string | null;
+  isShown: boolean;
+  onHover: (instance: OverrideInstance | null) => void;
+  onInspect: (element: Element) => void;
+  onSelect: (instance: OverrideInstance) => void;
+  siteNumbers: Map<string, number>;
+  sites: CallSite[];
+}) {
+  const beforeClasses = useBeforeClasses(sitesProps.sites, isShown);
+  if (sitesProps.sites.length === 0 && corners.length === 0) {
+    return <EmptyOverrides components={components} filter={filter} />;
+  }
+  return (
+    <>
+      <SiteGroups beforeClasses={beforeClasses} {...sitesProps} />
+      <CornerRows corners={corners} onInspect={onInspect} />
+    </>
+  );
 }

@@ -3,7 +3,9 @@ import type { CSSProperties } from "react";
 import { callSiteKey, overrideLabels } from "../fiber/call-sites";
 import type { OverrideInstance } from "../fiber/scan-overrides";
 import { presence } from "../motion/presence";
-import { hoverTarget } from "../shell/hover-target";
+import { useHeldWhileHovered } from "../shell/hover-target";
+import { DotArrow } from "./arrow/dot-arrow";
+import { useIsScrolling } from "./page-layout";
 import type { DotAnchor } from "./use-dot-anchors";
 
 const STAGGER_MS = 10;
@@ -33,20 +35,21 @@ function dotStyle({
 }
 
 function DotFace({
-  component,
+  instance,
   labels,
   number,
 }: {
-  component: string;
+  instance: OverrideInstance;
   labels: string;
   number: number | undefined;
 }) {
   return (
     <>
+      <DotArrow seed={String(instance.id)} />
       <span
         aria-hidden="true"
         className="dt-dot-chip"
-        data-component={component}
+        data-component={instance.component}
       >
         <span>{labels}</span>
       </span>
@@ -68,6 +71,62 @@ function firstOfEachSite(anchors: DotAnchor[]): Set<number> {
   return new Set(firsts.values());
 }
 
+function idsToShow(
+  shown: OverrideInstance[],
+  isScrolling: (node: Node | null) => boolean
+): Set<number> {
+  return new Set(
+    shown.flatMap(({ id, node }) => (isScrolling(node) ? [] : [id]))
+  );
+}
+
+interface DotProps {
+  anchor: DotAnchor;
+  index: number;
+  isHovered: boolean;
+  isNumbered: boolean;
+  isOut: boolean;
+  isSameSite: boolean;
+  isSelected: boolean;
+  number: number | undefined;
+  onHover: (instance: OverrideInstance | null) => void;
+  onSelect: (instance: OverrideInstance) => void;
+}
+
+function Dot({ anchor, index, isOut, number, ...dot }: DotProps) {
+  const { instance } = anchor;
+  const labels = overrideLabels(instance);
+  const [place, hover] = useHeldWhileHovered(
+    { aim: anchor.aim, side: anchor.side, x: anchor.x, y: anchor.y },
+    (isHovered) => {
+      dot.onHover(isHovered ? instance : null);
+    }
+  );
+  return (
+    <button
+      aria-label={`${number ?? ""} ${instance.component} overrides ${labels}`.trim()}
+      aria-pressed={dot.isSelected}
+      className="dt-dot"
+      data-aim={place.aim}
+      data-hovered={dot.isHovered}
+      data-numbered={dot.isNumbered}
+      data-out={isOut}
+      data-same-site={dot.isSameSite}
+      data-side={place.side}
+      inert={isOut}
+      onClick={() => {
+        dot.onSelect(instance);
+      }}
+      {...hover}
+      ref={presence}
+      style={dotStyle({ ...anchor, ...place, index })}
+      type="button"
+    >
+      <DotFace instance={instance} labels={labels} number={number} />
+    </button>
+  );
+}
+
 export function OverrideDots({
   anchors,
   hovered,
@@ -77,44 +136,27 @@ export function OverrideDots({
   shown,
   siteNumbers,
 }: OverrideDotsProps) {
-  const shownIds = new Set(shown.map(({ id }) => id));
+  const shownIds = idsToShow(shown, useIsScrolling());
   const hoveredSite = hovered ? callSiteKey(hovered) : null;
   const numbered = firstOfEachSite(anchors);
 
   return anchors.map((anchor, index) => {
-    const { instance, side } = anchor;
-    const isOut = !shownIds.has(instance.id);
-    const labels = overrideLabels(instance);
-    const site = callSiteKey(instance);
-    const number = siteNumbers.get(site);
+    const { id } = anchor.instance;
+    const site = callSiteKey(anchor.instance);
     return (
-      <button
-        aria-label={`${number ?? ""} ${instance.component} overrides ${labels}`.trim()}
-        aria-pressed={instance.id === selectedId}
-        className="dt-dot"
-        data-hovered={instance.id === hovered?.id}
-        data-numbered={numbered.has(instance.id)}
-        data-out={isOut}
-        data-same-site={hoveredSite === site}
-        data-side={side}
-        inert={isOut}
-        key={instance.id}
-        onClick={() => {
-          onSelect(instance);
-        }}
-        {...hoverTarget((isHovered) => {
-          onHover(isHovered ? instance : null);
-        })}
-        ref={presence}
-        style={dotStyle({ ...anchor, index })}
-        type="button"
-      >
-        <DotFace
-          component={instance.component}
-          labels={labels}
-          number={number}
-        />
-      </button>
+      <Dot
+        anchor={anchor}
+        index={index}
+        isHovered={id === hovered?.id}
+        isNumbered={numbered.has(id)}
+        isOut={!shownIds.has(id)}
+        isSameSite={hoveredSite === site}
+        isSelected={id === selectedId}
+        key={id}
+        number={siteNumbers.get(site)}
+        onHover={onHover}
+        onSelect={onSelect}
+      />
     );
   });
 }

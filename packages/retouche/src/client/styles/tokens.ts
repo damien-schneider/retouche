@@ -91,10 +91,11 @@ export const REDUCED_MOTION_STYLES = `
   .dt-expand-pill { transition: opacity 120ms linear, background-color 120ms linear, color 120ms linear !important; translate: none !important; }
   button:active:not(:disabled) { scale: 1; }
   .dt-outline, .dt-dot-chip, .dt-dot-chip::before, .dt-dot-chip span { transition: opacity 120ms linear !important; }
-  .dt-toolbar, .dt-panel, .dt-dot { transition: opacity 140ms linear !important; }
-  .dt-dot { scale: none !important; }
+  .dt-toolbar, .dt-panel, .dt-dot, .dt-marker { transition: opacity 140ms linear !important; }
+  .dt-dot, .dt-marker, .dt-dot-arrow { scale: none !important; }
   .dt-dot-pin { scale: var(--rest, 1) !important; }
+  .dt-dot-pin, .dt-dot-arrow { transition: opacity 140ms linear !important; }
   .dt-surface[data-state="panel"] .dt-toolbar, .dt-surface[data-state="bar"] .dt-panel,
-  .dt-page[data-dots="off"] .dt-dot, .dt-dot[data-out="true"] { transition: opacity 140ms linear, visibility 0s linear 140ms !important; }
+  .dt-page[data-dots="off"] .dt-dot, .dt-dot[data-out="true"], .dt-marker[data-out="true"] { transition: opacity 140ms linear, visibility 0s linear 140ms !important; }
 }
 `;

@@ -58,8 +58,10 @@ function InspectorHead({
 }
 
 interface InspectorProps {
+  components: readonly string[];
   instance: OverrideInstance;
   isHolding: boolean;
+  isOpen: boolean;
   number: number | undefined;
   onHoldChange: (isHolding: boolean) => void;
   renders: number;
@@ -67,15 +69,17 @@ interface InspectorProps {
 }
 
 export function Inspector({
+  components,
   instance,
   isHolding,
+  isOpen,
   number,
   onHoldChange,
   renders,
   route,
 }: InspectorProps) {
-  const { changes, measurement } = useOverrideChanges(instance);
-  const sites = useInstanceSites(instance);
+  const { changes, measurement } = useOverrideChanges(instance, isOpen);
+  const sites = useInstanceSites(instance, components);
   const isMeasurable = canStripOverride(instance);
   const facts: OverrideFacts = {
     callSite: sites.callSite.kind === "found" ? sites.callSite.request : null,

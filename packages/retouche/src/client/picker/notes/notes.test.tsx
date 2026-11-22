@@ -1,8 +1,9 @@
 import "../../../instrument";
+import { setTimeout as delay } from "node:timers/promises";
+
 import {
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
   within,
@@ -19,19 +20,18 @@ import {
 
 import Layer from "../../layer";
 import {
+  clickOn,
   config,
   focusedIn,
   giveElementsSize,
   openButton,
-  overlay,
-  pickButton,
   pointAt,
   serveDevRoute,
+  startPicking,
   Text,
 } from "../../testing/layer-page";
 import { isApplePlatform } from "../aim/keyboard";
 
-const PICK_NAME = /pick/i;
 const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
 
@@ -70,23 +70,6 @@ function Landing() {
   );
 }
 
-async function startPicking(): Promise<{
-  layer: HTMLElement;
-  panel: HTMLElement;
-}> {
-  render(<Landing />);
-  const panel = await waitFor(overlay);
-  fireEvent.click(pickButton(panel));
-  const layer = within(panel).getByRole("application", { name: PICK_NAME });
-  return { layer, panel };
-}
-
-function clickOn(layer: HTMLElement, element: Element): void {
-  pointAt(element);
-  fireEvent.pointerMove(layer, { clientX: 10, clientY: 10 });
-  fireEvent.click(layer, { clientX: 10, clientY: 10 });
-}
-
 function noteField(panel: HTMLElement): HTMLTextAreaElement {
   const field = within(within(panel).getByRole("form")).getByRole("textbox");
   if (!(field instanceof HTMLTextAreaElement)) {
@@ -115,7 +98,7 @@ function marker(panel: HTMLElement, text: RegExp): HTMLElement {
 
 describe("noting an element while picking", () => {
   it("opens a note on the clicked element and keeps picking once it is added", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
 
     clickOn(layer, heading());
 
@@ -131,7 +114,7 @@ describe("noting an element while picking", () => {
   });
 
   it("copies the element and leaves pick mode on Enter with an empty note", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
 
     clickOn(layer, heading());
     fireEvent.keyDown(noteField(panel), { key: "Enter" });
@@ -141,7 +124,7 @@ describe("noting an element while picking", () => {
   });
 
   it("aims with the keyboard and opens the note on the aimed element", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     pointAt(screen.getByText("Pricing"));
     fireEvent.pointerMove(layer, { clientX: 10, clientY: 10 });
 
@@ -152,7 +135,7 @@ describe("noting an element while picking", () => {
   });
 
   it("keeps letters typed into a note out of the panel shortcuts", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     const field = noteField(panel);
 
@@ -166,7 +149,7 @@ describe("noting an element while picking", () => {
 
 describe("copying for a coding agent", () => {
   it("copies the aimed element with the copy shortcut", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     pointAt(heading());
     fireEvent.pointerMove(layer, { clientX: 10, clientY: 10 });
 
@@ -178,7 +161,7 @@ describe("copying for a coding agent", () => {
   });
 
   it("leaves a text selection in the note to the native copy", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     const field = noteField(panel);
     fireEvent.change(field, { target: { value: "Too tight" } });
@@ -194,7 +177,7 @@ describe("copying for a coding agent", () => {
   });
 
   it("saves the open note and copies every note in order", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     addNote(panel, "First note");
     clickOn(layer, screen.getByText("Pricing"));
@@ -213,7 +196,7 @@ describe("copying for a coding agent", () => {
 
   it("names the call site by the path the dev route reads", async () => {
     serveDevRoute();
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, screen.getByText("Pricing"));
     await within(panel).findByTitle(/src\/pricing\.tsx/);
 
@@ -224,100 +207,9 @@ describe("copying for a coding agent", () => {
   });
 });
 
-function cardCode(panel: HTMLElement): HTMLElement {
-  const card = within(panel).getByRole("form");
-  return within(card).getByRole("region", { name: /code/i });
-}
-
-describe("the code beside a note", () => {
-  it("shows where the picked element is written and its lines, apart from the note field", async () => {
-    serveDevRoute();
-    const { layer, panel } = await startPicking();
-    clickOn(layer, screen.getByText("Pricing"));
-    const code = cardCode(panel);
-
-    await expect(
-      within(code).findByText('<Text className="text-lg">Pricing</Text>')
-    ).resolves.toBeTruthy();
-    expect(within(code).getByTitle(/src\/pricing\.tsx/)).toBeTruthy();
-    expect(within(code).queryByRole("textbox")).toBeNull();
-  });
-
-  it("shows the component's own lines when the dev route refuses where it is called, like a route its router renders", async () => {
-    serveDevRoute({ refusedFile: "notes.test.tsx" });
-    const { layer, panel } = await startPicking();
-    const paragraph = screen.getByText("Pricing").closest("p");
-    if (!paragraph) {
-      throw new TypeError("Text renders no paragraph");
-    }
-    clickOn(layer, paragraph);
-    const code = cardCode(panel);
-
-    await expect(
-      within(code).findByText('<Text className="text-lg">Pricing</Text>')
-    ).resolves.toBeTruthy();
-    expect(within(code).getByTitle(/src\/pricing\.tsx/)).toBeTruthy();
-  });
-
-  it("shows the whole element at first when it runs over many lines", async () => {
-    serveDevRoute({ elementLength: 18 });
-    const { layer, panel } = await startPicking();
-    clickOn(layer, screen.getByText("Pricing"));
-    const code = cardCode(panel);
-    await within(code).findByText('<Text className="text-lg">Pricing</Text>');
-
-    expect(within(code).getByText("</Section>")).toBeTruthy();
-  });
-
-  it("opens the picked element in the panel from its code", async () => {
-    const { layer, panel } = await startPicking();
-    clickOn(layer, heading());
-
-    fireEvent.click(
-      within(cardCode(panel)).getByRole("button", { name: /inspect/i })
-    );
-
-    expect(within(panel).queryByRole("form")).toBeNull();
-    await expect(
-      within(panel).findByRole("heading", { name: /Hero/ })
-    ).resolves.toBeTruthy();
-  });
-});
-
-describe("expanding the code beside a note", () => {
-  it("expands the code to read more of the file, then collapses it back", async () => {
-    serveDevRoute();
-    const { layer, panel } = await startPicking();
-    clickOn(layer, screen.getByText("Pricing"));
-    const code = cardCode(panel);
-    await within(code).findByText('<Text className="text-lg">Pricing</Text>');
-    expect(within(code).queryByText("const lastLine = 1;")).toBeNull();
-
-    fireEvent.click(within(code).getByRole("button", { name: /expand/i }));
-    expect(within(code).getByText("const lastLine = 1;")).toBeTruthy();
-
-    fireEvent.click(within(code).getByRole("button", { name: /collapse/i }));
-    expect(within(code).queryByText("const lastLine = 1;")).toBeNull();
-  });
-
-  it("collapses back to the lines around the element after more of them were revealed", async () => {
-    serveDevRoute();
-    const { layer, panel } = await startPicking();
-    clickOn(layer, screen.getByText("Pricing"));
-    const code = cardCode(panel);
-    await within(code).findByText('<Text className="text-lg">Pricing</Text>');
-    fireEvent.click(within(code).getByRole("button", { name: /below/i }));
-    expect(within(code).getByText("const lastLine = 1;")).toBeTruthy();
-
-    fireEvent.click(within(code).getByRole("button", { name: /expand/i }));
-    fireEvent.click(within(code).getByRole("button", { name: /collapse/i }));
-    expect(within(code).queryByText("const lastLine = 1;")).toBeNull();
-  });
-});
-
 describe("the notes tray", () => {
   it("copies and clears the notes from the tray", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     addNote(panel, "Make it bolder");
     fireEvent.keyDown(layer, { key: "Escape" });
@@ -332,7 +224,7 @@ describe("the notes tray", () => {
   });
 
   it("hands the keys back to the page after a tray action", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     addNote(panel, "Make it bolder");
     const tray = within(panel).getByRole("region", { name: /notes/i });
@@ -353,7 +245,7 @@ describe("the notes tray", () => {
 
 describe("leaving and revisiting notes", () => {
   it("discards the open note on Escape, then leaves pick mode", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     fireEvent.change(noteField(panel), { target: { value: "Never mind" } });
 
@@ -372,7 +264,7 @@ describe("leaving and revisiting notes", () => {
   });
 
   it("edits a note from its marker and removes it once emptied", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     addNote(panel, "First take");
     fireEvent.keyDown(layer, { key: "Escape" });
@@ -391,7 +283,7 @@ describe("leaving and revisiting notes", () => {
 
 describe("a marker whose element sits in a scroll area", () => {
   it("hides a marker while its element is scrolled out of the area that clips it", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     addNote(panel, "Make it bolder");
 
@@ -409,7 +301,7 @@ describe("a marker whose element sits in a scroll area", () => {
   });
 
   it("keeps a marker whose element scrolls out of the area that clips it and back, instead of fading it out and in again", async () => {
-    const { layer, panel } = await startPicking();
+    const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, heading());
     addNote(panel, "Make it bolder");
     const pinned = await within(panel).findByRole("button", { name: /bolder/ });
@@ -430,5 +322,42 @@ describe("a marker whose element sits in a scroll area", () => {
     await expect(
       within(panel).findByRole("button", { name: /bolder/ })
     ).resolves.toBe(pinned);
+  });
+});
+
+describe("a marker while its scroll area scrolls", () => {
+  it("steps aside while the area holding its element scrolls, and comes back once it stops", async () => {
+    const { layer, panel } = await startPicking(<Landing />);
+    clickOn(layer, heading());
+    addNote(panel, "Make it bolder");
+    const pinned = await within(panel).findByRole("button", { name: /bolder/ });
+
+    fireEvent.scroll(heading().parentElement ?? window);
+
+    expect(within(panel).queryByRole("button", { name: /bolder/ })).toBeNull();
+    await expect(
+      within(panel).findByRole("button", { name: /bolder/ })
+    ).resolves.toBe(pinned);
+  });
+});
+
+describe("a marker under the pointer", () => {
+  it("holds still while its element shifts as the pointer leaves the element for the marker, and follows it once the pointer moves on", async () => {
+    const { layer, panel } = await startPicking(<Landing />);
+    clickOn(layer, heading());
+    addNote(panel, "Make it bolder");
+    const pin = await within(panel).findByRole("button", { name: /bolder/ });
+    const underPointer = pin.parentElement?.style.translate;
+
+    fireEvent.pointerOver(pin);
+    Object.defineProperty(heading(), "getBoundingClientRect", {
+      value: () => new DOMRect(0, 60, 200, 20),
+    });
+    fireEvent.scroll(window);
+    await delay(100);
+    expect(pin.parentElement?.style.translate).toBe(underPointer);
+
+    fireEvent.pointerOut(pin);
+    expect(pin.parentElement?.style.translate).not.toBe(underPointer);
   });
 });

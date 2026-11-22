@@ -199,7 +199,7 @@ function AimLabel({
 }
 
 export function PickLayer({ picker }: { picker: Picker }) {
-  const aim = useAim();
+  const aim = useAim(picker.components);
   const { layerRef, marqueeRef } = usePickEvents(picker, aim);
   const { notes } = picker;
   const { aimed } = aim;

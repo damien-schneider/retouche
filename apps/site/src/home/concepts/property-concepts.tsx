@@ -3,13 +3,14 @@ import * as m from "motion/react-m";
 import { cn } from "../../ui/class-names";
 import { Heading } from "../../ui/heading";
 import type { ConceptGroup } from "./concept-section";
+import { CornerSpecimens } from "./corner-specimens";
 import { useRise } from "./scroll-reveal";
 
 function PropertiesIcon() {
   return (
     <span
       aria-hidden="true"
-      className="w-3.5 text-[11px] leading-none font-semibold text-orange-500"
+      className="text-brand w-3.5 text-[11px] leading-none font-semibold"
     >
       Aa
     </span>
@@ -142,9 +143,16 @@ export const PROPERTY_CONCEPTS: ConceptGroup = {
       override: BrandTitle,
       title: "Text color",
     },
+    {
+      art: <CornerSpecimens />,
+      description:
+        "A corner that doesn’t follow the curve it sits in. A pill in a pill or an avatar circle fits.",
+      id: "corners",
+      title: "Corners",
+    },
   ],
   Icon: PropertiesIcon,
   id: "properties",
-  lead: "What Retouche watches at a call site. The titles below override each one as you scroll.",
+  lead: "What Retouche watches. The titles below override each one as you scroll, and the first tile’s corner stops fitting.",
   title: "Properties",
 };

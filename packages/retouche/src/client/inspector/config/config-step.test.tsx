@@ -9,6 +9,7 @@ import {
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
+  byWholeText,
   codeStep,
   openButton,
   overlay,
@@ -58,7 +59,8 @@ async function configStep(): Promise<HTMLElement> {
 
 function lineNumberOf(step: HTMLElement, text: string): string | null {
   return (
-    within(step).getByText(text).previousElementSibling?.textContent ?? null
+    within(step).getByText(byWholeText(text)).previousElementSibling
+      ?.textContent ?? null
   );
 }
 
@@ -68,8 +70,8 @@ describe("the config step", () => {
     const step = await configStep();
     await within(step).findByRole("link", { name: /editor/i });
 
-    expect(within(step).getByText(/"Badge"/)).toBeTruthy();
-    expect(within(step).getByText(/"text-lg"/)).toBeTruthy();
+    expect(within(step).getByText(byWholeText(/"Badge"/))).toBeTruthy();
+    expect(within(step).getByText(byWholeText(/"text-lg"/))).toBeTruthy();
     expect(within(step).queryByText(/^import/)).toBeNull();
 
     fireEvent.click(within(step).getByRole("button", { name: /above/i }));
@@ -92,16 +94,19 @@ describe("the config step", () => {
     const step = await configStep();
     await within(step).findByRole("link", { name: /editor/i });
 
-    expect(within(step).getByText(/allow: \[/)).toBeTruthy();
+    expect(within(step).getByText(byWholeText(/allow: \[/))).toBeTruthy();
     expect(within(step).getAllByText("+")).toHaveLength(6);
     expect(lineNumberOf(step, "});")).toBe("5");
   });
 
-  it("still shows the entry when retouche.config.ts cannot be read", async () => {
+  it("still shows the entry, highlighted, when retouche.config.ts cannot be read", async () => {
     serveDevRoute();
     const step = await configStep();
 
-    await within(step).findByText(/"text-lg"/);
+    await within(step).findByText(byWholeText(/"text-lg"/));
+    expect(
+      within(step).getByText("text-lg").closest("[data-syntax]")
+    ).toHaveProperty("dataset.syntax", "string");
     expect(within(step).queryByRole("link", { name: /editor/i })).toBeNull();
   });
 });

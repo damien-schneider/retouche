@@ -1,4 +1,4 @@
-Set up Retouche in this React app. Retouche is a dev-only overlay: it puts a dot on every element where a call site overrides the typography of a design-system component (`<Text className="text-lg font-bold">`, `<Badge className={styles.loud}>`, `<Heading style={{ fontSize: 40 }}>`). Clicking a dot shows which properties the override changes, what it replaced, and the code behind it. Retouche does not judge: the developer decides, override by override, whether to fix the call site or allow it.
+Set up Retouche in this React app. Retouche is a dev-only overlay: it puts a dot on every element where a call site overrides the typography of a design-system component (`<Text className="text-lg font-bold">`, `<Badge className={styles.loud}>`, `<Heading style={{ fontSize: 40 }}>`). It also dots every nested corner that doesn't follow the curve of the container it sits in. Clicking a dot shows which properties the override changes, what it replaced, and the code behind it. Retouche does not judge: the developer decides, override by override, whether to fix the call site or allow it.
 
 Work through these steps in order. Stop and tell me if a precondition fails instead of working around it.
 
@@ -49,7 +49,7 @@ Copy `node_modules/retouche/templates/retouche.config.ts` to the project root, n
 - `components`: the list from step 3.
 - `allow`: leave it out. The developer reviews each override in the overlay, and when one is intended the overlay copies the exact entry to add. Only add an entry now when the design system's own code or docs say a component is meant to take that override, and name the source in your report.
 
-An `allow` entry is `{ component?: "Text", classes?: ["text-muted-*"], properties?: ["text-color"] }`: `classes` are globs on the class name (variants such as `md:` or `hover:` are ignored), `properties` lets any override of those properties through, class or inline style, and without `component` the entry applies to every watched component. An override is let through when it matches either list.
+An `allow` entry is `{ component?: "Text", classes?: ["text-muted-*"], properties?: ["text-color"], corners?: true }`: `classes` are globs on the class name (variants such as `md:` or `hover:` are ignored), `properties` lets any override of those properties through, class or inline style, `corners: true` keeps the component's nested corners as they are, and without `component` the entry applies to every watched component. An override is let through when it matches either list.
 
 ## 5. Wire it up
 

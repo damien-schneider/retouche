@@ -1,19 +1,16 @@
-import { useMotionValueEvent, useTransform } from "motion/react";
+import { useTransform } from "motion/react";
 import * as m from "motion/react-m";
-import {
-  type ComponentType,
-  type ReactNode,
-  use,
-  useRef,
-  useState,
-} from "react";
+import { type ComponentType, type ReactNode, use, useRef } from "react";
 
 import { Heading } from "../../ui/heading";
 import { Text } from "../../ui/text";
-import { RowProgress, stepStart, useRowProgress } from "./scroll-reveal";
+import {
+  RETOUCH_AT,
+  RowProgress,
+  useRetouched,
+  useRowProgress,
+} from "./scroll-reveal";
 
-const RETOUCH_STEP = 3;
-const RETOUCH_AT = stepStart(RETOUCH_STEP);
 const RETOUCH_BLUR_SPAN = 0.08;
 
 export interface Concept {
@@ -92,10 +89,7 @@ function RetouchableTitle({
   title: string;
 }) {
   const progress = use(RowProgress);
-  const [retouched, setRetouched] = useState(false);
-  useMotionValueEvent(progress, "change", (value) => {
-    setRetouched(value >= RETOUCH_AT);
-  });
+  const retouched = useRetouched();
   const filter = useTransform(
     progress,
     [

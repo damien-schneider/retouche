@@ -16,8 +16,9 @@ export function Intro() {
       </Heading>
       <Text>
         Retouche is a dev overlay for React. It pins every call site that
-        overrides your design system’s typography and shows what the override
-        replaced, so you decide whether to fix it or keep it.
+        overrides your design system’s typography, and every nested corner that
+        doesn’t follow its container’s curve, and shows what changed, so you
+        decide whether to fix it or keep it.
       </Text>
       <Text>
         To set it up, give this prompt to Claude Code, Codex or Cursor in your

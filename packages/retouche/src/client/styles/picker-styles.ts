@@ -47,10 +47,11 @@ export const PICKER_STYLES = `
 .dt-notes-page, .dt-card-page { position: absolute; top: 0; left: 0; width: 0; height: 0; contain: layout; }
 .dt-notes-page { z-index: ${Z_INDEX.notes}; }
 .dt-card-page { z-index: ${Z_INDEX.card}; }
-.dt-marker { position: absolute; top: 0; left: 0; z-index: 1; transition: translate 160ms var(--rt-ease); animation: dt-marker-in 200ms var(--rt-ease); }
+.dt-marker { position: absolute; top: 0; left: 0; z-index: 1; transition: translate 160ms var(--rt-ease), opacity 160ms var(--rt-ease), scale 160ms var(--rt-ease); animation: dt-marker-in 200ms var(--rt-ease); }
 .dt-marker:has(:focus-visible, [aria-expanded="true"]) { z-index: 2; }
 @keyframes dt-marker-in { from { opacity: 0; scale: .5; } }
 .dt-marker[data-ghost="leaving"] { opacity: 0; scale: .6; transition: opacity 120ms var(--rt-ease-exit), scale 120ms var(--rt-ease-exit); }
+.dt-marker[data-out="true"] { opacity: 0; scale: .6; visibility: hidden; pointer-events: none; transition: opacity 120ms var(--rt-ease-exit), scale 120ms var(--rt-ease-exit), visibility 0s linear 120ms; }
 .dt-marker-pin {
   position: absolute; right: 0; bottom: 0; display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 11px 11px 3px 11px;

@@ -27,7 +27,7 @@ function pointedAt(current: AimState, element: Element | null): AimState {
     : { element, isShown: true };
 }
 
-export function useAim(): Aim {
+export function useAim(components: readonly string[]): Aim {
   const [aim, setAim] = useState(UNAIMED);
   const cameFromRef = useRef<WeakMap<Element, Element>>(null);
   const aimed = aim.isShown ? aim.element : null;
@@ -36,12 +36,12 @@ export function useAim(): Aim {
       return;
     }
     const timer = window.setTimeout(() => {
-      locate(aimed);
+      locate(aimed, components);
     }, LOCATE_AFTER_MS);
     return () => {
       window.clearTimeout(timer);
     };
-  }, [aimed]);
+  }, [aimed, components]);
 
   return {
     aimAt: (element) => {

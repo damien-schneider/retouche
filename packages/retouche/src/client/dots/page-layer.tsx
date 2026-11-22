@@ -1,5 +1,7 @@
 import { useRef } from "react";
 
+import { CornerDots } from "../corners/corner-dots";
+import type { CornerFinding } from "../corners/measure/measure-corners";
 import type { OverrideInstance } from "../fiber/scan-overrides";
 import type { Selection } from "../selection";
 import { ElementOutline, type OutlineTone } from "./element-outline";
@@ -9,6 +11,11 @@ import { useDotAnchors } from "./use-dot-anchors";
 interface Outlined {
   node: Element | null;
   tone: OutlineTone;
+}
+
+interface Outlines {
+  hover: Outlined;
+  selected: Outlined;
 }
 
 const NOTHING: Outlined = { node: null, tone: "override" };
@@ -26,21 +33,27 @@ function selectedOutline(
   return inspected ? { node: inspected, tone: "override" } : NOTHING;
 }
 
-function hoverOutline(
+function outlinesOf(
   hovered: OverrideInstance | null,
-  selected: Outlined
-): Outlined {
-  return hovered && hovered.node !== selected.node
-    ? { node: hovered.node, tone: "override" }
-    : NOTHING;
+  selection: Selection | null,
+  inspected: Element | null
+): Outlines {
+  const selected = selectedOutline(selection, inspected);
+  const hover: Outlined =
+    hovered && hovered.node !== selected.node
+      ? { node: hovered.node, tone: "override" }
+      : NOTHING;
+  return { hover, selected };
 }
 
 interface PageLayerProps {
   areDotsShown: boolean;
+  corners: CornerFinding[];
   hovered: OverrideInstance | null;
   inspected: Element | null;
   instances: OverrideInstance[];
   onHover: (instance: OverrideInstance | null) => void;
+  onInspect: (element: Element) => void;
   onSelect: (instance: OverrideInstance) => void;
   selection: Selection | null;
   shown: OverrideInstance[];
@@ -49,10 +62,12 @@ interface PageLayerProps {
 
 export function PageLayer({
   areDotsShown,
+  corners,
   hovered,
   inspected,
   instances,
   onHover,
+  onInspect,
   onSelect,
   selection,
   shown,
@@ -64,8 +79,7 @@ export function PageLayer({
     isActive: areDotsShown,
     layerRef,
   });
-  const selected = selectedOutline(selection, inspected);
-  const hover = hoverOutline(hovered, selected);
+  const { hover, selected } = outlinesOf(hovered, selection, inspected);
   const selectedId = selection?.kind === "live" ? selection.instance.id : null;
 
   return (
@@ -86,6 +100,12 @@ export function PageLayer({
           selectedId={selectedId}
           shown={shown}
           siteNumbers={siteNumbers}
+        />
+        <CornerDots
+          corners={corners}
+          inspected={inspected}
+          layerRef={layerRef}
+          onInspect={onInspect}
         />
       </div>
     </div>

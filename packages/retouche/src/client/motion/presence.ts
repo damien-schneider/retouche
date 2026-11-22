@@ -1,13 +1,16 @@
 import { type Departure, freeze, isSeen, land } from "./exit-ghost";
 import {
   allFinish,
+  animationsOf,
   type Befores,
   followersOf,
   glide,
   measure,
   scrollAreaOf,
 } from "./followers";
+import { isOffScreen, watchScreen } from "./on-screen";
 
+const HIDDEN_REGION = "[inert]";
 const departures: Departure[] = [];
 const arrivals = new Set<HTMLElement>();
 let isFlushQueued = false;
@@ -26,7 +29,9 @@ function entersSettledParent(node: HTMLElement): boolean {
       return false;
     }
   }
-  return node.isConnected && isSeen(node);
+  return (
+    node.isConnected && node.closest(HIDDEN_REGION) === null && isSeen(node)
+  );
 }
 
 function measureWithout(entering: HTMLElement[], befores: Befores): void {
@@ -53,9 +58,10 @@ function measureWithout(entering: HTMLElement[], befores: Befores): void {
   }
 }
 
-async function arrive(node: HTMLElement): Promise<void> {
-  node.dataset.arriving = "";
-  const running = "getAnimations" in node ? node.getAnimations() : [];
+async function settleArrival(
+  node: HTMLElement,
+  running: Animation[]
+): Promise<void> {
   if (await allFinish(running)) {
     delete node.dataset.arriving;
   }
@@ -73,7 +79,10 @@ function flush(): void {
   measureWithout(entering, befores);
   arrivals.clear();
   for (const node of entering) {
-    void arrive(node);
+    node.dataset.arriving = "";
+  }
+  for (const node of entering) {
+    void settleArrival(node, animationsOf(node));
   }
   glide(befores);
 }
@@ -90,10 +99,14 @@ export function presence(node: HTMLElement | null): (() => void) | undefined {
     return;
   }
   arrivals.add(node);
+  const unwatch = watchScreen(node);
   queueFlush();
   return () => {
     arrivals.delete(node);
-    const departure = freeze(node);
+    unwatch();
+    const isOutOfSight =
+      isOffScreen(node) || node.closest(HIDDEN_REGION) !== null;
+    const departure = isOutOfSight ? null : freeze(node);
     if (departure) {
       departures.push(departure);
       queueFlush();

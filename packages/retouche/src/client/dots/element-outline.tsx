@@ -12,7 +12,7 @@ import {
   visibleViewport,
 } from "../picker/aim/visible-viewport";
 import { CheckIcon } from "../shell/icons";
-import { onPageLayoutChange } from "./page-layout";
+import { onPageLayoutChange, useIsScrolling } from "./page-layout";
 import { visibleBox } from "./visible-box";
 
 export type OutlineTone = "note" | "override" | "resolved";
@@ -100,7 +100,8 @@ export function ElementOutline({
   node: Element | null;
   tone: OutlineTone;
 }) {
-  const boxRef = useOutlineBox(layerRef, node);
+  const isScrolling = useIsScrolling();
+  const boxRef = useOutlineBox(layerRef, isScrolling(node) ? null : node);
   const [target, setTarget] = useState({ node, placements: 0 });
   if (node !== target.node) {
     setTarget({ node, placements: target.placements + (node ? 1 : 0) });

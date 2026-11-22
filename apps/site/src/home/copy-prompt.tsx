@@ -45,7 +45,7 @@ export function CopyPrompt({ prompt }: { prompt: string }) {
   }
 
   return (
-    <div className="bg-card shadow-card flex items-start gap-3 rounded-[14px] py-2.5 pr-2.5 pl-4">
+    <div className="bg-card shadow-card flex items-start gap-3 rounded-[18px] py-2.5 pr-2.5 pl-4">
       <p
         className="text-ink min-w-0 flex-1 py-1.5 text-[13px]/5 [overflow-wrap:anywhere]"
         ref={promptRef}

@@ -4,7 +4,7 @@
 
 ## Stack & Commands
 
-Bun workspace. One package (`packages/retouche`, built with tsdown) and one site (`apps/site`, TanStack Start, prerendered to static HTML). React 19, Tailwind v4, zod, Vitest + jsdom; the site alone adds Motion (`motion/react`). Lint and format with oxlint and oxfmt on Ultracite presets (`oxlint.config.ts`, `oxfmt.config.ts`); the hard rules below are enforced there.
+Bun workspace. One package (`packages/retouche`, built with tsdown) and one site (`apps/site`, TanStack Start, prerendered to static HTML). React 19, Tailwind v4, zod, Vitest + jsdom; the site alone adds Motion (`motion/react`). The package's components go through the React Compiler in the build and in tests alike (`packages/retouche/react-compiler.ts`), so tests render what ships; the site is not compiled. Lint and format with oxlint and oxfmt on Ultracite presets (`oxlint.config.ts`, `oxfmt.config.ts`); the hard rules below are enforced there.
 
 - **Format & fix:** `bun run fix` (oxlint --fix, then oxfmt)
 - **Check:** `bun run check`
@@ -25,18 +25,20 @@ packages/retouche/src/
   instrument.ts        → installs the DevTools hook before React
   cli.ts               → `retouche prompt`
   theme.ts             → overlay design tokens for any selector, light or dark by data-theme or else the system: the overlay's root and the site's fake overlay
+  hand-arrow.ts        → hand-drawn arrow strokes seeded by a string, so each dot's arrow is its own and keeps its shape: the dots and the site's story pins
   rules/               → config schema, class/style groups, allow matching, override detection, diff (pure, no DOM)
-  client/fiber/        → fiber scan after React commits, call-site grouping, strip and measure
+  client/fiber/        → fiber scan, call-site grouping, strip and measure; commits/ rescans the page after its React commits
   client/layer.tsx     → composition root: page layer, surface, panel
   client/use-layer-*   → overlay state, navigation between list and inspector, keys
   client/selection.ts  → keeps the inspected override across edits: by id, then by call-site key
-  client/dots/         → dot anchors in document space, viewport windowing, dots, element outline
+  client/dots/         → dot anchors in document space, viewport windowing, dots, element outline; arrow/ the hand-drawn arrow each dot points at its text or corner, from the side the page has room on
   client/surface/      → the one surface that is the bar, the panel or the narrow-screen sheet: dock geometry, pin, toolbar; gestures/ holds snap drag, resize and the sheet's handle
-  client/panel/        → panel head and stepper, property lenses, overrides list, config issues
+  client/panel/        → panel head and stepper, property lenses, config issues; list/ the one overrides list and its row keys
+  client/corners/      → nested corners whose radius doesn't follow their container's: dots, list rows, the picked element's corner fit and its prompts; measure/ finds them after the page's commits
   client/inspector/    → property diff, hold to compare, code trace, fix and allow prompts, fixed outcome; config/ splices the allow entry into the app's real retouche.config.ts
-  client/code/         → source excerpt with marked classes, edge expanders that reveal the rest of the file on their side, editor links
+  client/code/         → source excerpt with marked classes, edge expanders that reveal the rest of the file on their side, editor links; syntax/ highlights it with sugar-high, the grammar picked by file extension, bundled like bippy
   client/picker/       → pick mode: the capture layer and toolbar toggle; aim/ keyboard aiming, hotkeys and placement; element/ the picked element's typography and code trace; notes/ note card, markers, tray and the markdown handed to agents
-  client/motion/       → presence: an arriving element scales in while what follows glides to make room; a departing one leaves an exit ghost while what followed it glides into the gap; height growth for the code view as it reveals lines
+  client/motion/       → presence: an arriving element scales in while what follows glides to make room; a departing one leaves an exit ghost while what followed it glides into the gap, unless it went off screen; neither plays inside an `inert` region, which the overlay sets only on what it hides; height glide for the code as it reveals or hides lines; the settled size a gliding element lands on, which the note card is placed by
   client/route/        → dev route client and its availability state
   client/shell/        → shadow portal, icons, storage, widget events, hover target
   client/theme/        → the app's light or dark theme read from the page, the stored choice that overrides it, the switch
@@ -51,7 +53,7 @@ apps/site/                      → promotional site on its own cva design syste
 
 ## Product Boundaries
 
-- **Typography only.** Detection, templates and the prompt watch font size, line height, weight, family, tracking, case, decoration, figures and text color. Spacing, layout and color-beyond-text are out of scope; do not add them to the watched groups.
+- **Typography and nested corners.** Detection, templates and the prompt watch font size, line height, weight, family, tracking, case, decoration, figures and text color on listed components, and corners that don't fit the corner they sit in. Spacing, layout and color-beyond-text stay out of scope; do not add them to the watched groups.
 - **Report, don't judge.** Every watched override on a listed component is shown the same way; the developer decides whether it is wanted. No severities, rules or recommended roles: an intended override goes in `allow`, and the inspector's allow prompt writes that entry.
 - **Any styling, one overlay.** The prompt discovers the design system whatever styles it; the overlay reads Tailwind classes by name and any other class through the page's stylesheets.
 - **React only.** Other frameworks are out of scope.
@@ -59,7 +61,7 @@ apps/site/                      → promotional site on its own cva design syste
 - **Never published.** `packages/retouche` stays `"private": true`. Distribution is the tarball from `bun run pack`, served by the site at `/retouche.tgz` next to the setup prompt at `/setup.md`. Never run `npm publish`.
 - **No `sideEffects` field in the package.** Vite pre-bundles the tarball and drops `retouche/instrument`'s shared hook chunk, so nothing gets measured. Changes to packaging are verified by installing the tarball in an app outside the workspace.
 - **Reflet is a source, not a dependency.** Code taken from Reflet is copied and adapted here. Never import from Reflet or add it as a dependency.
-- **Three entry points: dots, the overrides list and the element picker.** The picker aims at any element on the page by pointer or keyboard. Clicking it opens a note: notes leave numbered markers and are copied as markdown for a coding agent, and `⌘C` copies the aimed element alone. `⇧`-click opens the element in the panel: one carrying a watched override opens that override; any other shows its measured typography and the code that renders it. Notes are written for an agent; they never edit code or config. The picker starts from the overlay's toolbar, never from a global shortcut.
+- **Three entry points: dots, the overrides list and the element picker.** The picker aims at any element on the page by pointer or keyboard. Clicking it opens a note: notes leave numbered markers and are copied as markdown for a coding agent, and `⌘C` copies the aimed element alone. The note's code opens where the app uses a listed component and where any other component writes the element, with one button to step to the other place. `⇧`-click opens the element in the panel: one carrying a watched override opens that override; any other shows its measured typography and the code that renders it. Notes are written for an agent; they never edit code or config. The picker starts from the overlay's toolbar, never from a global shortcut.
 
 ## Zero Technical Debt Policy
 
@@ -113,7 +115,7 @@ Non-negotiable. Every file, every change.
 
 - Keyboard reachable, visible focus, `prefers-reduced-motion` respected
 - Motion under 300ms; exits faster than entries; buttons scale to 0.96 on `:active`
-- Interactive motion is CSS transitions, so it can be interrupted; keyframes are for one-shot entrances. Size is animated in three contained places: the surface (the bar-to-panel morph), the pick outline, whose box glides between the elements it aims at on `--rt-ease-spring` (scaling it would smear its ring), and the code view, whose height grows when an edge reveals the rest of its side, owned by `motion/height-growth.ts`; everything else animates `transform`, `opacity` or paint (`color`, `filter`, `clip-path`), never layout
+- Interactive motion is CSS transitions, so it can be interrupted; keyframes are for one-shot entrances. Size is animated in four contained places: the surface (the bar-to-panel morph), the pick outline, whose box glides between the elements it aims at on `--rt-ease-spring` (scaling it would smear its ring), the code view, whose height grows when an edge reveals the rest of its side, and the note card, which widens and glides its code sheet's height when Expand or Collapse changes how much of the file it shows; heights glide through `motion/height-glide.ts`; everything else animates `transform`, `opacity` or paint (`color`, `filter`, `clip-path`), never layout
 - One exception, site only: the Properties rows' reveals and the arrow drawn toward the overlay's bar are scrubbed by scroll with `motion/react` (`useScroll`, `useTransform`); the rows' timing lives in `apps/site/src/home/concepts/scroll-reveal.ts`. They follow the scroll position, so they have no duration and play backwards when scrolling up; reduced motion keeps only their opacity. The Overlay story is scrubbed the same way: its cursor glides between the controls it uses and the fake panel scrolls to the code, both on the one timeline in `apps/site/src/home/story/story-timeline.ts`; what the cursor clicks plays as CSS transitions. Reduced motion makes the cursor and the panel jump between their stops and keeps only opacity transitions. The package never depends on Motion
 - Site layout follows the page's width, not the viewport's: breakpoints are container queries on `<main>` (`@2xl`, `@5xl`), never `sm:`/`lg:`. The pinned panel narrows the page with a margin, which viewport queries never see
 - One surface: the bar grows into the panel. No tabs: property lenses filter the one list. The only other floating elements are the picker's note card and notes tray, present only while picking or while notes exist, plus the tray's brief copy confirmation

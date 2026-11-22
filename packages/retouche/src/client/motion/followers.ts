@@ -55,8 +55,11 @@ export async function allFinish(running: Animation[]): Promise<boolean> {
   return settled.every(({ status }) => status === "fulfilled");
 }
 
-export function animationsOf(element: HTMLElement): Animation[] {
-  return "getAnimations" in element ? element.getAnimations() : [];
+export function animationsOf(
+  element: HTMLElement,
+  options?: GetAnimationsOptions
+): Animation[] {
+  return "getAnimations" in element ? element.getAnimations(options) : [];
 }
 
 async function endFlipWhenFinished(element: HTMLElement): Promise<void> {

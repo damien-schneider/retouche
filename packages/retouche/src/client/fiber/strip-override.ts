@@ -95,15 +95,22 @@ function propsSwap(instance: OverrideInstance, fiber: Fiber) {
   return { original, stripped };
 }
 
+interface PropsPatch {
+  fiber: Fiber;
+  props: TypographyProps;
+}
+
 // Each overrideProps call copies memoizedProps: two calls in one flush drop the first.
-function applyProps(fiber: Fiber, patch: TypographyProps): void {
+function applyProps(patches: PropsPatch[]): void {
   const renderer = propsRenderer();
-  const latest = getLatestFiber(fiber);
   flushSync(() => {
-    renderer?.overrideProps?.(latest, [], {
-      ...latest.memoizedProps,
-      ...patch,
-    });
+    for (const { fiber, props } of patches) {
+      const latest = getLatestFiber(fiber);
+      renderer?.overrideProps?.(latest, [], {
+        ...latest.memoizedProps,
+        ...props,
+      });
+    }
   });
 }
 
@@ -113,15 +120,82 @@ export function stripOverride(instance: OverrideInstance): () => void {
     return () => {};
   }
   const { original, stripped } = propsSwap(instance, fiber);
-  applyProps(fiber, stripped);
+  applyProps([{ fiber, props: stripped }]);
   return () => {
-    applyProps(fiber, original);
+    applyProps([{ fiber, props: original }]);
   };
 }
 
 function hostNode(instance: OverrideInstance): Element | null {
   const fiber = clientFiber(instance);
   return (fiber && firstHostNode(getLatestFiber(fiber))) ?? instance.node;
+}
+
+interface StrippableInstance {
+  fiber: Fiber;
+  instance: OverrideInstance;
+}
+
+function hasAncestorIn(fiber: Fiber, fibers: Set<Fiber>): boolean {
+  for (
+    let parent = getLatestFiber(fiber).return;
+    parent;
+    parent = parent.return
+  ) {
+    if (fibers.has(parent)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function outermost(strippable: StrippableInstance[]): StrippableInstance[] {
+  const fibers = new Set(
+    strippable.flatMap(({ fiber }) =>
+      fiber.alternate ? [fiber, fiber.alternate] : [fiber]
+    )
+  );
+  return strippable.filter(({ fiber }) => !hasAncestorIn(fiber, fibers));
+}
+
+function classesWithout(
+  layer: StrippableInstance[]
+): [OverrideInstance, string[]][] {
+  const swaps = layer.map(({ fiber, instance }) => ({
+    fiber,
+    ...propsSwap(instance, fiber),
+  }));
+  applyProps(swaps.map(({ fiber, stripped }) => ({ fiber, props: stripped })));
+  try {
+    return layer.map(({ instance }) => [
+      instance,
+      [...(hostNode(instance)?.classList ?? [])],
+    ]);
+  } finally {
+    applyProps(
+      swaps.map(({ fiber, original }) => ({ fiber, props: original }))
+    );
+  }
+}
+
+export function measureBeforeClasses(
+  instances: OverrideInstance[]
+): Map<OverrideInstance, string[] | null> {
+  const before = new Map<OverrideInstance, string[] | null>(
+    instances.map((instance) => [instance, null] as const)
+  );
+  let pending = instances.flatMap((instance) => {
+    const fiber = clientFiber(instance);
+    return fiber && canStripOverride(instance) ? [{ fiber, instance }] : [];
+  });
+  while (pending.length > 0) {
+    const layer = outermost(pending);
+    for (const [instance, classes] of classesWithout(layer)) {
+      before.set(instance, classes);
+    }
+    pending = pending.filter((entry) => !layer.includes(entry));
+  }
+  return before;
 }
 
 interface HostReading {

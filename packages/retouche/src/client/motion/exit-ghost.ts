@@ -1,4 +1,10 @@
-import { allFinish, type Befores, followersOf, measure } from "./followers";
+import {
+  allFinish,
+  animationsOf,
+  type Befores,
+  followersOf,
+  measure,
+} from "./followers";
 
 export interface Departure {
   befores: Befores;
@@ -75,7 +81,7 @@ export function land(departure: Departure): boolean {
   ghost.style.top = `${from.top - at.top}px`;
   ghost.scrollTop = scrollTop;
   ghost.dataset.ghost = "leaving";
-  const running = "getAnimations" in ghost ? ghost.getAnimations() : [];
+  const running = animationsOf(ghost);
   if (running.length === 0) {
     ghost.remove();
   } else {

@@ -124,14 +124,15 @@ function LayerLenses({ state }: { state: LayerState }) {
   return (
     <PropertyLenses
       active={navigation.propertyFilter}
-      onFilter={(group) => {
+      corners={state.corners.length}
+      onFilter={(lens) => {
         if (navigation.placeId === null) {
           navigation.filterProperty(
-            group === navigation.propertyFilter ? null : group
+            lens === navigation.propertyFilter ? null : lens
           );
           return;
         }
-        navigation.filterProperty(group);
+        navigation.filterProperty(lens);
         navigation.back();
       }}
       sites={state.sites}
@@ -167,12 +168,17 @@ function LayerPanel({
       }}
     >
       <PanelBody
+        corners={state.shownCorners}
         element={navigation.element}
-        hoveredKey={state.hovered ? callSiteKey(state.hovered) : null}
+        hoveredKey={
+          navigation.isOpen && state.hovered ? callSiteKey(state.hovered) : null
+        }
         isHolding={state.isHolding}
+        isOpen={navigation.isOpen}
         layerConfig={layerConfig}
         onHoldChange={state.setIsHolding}
         onHover={state.setHovered}
+        onInspect={navigation.inspectElement}
         onSelect={state.select}
         propertyFilter={navigation.propertyFilter}
         route={route}
@@ -209,10 +215,12 @@ export default function Layer(props: LayerProps) {
       <div className="dt" data-theme={theme.theme} ref={layerKeys(state)}>
         <PageLayer
           areDotsShown={state.areDotsShown}
+          corners={isOpen ? state.shownCorners : state.corners}
           hovered={state.hovered}
           inspected={isOpen ? navigation.element : null}
           instances={state.instances}
           onHover={state.setHovered}
+          onInspect={navigation.inspectElement}
           onSelect={state.pressDot}
           selection={isOpen ? selection : null}
           shown={isOpen ? state.shown : state.instances}

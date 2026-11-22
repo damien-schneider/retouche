@@ -1,8 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": { "retouche/config": ["./src/rules/define-config.ts"] },
     "types": ["node"]
   },
-  "include": ["src", "templates", "tsdown.config.ts", "vitest.config.ts"]
+  "include": [
+    "src",
+    "templates",
+    "react-compiler.ts",
+    "tsdown.config.ts",
+    "vitest.config.ts"
+  ]
 }

@@ -1,4 +1,4 @@
-import type { PointerEvent } from "react";
+import { type PointerEvent, useState } from "react";
 
 export interface HoverTargetProps {
   onBlur: () => void;
@@ -28,4 +28,18 @@ export function hoverTarget(
       onChange(true);
     },
   };
+}
+
+export function useHeldWhileHovered<T>(
+  current: T,
+  onChange?: (isHovered: boolean) => void
+): [T, HoverTargetProps] {
+  const [held, setHeld] = useState<T | null>(null);
+  return [
+    held ?? current,
+    hoverTarget((isHovered) => {
+      setHeld((last) => (isHovered ? (last ?? current) : null));
+      onChange?.(isHovered);
+    }),
+  ];
 }

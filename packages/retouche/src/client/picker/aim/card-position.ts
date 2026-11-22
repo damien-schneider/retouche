@@ -1,3 +1,4 @@
+import type { Size } from "../../motion/settled-size";
 import type { VisibleViewport } from "./visible-viewport";
 
 export type CardSide = "above" | "below" | "left" | "right";
@@ -20,15 +21,16 @@ interface Box {
   top: number;
 }
 
+interface CardSizes {
+  settled: Size;
+  shown: Size;
+}
+
 const NOTE_GAP = 10;
 const EDGE_GAP = 12;
 const MIN_CARD_HEIGHT = 280;
 
-function spotAround(
-  rect: Box,
-  view: VisibleViewport,
-  card: { height: number; width: number }
-): CardSpot {
+function spotAround(rect: Box, view: VisibleViewport, card: Size): CardSpot {
   const viewLeft = view.left + EDGE_GAP;
   const viewRight = view.left + view.width - EDGE_GAP;
   const viewTop = view.top + EDGE_GAP;
@@ -74,15 +76,24 @@ function roomAround(rect: Box, view: VisibleViewport): number {
 export function cardPlacement(
   rect: Box,
   view: VisibleViewport,
-  card: { height: number; width: number }
+  { settled, shown }: CardSizes
 ): CardPlacement {
   const maxHeight = roomAround(rect, view);
+  const landingHeight = Math.min(settled.height, maxHeight);
+  const spot = spotAround(rect, view, {
+    height: landingHeight,
+    width: settled.width,
+  });
+  const rise =
+    spot.side === "above"
+      ? landingHeight - Math.min(shown.height, maxHeight)
+      : 0;
+  const shift = spot.side === "left" ? settled.width - shown.width : 0;
   return {
-    ...spotAround(rect, view, {
-      height: Math.min(card.height, maxHeight),
-      width: card.width,
-    }),
+    left: spot.left + shift,
     maxHeight,
     maxWidth: view.width - EDGE_GAP * 2,
+    side: spot.side,
+    top: spot.top + rise,
   };
 }

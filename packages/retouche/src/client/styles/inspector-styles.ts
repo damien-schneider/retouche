@@ -75,6 +75,11 @@ export const INSPECTOR_STYLES = `
   background: linear-gradient(var(--line-tint), var(--line-tint)), linear-gradient(var(--rt-card), var(--rt-card)), var(--rt-bg);
 }
 .dt-line[data-marked="true"] .dt-line-number { box-shadow: inset 2px 0 0 var(--rt-accent); color: var(--rt-accent-ink); }
+.dt-code [data-syntax="keyword"] { color: var(--rt-syntax-keyword); }
+.dt-code [data-syntax="string"] { color: var(--rt-syntax-string); }
+.dt-code :is([data-syntax="class"], [data-syntax="entity"]) { color: var(--rt-syntax-type); }
+.dt-code [data-syntax="comment"] { color: var(--rt-text-faint); }
+.dt-code [data-syntax="sign"] { color: var(--rt-text-muted); }
 .dt-code mark { margin: 0 -1px; padding: 1px; border-radius: 3px; background: none; color: inherit; }
 .dt-code mark[data-change="added"] { background: color-mix(in srgb, var(--rt-accent) 22%, transparent); }
 .dt-code mark[data-change="removed"] { outline: 1px dashed color-mix(in srgb, var(--rt-text-faint) 70%, transparent); outline-offset: -1px; color: var(--rt-text-muted); }

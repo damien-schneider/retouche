@@ -1,4 +1,7 @@
+import type { ParsedLine } from "sugar-high/core";
+
 import type { LineRange, SourceFile } from "../../protocol";
+import { syntaxLines } from "./syntax/syntax-lines";
 
 export interface CodeMarks {
   change: "added" | "removed";
@@ -10,7 +13,7 @@ export interface SourceReading {
   excerpt: LineRange | null;
   focus: LineRange | null;
   inserted: LineRange | null;
-  lines: string[];
+  lines: readonly ParsedLine[];
   marked: LineRange | null;
   pattern: RegExp | null;
 }
@@ -50,9 +53,12 @@ function tokenPattern(tokens: string[]): RegExp | null {
   );
 }
 
-function tokenLines(lines: string[], pattern: RegExp): LineRange | null {
-  const hits = lines.flatMap((text, index) =>
-    text.search(pattern) === -1 ? [] : [index + 1]
+function tokenLines(
+  lines: readonly ParsedLine[],
+  pattern: RegExp
+): LineRange | null {
+  const hits = lines.flatMap((line, index) =>
+    line.value.search(pattern) === -1 ? [] : [index + 1]
   );
   const [start] = hits;
   return start === undefined ? null : { end: hits.at(-1) ?? start, start };
@@ -80,7 +86,7 @@ export function readSource(
   marks: CodeMarks,
   size: ExcerptSize = EXCERPT
 ): SourceReading {
-  const lines = file.code.split("\n");
+  const lines = syntaxLines(file.code, file.path);
   const marked = markedRange(file);
   const pattern = tokenPattern(marks.tokens);
   const isFileWide = marks.scope === "file" && pattern !== null;

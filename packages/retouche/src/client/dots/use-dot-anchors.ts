@@ -3,11 +3,13 @@ import { flushSync } from "react-dom";
 
 import type { OverrideInstance } from "../fiber/scan-overrides";
 import { visibleViewport } from "../picker/aim/visible-viewport";
+import { type Aim, ARROW } from "./arrow/dot-arrow";
 import { watchReach } from "./near-viewport";
-import { onPageLayoutChange } from "./page-layout";
+import { isInScrollingArea, onSettledLayoutChange } from "./page-layout";
 import { type ClipCache, clippedBox } from "./visible-box";
 
 export interface DotAnchor {
+  aim: Aim;
   instance: OverrideInstance;
   isClipped: boolean;
   side: "left" | "right";
@@ -20,6 +22,7 @@ const CORNER_OFFSET = 3;
 const DOT_SPACING = 22;
 const CHIP_ROOM = 300;
 const NEIGHBOURS = [-DOT_SPACING, 0, DOT_SPACING];
+const LABEL_REACH = ARROW.reach + ARROW.label / 2;
 
 type DotCells = Map<string, DotAnchor[]>;
 
@@ -69,8 +72,15 @@ function contentRight(node: Element, box: DOMRect): number {
   return content.width > 0 ? Math.min(content.right, box.right) : box.right;
 }
 
+function aimOf(x: number, y: number, pageWidth: number): Aim {
+  const vertical = y - LABEL_REACH < 0 ? "up" : "down";
+  const horizontal = x + LABEL_REACH > pageWidth ? "right" : "left";
+  return `${vertical}-${horizontal}` as const;
+}
+
 function measure(instances: OverrideInstance[], origin: DOMRect): DotAnchor[] {
-  const pageRight = document.documentElement.scrollWidth - EDGE_GAP;
+  const pageWidth = document.documentElement.scrollWidth;
+  const pageRight = pageWidth - EDGE_GAP;
   const view = visibleViewport();
   const chipEdge = view.left + view.width - CHIP_ROOM - origin.left;
   const placed: DotAnchor[] = [];
@@ -92,6 +102,7 @@ function measure(instances: OverrideInstance[], origin: DOMRect): DotAnchor[] {
     const start = Math.min(Math.max(right, EDGE_GAP), pageRight);
     const x = seen ? freeX(cells, start, y) : start;
     const anchor: DotAnchor = {
+      aim: aimOf(x, y, pageWidth),
       instance,
       isClipped: !seen,
       side: x > chipEdge ? "left" : "right",
@@ -106,18 +117,28 @@ function measure(instances: OverrideInstance[], origin: DOMRect): DotAnchor[] {
   return placed;
 }
 
-function sameAnchors(a: DotAnchor[], b: DotAnchor[]): boolean {
+function isSameAnchor(anchor: DotAnchor, before: DotAnchor): boolean {
   return (
-    a.length === b.length &&
-    a.every(
-      (anchor, index) =>
-        anchor.instance === b[index]?.instance &&
-        anchor.isClipped === b[index]?.isClipped &&
-        anchor.side === b[index]?.side &&
-        Math.round(anchor.x) === Math.round(b[index]?.x ?? Number.NaN) &&
-        Math.round(anchor.y) === Math.round(b[index]?.y ?? Number.NaN)
-    )
+    anchor.instance === before.instance &&
+    anchor.aim === before.aim &&
+    anchor.isClipped === before.isClipped &&
+    anchor.side === before.side &&
+    Math.round(anchor.x) === Math.round(before.x) &&
+    Math.round(anchor.y) === Math.round(before.y)
   );
+}
+
+function keepUnchanged(befores: DotAnchor[], next: DotAnchor[]): DotAnchor[] {
+  const byInstance = new Map(
+    befores.map((before) => [before.instance, before])
+  );
+  return next.map((anchor) => {
+    const before = byInstance.get(anchor.instance);
+    return before &&
+      (isSameAnchor(anchor, before) || isInScrollingArea(anchor.instance.node))
+      ? before
+      : anchor;
+  });
 }
 
 export function useDotAnchors(options: {
@@ -139,8 +160,15 @@ export function useDotAnchors(options: {
       if (!(layer && near)) {
         return;
       }
-      const next = measure(near, layer.getBoundingClientRect());
-      if (!sameAnchors(published.current, next)) {
+      const befores = published.current;
+      const next = keepUnchanged(
+        befores,
+        measure(near, layer.getBoundingClientRect())
+      );
+      if (
+        next.length !== befores.length ||
+        next.some((anchor, index) => anchor !== befores[index])
+      ) {
         published.current = next;
         setAnchors(next);
       }
@@ -149,7 +177,7 @@ export function useDotAnchors(options: {
       near = inReach;
       update();
     });
-    const stopMeasuring = onPageLayoutChange(() => {
+    const stopMeasuring = onSettledLayoutChange(() => {
       flushSync(update);
     });
     return () => {

@@ -18,6 +18,7 @@ export interface CopyFeedback {
 }
 
 export interface Picker {
+  components: readonly string[];
   copyAll: () => void;
   copyElement: (element: Element, note: string) => void;
   escape: () => void;
@@ -76,16 +77,18 @@ function factsOf(list: Note[]): NoteFacts[] {
   }));
 }
 
-function showInPanel(
-  navigation: LayerNavigation,
-  instances: OverrideInstance[],
-  element: Element
-): void {
+function showInPanel(options: {
+  components: readonly string[];
+  element: Element;
+  instances: OverrideInstance[];
+  navigation: LayerNavigation;
+}): void {
+  const { components, element, instances, navigation } = options;
   const instance = innermostInstance(element, instances);
   if (instance) {
     navigation.select(instance, instances);
   } else {
-    locate(element);
+    locate(element, components);
     navigation.inspectElement(element);
   }
 }
@@ -147,10 +150,11 @@ function copyActions({
 
 export function usePicker(
   navigation: LayerNavigation,
-  instances: OverrideInstance[]
+  instances: OverrideInstance[],
+  components: readonly string[]
 ): Picker {
   const { enter, isPicking, leave } = usePickMode();
-  const notes = useNotes(instances);
+  const notes = useNotes(instances, components);
   const { copy, feedback } = useCopy();
   const stop = () => {
     notes.commit();
@@ -159,6 +163,7 @@ export function usePicker(
 
   return {
     ...copyActions({ copy, instances, leave, notes }),
+    components,
     escape: () => {
       if (notes.card === null) {
         stop();
@@ -169,7 +174,7 @@ export function usePicker(
     feedback,
     inspect: (element) => {
       stop();
-      showInPanel(navigation, instances, element);
+      showInPanel({ components, element, instances, navigation });
     },
     isActive: isPicking || notes.card !== null,
     isPicking,

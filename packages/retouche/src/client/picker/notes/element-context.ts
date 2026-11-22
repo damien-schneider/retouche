@@ -119,10 +119,13 @@ function store(element: Element, sites: ElementSites): void {
   }
 }
 
-async function settle(element: Element): Promise<void> {
+async function settle(
+  element: Element,
+  components: readonly string[]
+): Promise<void> {
   let sites: InstanceSites;
   try {
-    sites = await locateSites(element);
+    sites = await locateSites(element, components);
   } catch {
     locating.delete(element);
     return;
@@ -140,10 +143,10 @@ async function settle(element: Element): Promise<void> {
   store(element, { callSite, component, componentName });
 }
 
-export function locate(element: Element): void {
+export function locate(element: Element, components: readonly string[]): void {
   if (!locating.has(element)) {
     locating.add(element);
-    void settle(element);
+    void settle(element, components);
   }
 }
 

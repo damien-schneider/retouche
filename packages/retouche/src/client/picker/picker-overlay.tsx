@@ -19,13 +19,13 @@ export function PickerOverlay({
 }) {
   const pageRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const { card } = picker.notes;
+  const { card, list } = picker.notes;
 
   return (
     <>
       {picker.isPicking && <PickLayer picker={picker} />}
       <div className="dt-notes-page" ref={pageRef}>
-        <NoteMarkers layerRef={pageRef} picker={picker} />
+        {list.length > 0 && <NoteMarkers layerRef={pageRef} picker={picker} />}
         <ElementOutline
           kind="picked"
           layerRef={pageRef}

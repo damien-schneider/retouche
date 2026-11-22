@@ -1,9 +1,9 @@
 # Retouche
 
-A dev overlay that puts a dot on every element whose call site overrides your design system's typography.
+A dev overlay that puts a dot on every element whose call site overrides your design system's typography, and on every nested corner that doesn't follow the curve it sits in.
 
 <p align="center">
-  <img src=".github/assets/retouche-inspector.png" alt="The Retouche site's Properties section, each title overriding one typography property (larger, bold, serif, uppercase, blue) with a numbered blue pin. The Retouche panel pinned on the right inspects the first Heading override: text-sm 14px replaced by text-[17px]/5 17px, traced from the call site to the component's source" width="100%">
+  <img src=".github/assets/retouche-inspector.png" alt="The Retouche site's Properties section, each title overriding one typography property (larger, bold, serif, uppercase, orange) with a numbered orange arrow. The Retouche panel pinned on the right inspects the first Heading override: text-sm 14px replaced by text-[17px]/5 17px, traced from the call site to the component's source" width="100%">
 </p>
 
 ```text
@@ -21,7 +21,8 @@ Copy the prompt from the site, give it to your coding agent in your app, then op
 
 - **You decide what is wanted.** Retouche reports every typography override on the components you list and does not grade them. Fix one with a copied prompt, or keep it with the `allow` entry the inspector shows and copies for you.
 - **Any styling.** Tailwind utilities are read by name; any other class, from CSS Modules, plain CSS or CSS-in-JS, by the typography properties the page's stylesheets give it; inline `style` by property. Custom theme tokens need no config: `text-caption` reads as a size because the CSS Tailwind generates for it sets `font-size`.
-- **Typography, not layout.** Retouche watches font size, line height, weight, family, tracking, case, decoration, figures and text color. `mt-4` and `w-full` at a call site stay silent.
+- **Typography and corners, not layout.** Retouche watches font size, line height, weight, family, tracking, case, decoration, figures and text color. `mt-4` and `w-full` at a call site stay silent.
+- **Nested corners that fit.** A button in a card's corner, an item in a popover's corner, a toolbar in a bubble menu: when its radius isn't the container's radius minus the gap between them, ±1px, it gets a dot on the corner that breaks and a row under the Corners lens. The inspector shows both radii, the gap and the radius that would fit, the container's code, and a prompt that fixes the corner where the container decides it rather than in the two numbers. Circles, pills at least as round as the curve, scrolled content and fixed elements are left alone.
 - **Overrides shown where they render.** Dots sit on the overridden element; the panel lists each call site once, however many elements it renders, with the class it replaced next to what replaces it, and a property chip narrows both to one property.
 - **Measured, not guessed.** The diff re-renders the element without the override and reads both computed values: `text-5xl 48px → text-6xl 60px`. Hold to compare previews the page without it.
 - **Code in context.** The inspector traces the override from the call site to the component's own source, with the overriding and overridden classes marked, then shows the `allow` entry that would keep it; while you hold to compare, the override is struck and the component's classes come back. Hover or focus either edge of an excerpt to reveal every line on that side in one click: the lines you were reading stay in view while the excerpt grows to show them.
@@ -71,7 +72,7 @@ Every overridden element in view gets a pin where its visible text ends: at the 
 | Picker | Aim at any element with the pointer, `Tab` or the arrow keys, or drag a box around it: while you drag, the element whose box or text best fills yours is aimed, the innermost one on a near tie, and releasing picks it. The wheel still scrolls the page and the scroll area under the pointer, and the aim follows what comes under it. Click, `Enter` or the end of a drag opens a note card on it: the note field with its copy and add buttons, and tucked under it the element's name, where it is written and its lines of code, the whole element when it fits, as tall as the space above or below the element allows, with the button that opens it in the panel; hovering the code shows how many lines lie above and below, and Expand widens the card to read more of the file. `⇧`-click, `⇧Enter` or a drag ended with `⇧` opens it in the panel directly: one inside an override opens its inspector, any other shows its computed typography, the classes behind each property, and the code from where its component is rendered to the line that renders it |
 | Notes | A numbered marker on each noted element and a tray with Copy all and Clear. Click a marker to edit or remove its note. Notes last until you clear them or reload the page |
 
-**Pin**, on the left of the panel head, docks the panel beside the page instead of over it: the page stays flush with the window, and only its two corners on the panel's side round into the panel, outlined by a hairline so the seam shows against any page. Drag the seam to resize, drag the panel's header to move it to the other side. Pinning adds a margin and a scroll padding of the panel's width to `<html>` on the panel's side, so the picker's note card stays beside it. Only the two rounded corners are drawn over the page. Elements positioned against the viewport ignore the margin, so they sit under the panel. It needs a viewport of 720px or more.
+**Pin**, on the left of the panel head, docks the panel beside the page instead of over it: the page stays flush with the window and sits above the panel like a card, its two corners on the panel's side rounded into the panel, its edge lit by a hairline on the inside and casting a soft shadow onto the panel, so the seam shows against any page. Drag the seam to resize, drag the panel's header to move it to the other side. Pinning adds a margin and a scroll padding of the panel's width to `<html>` on the panel's side, so the picker's note card stays beside it. Only the two rounded corners and the hairline along the seam are drawn over the page. Elements positioned against the viewport ignore the margin, so they sit under the panel. It needs a viewport of 720px or more.
 
 **Theme.** The overlay takes the app's light or dark theme and follows it when it switches. It reads, in order: a `dark` or `light` class or `data-theme`, `data-mode`, `data-color-mode`, `data-color-scheme` or `data-bs-theme` attribute on `<html>` or `<body>`; the `color-scheme` set on `<html>`; how dark the background painted on `<body>` or `<html>` is; then the system setting. The switch next to the pin overrides it, and the choice is kept for the site; switching back to the app's theme follows the app again. A theme set only through an inline `style` is picked up when the overlay next mounts.
 
@@ -158,7 +159,8 @@ export default defineConfig({
 | Field | Purpose |
 | --- | --- |
 | `components` | Display names of the design-system components to watch: the ones that style their own text, and the ones that render those with classes of their own, so what they render is trusted as composition |
-| `allow` | Overrides that are wanted. Each entry takes `classes` (globs on the class name, variants ignored), `properties`, or both, and an optional `component`; without one it applies to every watched component. An override is let through when it matches either list, so `properties` covers classes and inline styles alike |
+| `allow` | Overrides that are wanted. Each entry takes `classes` (globs on the class name, variants ignored), `properties`, `corners`, or a mix, and an optional `component`; without one it applies to every watched component. An override is let through when it matches either list, so `properties` covers classes and inline styles alike |
+| `allow.*.corners` | `true` keeps the nested corners of the entry's `component` as they are |
 | `allow.*.properties` | `font-size`, `font-weight`, `font-family`, `line-height`, `letter-spacing`, `font-style`, `text-transform`, `text-decoration`, `font-variant-numeric`, `font-smoothing`, `text-color` |
 
 An invalid config pauses scanning and lists every issue in the panel.
@@ -175,7 +177,9 @@ Overrides are grouped by call site, the JSX element in your source that passed t
 
 Dots are rendered only for elements within 600px of the viewport, or of the scroll area that holds them, so the overlay's cost follows what is on screen rather than the size of the page. On a page with 2,001 overridden elements the overlay holds 37 dots, a rescan takes about 1.3 ms and scrolling holds 60 frames a second; with 12,201 a rescan takes about 9 ms and one frame in a scroll runs long. Measured in headless Chromium at 1280×800 on a React development build with StrictMode.
 
-Inside a scroll area, dots follow the scroll in the frame it happens. A dot whose element scrolls out of the area stays in place, hidden, so it neither fades out nor replays its entrance when the element scrolls back.
+Dots ride the page's own scroll natively. A scroll area inside the page scrolls on the compositor, ahead of what the overlay can measure, so while one scrolls, the dots, note markers and outlines on elements inside it scale down and fade out, and come back 150ms after it stops, even while another area, such as a streaming chat, keeps scrolling; those elsewhere stay on their text. A dot whose element scrolls out of the area stays in place, hidden, so it does not replay its entrance when the element scrolls back.
+
+A dot, note marker or corner dot holds still while the pointer or focus is on it. Moving onto it ends the page's own hover on the element beneath, and an element that shifts or reflows on hover would otherwise carry the dot out from under the pointer; it catches up once the pointer moves on.
 
 Verified on React 19 client components with Vite, and on Next.js 16 with Turbopack, client and server components alike. Server components are detected from React's server debug info; their diff cannot be measured in the browser. Next's webpack dev server (`next dev --webpack`) is not supported: overrides are detected, but client call sites point at the compiled line and server components show no code. Frameworks other than React are out of scope.
 
@@ -215,13 +219,14 @@ The site also hosts the setup: every dev or build run copies the packed tarball 
 
 | Path | Responsibility |
 | --- | --- |
-| `packages/retouche/src/rules` | Config schema, class and style grouping, allow matching, override detection, property diff |
+| `packages/retouche/src/rules` | Config schema, class and style grouping, allow matching, override detection, property diff, corner fit |
 | `packages/retouche/src/client/fiber` | Fiber scan, call-site grouping, override stripping and measurement |
 | `packages/retouche/src/client/dots` | Dot placement in document space, viewport windowing, the dots, the element outline |
 | `packages/retouche/src/client/surface` | The one surface that is the bar, the panel or the narrow-screen sheet: dock geometry, pin, toolbar, the resize handle on the seam, and in `gestures/` snap drag, resize and the sheet's handle |
 | `packages/retouche/src/client/panel` | Panel head and stepper, property lenses, overrides list, config issues |
 | `packages/retouche/src/client/inspector` | Property diff, hold to compare, code trace, fix and allow prompts |
 | `packages/retouche/src/client/picker` | Pick mode: the capture layer, keyboard aiming, drag-to-pick by area, the picked element's typography and code trace, the note card, markers, tray and the markdown copied for agents |
+| `packages/retouche/src/client/corners` | Nested corner fit: the painted pairs measured near the viewport, their dots, rows, inspector block and prompts |
 | `packages/retouche/src/client/stylesheets` | Typography properties the page's stylesheets give each class |
 | `packages/retouche/src/client/code` | Source excerpt with marked classes, edge expanders that reveal the rest of the file on their side, editor links |
 | `packages/retouche/src/client/route` | Dev route client and its availability state |

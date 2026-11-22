@@ -14,19 +14,25 @@ const SEAM_REACH = 6;
 const SHEET_HEIGHT = `var(${SHEET_HEIGHT_VAR}, ${SHEET_SHARE.half * 100}dvh)`;
 
 export const SURFACE_STYLES = `
-.dt-stage { position: fixed; inset: 0; z-index: ${Z_INDEX.surface}; pointer-events: none; container-type: size; }
-.dt-frame { --r: 14px; position: absolute; inset: 0; isolation: isolate; overflow: hidden; color: var(--rt-canvas); }
+.dt-stage { --r: 32px; position: fixed; inset: 0; z-index: ${Z_INDEX.surface}; pointer-events: none; container-type: size; }
+.dt-stage [data-side="right"] { --seam-dir: -1; }
+.dt-stage [data-side="left"] { --seam-dir: 1; }
+.dt-frame { position: absolute; inset: 0; isolation: isolate; overflow: hidden; color: var(--rt-canvas); }
 .dt-frame-under {
   position: absolute; top: 0; bottom: 0; width: ${pinnedWidth("100%")}; background: currentColor; visibility: hidden;
   transition: translate 220ms var(--rt-ease-morph), visibility 0s linear 220ms;
 }
 .dt-frame[data-side="left"] .dt-frame-under { left: 0; translate: calc(-100% - var(--r)) 0; }
 .dt-frame[data-side="right"] .dt-frame-under { right: 0; translate: calc(100% + var(--r)) 0; }
-.dt-frame-page {
-  position: absolute; top: 0; bottom: 0; z-index: 1; border-radius: var(--r);
-  box-shadow: 0 0 0 var(--hairline) var(--rt-border); opacity: 0; visibility: hidden;
+.dt-frame-page, .dt-surface::after {
+  position: absolute; top: 0; bottom: 0; border-radius: var(--r); opacity: 0; visibility: hidden; pointer-events: none;
+  box-shadow: inset calc(var(--seam-dir) * var(--hairline)) 0 0 var(--rt-glass-rim), 0 0 0 var(--hairline) var(--rt-glass-stroke), var(--rt-shadow);
   transition: opacity 120ms var(--rt-ease-exit), visibility 0s linear 120ms;
 }
+.dt-frame-page { z-index: 1; }
+.dt-surface::after { content: ""; z-index: -1; width: 100vw; }
+.dt-surface[data-side="right"]::after { right: 100%; }
+.dt-surface[data-side="left"]::after { left: 100%; }
 .dt-frame[data-side="right"] .dt-frame-page { right: ${pinnedWidth("100%")}; left: calc(-2 * var(--r)); }
 .dt-frame[data-side="left"] .dt-frame-page { right: calc(-2 * var(--r)); left: ${pinnedWidth("100%")}; }
 .dt-frame-under::before, .dt-frame-under::after {
@@ -80,7 +86,7 @@ export const SURFACE_STYLES = `
 .dt-open-label { padding-left: 3px; color: var(--rt-error-ink); font-size: 12px; font-weight: 550; line-height: 16px; }
 .dt-count {
   position: absolute; top: 1px; right: 0; display: inline-grid; place-items: center; min-width: 14px; height: 14px; padding: 0 3px; overflow: hidden;
-  border-radius: var(--rt-pill); background: var(--rt-accent); box-shadow: 0 0 0 2px var(--rt-bg); color: #fff;
+  border-radius: var(--rt-pill); background: var(--rt-accent); box-shadow: 0 0 0 2px var(--rt-bg); color: var(--rt-accent-text);
   font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: 0; line-height: 1;
 }
 .dt-count[data-tone="clean"] {
@@ -115,29 +121,29 @@ ${HOVER_CAPABLE} {
 
 .dt-resize {
   --seam: calc(${SURFACE_GAP}px + ${floatingWidth("100%")} - ${SEAM_REACH}px);
-  position: absolute; top: ${SURFACE_GAP}px; bottom: ${SURFACE_GAP}px; width: ${SEAM_REACH * 2}px;
-  border-radius: 0; cursor: ew-resize; pointer-events: auto; touch-action: none;
+  position: absolute; top: ${SURFACE_GAP}px; bottom: ${SURFACE_GAP}px; display: grid; place-items: center; width: ${SEAM_REACH * 2}px;
+  border-radius: 0; color: var(--rt-text-faint); cursor: ew-resize; pointer-events: auto; touch-action: none;
+  animation: rt-fade 160ms var(--rt-ease) 240ms backwards;
+  transition: color 140ms var(--rt-ease);
 }
 .dt-surface[data-side="right"] + .dt-resize { right: var(--seam); }
 .dt-surface[data-side="left"] + .dt-resize { left: var(--seam); }
 .dt-resize:active:not(:disabled) { scale: 1; }
 .dt-resize:focus-visible { outline: none; }
-.dt-resize::after {
-  content: ""; position: absolute; top: 50%; left: calc(50% - 2px); width: 4px; height: 36px; margin-top: -18px;
-  border-radius: var(--rt-pill); background: var(--rt-text-muted); opacity: 0; clip-path: inset(7px 0 round var(--rt-pill));
-  transition: opacity 140ms var(--rt-ease), clip-path 200ms var(--rt-ease), background-color 140ms var(--rt-ease);
+.dt-resize::before {
+  content: ""; position: absolute; top: 50%; left: 50%; width: 14px; height: 28px; margin: -14px 0 0 -7px;
+  border-radius: var(--rt-pill); background: var(--rt-bg); box-shadow: var(--rt-shadow-low);
 }
+.dt-resize svg { position: relative; }
 .dt-surface[data-dragging="true"] + .dt-resize { display: none; }
 @media (min-width: ${PIN_MIN_VIEWPORT}px) {
   .dt-surface[data-pinned="true"] + .dt-resize { --seam: calc(${pinnedWidth("100%")} - ${SEAM_REACH}px); top: 0; bottom: 0; }
-  .dt-surface[data-pinned="true"] + .dt-resize::after { opacity: .4; animation: rt-fade 160ms var(--rt-ease) 240ms backwards; }
 }
 ${HOVER_CAPABLE} {
-  .dt-surface + .dt-resize:hover::after { opacity: .8; clip-path: inset(0 round var(--rt-pill)); }
+  .dt-surface + .dt-resize:hover { color: var(--rt-text-muted); }
 }
-.dt-surface + .dt-resize:focus-visible::after, .dt-surface[data-resizing="true"] + .dt-resize::after {
-  background: var(--rt-accent); opacity: 1; clip-path: inset(0 round var(--rt-pill));
-}
+.dt-surface + .dt-resize:focus-visible, .dt-surface[data-resizing="true"] + .dt-resize { color: var(--rt-accent); }
+.dt-surface + .dt-resize:focus-visible::before { box-shadow: 0 0 0 2px var(--rt-accent); }
 
 .dt-sheet-handle {
   position: absolute; right: 0; left: 0; z-index: 1; height: 64px;
@@ -158,7 +164,10 @@ ${HOVER_CAPABLE} {
   .dt-frame[data-pinned="true"] .dt-frame-under {
     translate: 0; visibility: visible; transition-duration: 280ms, 0s; transition-delay: 0s;
   }
-  .dt-frame[data-pinned="true"] .dt-frame-page { opacity: 1; visibility: visible; transition: opacity 280ms var(--rt-ease), visibility 0s; }
+  .dt-frame[data-pinned="true"] .dt-frame-page,
+  .dt-surface[data-state="panel"][data-pinned="true"]:not([data-dragging="true"])::after {
+    opacity: 1; visibility: visible; transition: opacity 280ms var(--rt-ease), visibility 0s;
+  }
   .dt-surface[data-state="panel"][data-pinned="true"] { --rt-gap: 0px; width: ${pinnedWidth("100%")}; height: 100%; }
   .dt-surface[data-state="panel"][data-pinned="true"]:not([data-dragging="true"]) {
     --rt-card: var(--rt-bg); --rt-card-ring: var(--rt-shadow-low);

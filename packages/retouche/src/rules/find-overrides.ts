@@ -24,6 +24,7 @@ export type SheetClassGroups = ReadonlyMap<string, readonly WatchedGroup[]>;
 interface CompiledAllow {
   classes: RegExp[];
   component: string | null;
+  corners: boolean;
   properties: WatchedGroup[];
 }
 
@@ -73,6 +74,7 @@ export function compileConfig(config: RetoucheConfig): CompiledConfig {
   const allow = (config.allow ?? []).map((entry) => ({
     classes: (entry.classes ?? []).map(globToRegExp),
     component: entry.component ?? null,
+    corners: entry.corners ?? false,
     properties: entry.properties ?? [],
   }));
   return { allow };
@@ -89,6 +91,17 @@ export function watchedGroupsOf(
     return groups.filter(isWatchedGroup);
   }
   return [...(declared ?? [])];
+}
+
+export function allowsCorners(
+  config: CompiledConfig,
+  component: string | null
+): boolean {
+  return config.allow.some(
+    (entry) =>
+      entry.corners &&
+      (entry.component === null || entry.component === component)
+  );
 }
 
 function allows(

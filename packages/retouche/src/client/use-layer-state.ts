@@ -1,13 +1,18 @@
 import { useState, useSyncExternalStore } from "react";
 import { z } from "zod";
 
-import type { WatchedGroup } from "../rules/class-groups";
+import type { CornerFinding } from "./corners/measure/measure-corners";
+import { useCornerScan } from "./corners/measure/use-corner-scan";
 import { onPageLayoutChange } from "./dots/page-layout";
 import { type CallSite, callSitesOf } from "./fiber/call-sites";
+import { useOverrideScan } from "./fiber/commits/use-override-scan";
 import type { OverrideInstance } from "./fiber/scan-overrides";
-import { useOverrideScan } from "./fiber/use-override-scan";
-import { groupByComponent } from "./panel/overrides-list";
-import { changesProperty } from "./panel/property-lenses";
+import { groupByComponent } from "./panel/list/overrides-list";
+import {
+  CORNER_LENS,
+  changesProperty,
+  type Lens,
+} from "./panel/property-lenses";
 import { type Picker, usePicker } from "./picker/use-picker";
 import { pickOf, resolveSelection, type Selection } from "./selection";
 import {
@@ -22,6 +27,7 @@ import {
 
 export interface LayerState {
   areDotsShown: boolean;
+  corners: CornerFinding[];
   hovered: OverrideInstance | null;
   instances: OverrideInstance[];
   isHolding: boolean;
@@ -35,12 +41,15 @@ export interface LayerState {
   setHovered: (instance: OverrideInstance | null) => void;
   setIsHolding: (isHolding: boolean) => void;
   shown: OverrideInstance[];
+  shownCorners: CornerFinding[];
   shownSites: CallSite[];
   siteNumbers: Map<string, number>;
   sites: CallSite[];
   stepBy: (delta: number) => void;
   toggleDots: () => void;
 }
+
+const UNLISTED: string[] = [];
 
 const STORED_DOTS: StoredPreference<boolean> = {
   fallback: true,
@@ -104,14 +113,64 @@ function toggleInspection(
   }
 }
 
-function sitesInLens(
-  sites: CallSite[],
-  propertyFilter: WatchedGroup | null
-): CallSite[] {
-  const inLens = propertyFilter
-    ? sites.filter(({ lead }) => changesProperty(lead, propertyFilter))
+function sitesInLens(sites: CallSite[], lens: Lens | null): CallSite[] {
+  if (lens === CORNER_LENS) {
+    return [];
+  }
+  const inLens = lens
+    ? sites.filter(({ lead }) => changesProperty(lead, lens))
     : sites;
   return groupByComponent(inLens).flatMap(([, group]) => group);
+}
+
+function cornersInLens(
+  corners: CornerFinding[],
+  lens: Lens | null
+): CornerFinding[] {
+  return lens === null || lens === CORNER_LENS ? corners : [];
+}
+
+function siteHolding(
+  sites: CallSite[],
+  instance: OverrideInstance | null
+): CallSite | null {
+  return (
+    (instance && sites.find((site) => site.instances.includes(instance))) ??
+    null
+  );
+}
+
+function sitesInView(
+  instances: OverrideInstance[],
+  lens: Lens | null,
+  picked: OverrideInstance | null
+): Pick<
+  LayerState,
+  "selectedSite" | "shown" | "shownSites" | "siteNumbers" | "sites"
+> {
+  const sites = callSitesOf(instances);
+  const shownSites = sitesInLens(sites, lens);
+  return {
+    selectedSite: siteHolding(sites, picked),
+    shown: shownSites.flatMap((site) => site.instances),
+    shownSites,
+    siteNumbers: numberSites(sites),
+    sites,
+  };
+}
+
+function instanceActions(
+  navigation: LayerNavigation,
+  instances: OverrideInstance[]
+): Pick<LayerState, "pressDot" | "select"> {
+  return {
+    pressDot: (instance) => {
+      toggleInspection(navigation, instance, instances);
+    },
+    select: (instance) => {
+      navigation.select(instance, instances);
+    },
+  };
 }
 
 export function useLayerState(layerConfig: LayerConfig): LayerState {
@@ -123,37 +182,36 @@ export function useLayerState(layerConfig: LayerConfig): LayerState {
     isPaused: isHolding,
     scan: layerConfig.scan,
   });
-  const picker = usePicker(navigation, instances);
+  const corners = useCornerScan({
+    config: layerConfig.scan?.config ?? null,
+    isPaused: isHolding,
+  });
+  const picker = usePicker(
+    navigation,
+    instances,
+    layerConfig.scan?.components ?? UNLISTED
+  );
   const resolved = useSelection(navigation, instances);
   const selection = layerConfig.config ? resolved : null;
-  const sites = callSitesOf(instances);
-  const shownSites = sitesInLens(sites, navigation.propertyFilter);
   const picked = selection?.kind === "live" ? selection.instance : null;
-  const selectedSite =
-    (picked && sites.find((site) => site.instances.includes(picked))) ?? null;
+  const siteView = sitesInView(instances, navigation.propertyFilter, picked);
+  const { selectedSite, shownSites } = siteView;
 
   return {
     areDotsShown,
+    corners,
     hovered: instances.find(({ id }) => id === hovered?.id) ?? null,
     instances,
     isHolding,
     layerConfig,
     navigation,
     picker,
-    pressDot: (instance) => {
-      toggleInspection(navigation, instance, instances);
-    },
-    select: (instance) => {
-      navigation.select(instance, instances);
-    },
-    selectedSite,
+    ...instanceActions(navigation, instances),
+    ...siteView,
     selection,
     setHovered,
     setIsHolding,
-    shown: shownSites.flatMap((site) => site.instances),
-    shownSites,
-    siteNumbers: numberSites(sites),
-    sites,
+    shownCorners: cornersInLens(corners, navigation.propertyFilter),
     stepBy: (delta) => {
       const next = selectedSite && siteBeside(shownSites, selectedSite, delta);
       if (next) {

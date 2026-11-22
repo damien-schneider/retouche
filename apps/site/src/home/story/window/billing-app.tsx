@@ -1,4 +1,5 @@
 import { type ReactNode, use } from "react";
+import { handArrow } from "retouche/hand-arrow";
 
 import { cn } from "../../../ui/class-names";
 import {
@@ -30,20 +31,43 @@ const STATUS_TONES = {
 
 const FIXED_PIN = 2;
 const MOBILE_NAV_ITEMS = 3;
+const ARROW_SIZE = 11;
+
+function PinArrow({ number }: { number: number }) {
+  const { head, shaft } = handArrow(`story-${number}`, ARROW_SIZE);
+  return (
+    <svg
+      aria-hidden="true"
+      className="stroke-brand absolute bottom-0 left-0 size-[11px] -scale-x-100 overflow-visible fill-none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.75}
+      viewBox={`0 0 ${ARROW_SIZE} ${ARROW_SIZE}`}
+    >
+      <path d={shaft} />
+      <path d={head} />
+    </svg>
+  );
+}
 
 function Pin({ number }: { number: number }) {
   const isFixed = useHasReached("fixed") && number === FIXED_PIN;
   return (
     <span
       className={cn(
-        "pin absolute -top-3 -right-[22px] transition-[scale,opacity] ease-out",
+        "absolute -top-[3px] -right-[3px] size-0 transition-[scale,opacity] ease-out",
         isFixed
           ? "scale-50 opacity-0 duration-150"
           : "scale-100 opacity-100 duration-250"
       )}
-      data-cursor={number === FIXED_PIN ? "pin" : undefined}
     >
-      {number}
+      <PinArrow number={number} />
+      <span
+        className="pin absolute bottom-[7px] left-[7px]"
+        data-cursor={number === FIXED_PIN ? "pin" : undefined}
+      >
+        {number}
+      </span>
     </span>
   );
 }

@@ -36,7 +36,7 @@ interface TraceOptions {
   sites: InstanceSites;
 }
 
-function SiteCode({
+export function SiteCode({
   marks,
   route,
   site,
