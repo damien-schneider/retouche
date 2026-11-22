@@ -1,0 +1,40 @@
+import { Heading } from "../ui/heading";
+import { Text } from "../ui/text";
+import { CopyPrompt } from "./copy-prompt";
+
+const SETUP_PROMPT = `Set up Retouche in this React app by following ${import.meta.env.SITE_URL}/setup.md`;
+
+export function Intro() {
+  return (
+    <section
+      aria-labelledby="index-title"
+      className="flex scroll-mt-28 flex-col gap-3"
+      id="index"
+    >
+      <Heading className="mb-1" id="index-title" level={1} size="page">
+        Typography overrides, pinned where they render
+      </Heading>
+      <Text>
+        Retouche is a dev overlay for React. It pins every call site that
+        overrides your design system’s typography and shows what the override
+        replaced, so you decide whether to fix it or keep it.
+      </Text>
+      <Text>
+        To set it up, give this prompt to Claude Code, Codex or Cursor in your
+        React app:
+      </Text>
+      <div className="my-3">
+        <CopyPrompt prompt={SETUP_PROMPT} />
+      </div>
+      <Text>
+        The agent installs the package and finds the components that own your
+        typography, whatever styles them. Then open localhost.
+      </Text>
+      <Text>
+        Obs: React 19 with Vite, or Next.js 16 with the App Router and
+        Turbopack. Retouche runs only in development and is not on npm; the
+        agent installs it from a tarball hosted here.
+      </Text>
+    </section>
+  );
+}

@@ -1,0 +1,29 @@
+{
+  "name": "retouche-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "bun run --filter retouche build",
+    "check": "oxlint && oxfmt --check",
+    "dev": "bun run pack && bun run --filter site dev",
+    "fix": "oxlint --fix && oxfmt",
+    "pack": "bun run --cwd packages/retouche pack",
+    "prompt": "bun run --cwd packages/retouche pack > /dev/null && node packages/retouche/dist/cli.js prompt",
+    "test": "bun run --filter retouche test",
+    "typecheck": "bun run --filter '*' typecheck",
+    "build:site": "bun run pack && bun run --filter site build"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
+    "oxlint-tsgolint": "^7.0.2007",
+    "typescript": "^7.0.2",
+    "ultracite": "7.12.0"
+  },
+  "packageManager": "bun@1.4.4"
+}
