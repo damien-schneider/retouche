@@ -18,14 +18,14 @@ const LIGHT_TOKENS = `
   --rt-primary: #191919;
   --rt-primary-text: #ffffff;
   --rt-accent: #ff6900;
-  --rt-accent-ink: #ca3500;
+  --rt-accent-ink: #b64600;
   --rt-accent-text: #191919;
   --rt-error: #e5484d;
   --rt-error-ink: #ce2c31;
   --rt-added: #2b9a5f;
   --rt-syntax-keyword: #b5306b;
   --rt-syntax-string: #2d7a4f;
-  --rt-syntax-type: #a85a12;
+  --rt-syntax-type: #7f53ac;
   --rt-tooltip: #1c1c1c;
   --rt-tooltip-text: #ffffff;
   --rt-tooltip-muted: rgb(255 255 255 / 62%);
@@ -71,7 +71,7 @@ const DARK_TOKENS = `
   --rt-added: #3dd68c;
   --rt-syntax-keyword: #f294b6;
   --rt-syntax-string: #93d3a2;
-  --rt-syntax-type: #e8ac74;
+  --rt-syntax-type: #c9aaee;
   --rt-tooltip: #2e2e2e;
   --rt-canvas: #121212;
   --rt-glass: rgb(29 29 29 / 86%);
