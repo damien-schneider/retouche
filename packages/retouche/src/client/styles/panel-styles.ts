@@ -144,13 +144,13 @@ ${CASCADE_ORDER}
 .dt-list { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; }
 .dt-list > li { content-visibility: auto; contain-intrinsic-size: auto 54px; }
 .dt-row {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) fit-content(62%); align-items: center; gap: 3px 10px;
+  display: grid; grid-template-columns: minmax(20px, auto) minmax(0, 1fr) fit-content(62%); align-items: center; gap: 3px 10px;
   width: 100%; min-height: 38px; padding: 6px 8px 6px 9px; border-radius: var(--rt-radius-row); text-align: left;
 }
 .dt-row[data-hovered="true"] { background: var(--rt-bg-hover); }
 .dt-row:active:not(:disabled) { scale: 1; background: var(--rt-bg-pressed); }
 .dt-row:focus-visible { outline-offset: -2px; }
-.dt-row-text { overflow: hidden; color: var(--rt-text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.dt-row-text { grid-column: 2; overflow: hidden; color: var(--rt-text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .dt-row-props { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .dt-row-names { color: var(--rt-text-muted); font-size: 12px; line-height: 16px; text-align: right; text-wrap: balance; }
 .dt-row-change {

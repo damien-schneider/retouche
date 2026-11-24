@@ -22,7 +22,7 @@ Copy the prompt from the site, give it to your coding agent in your app, then op
 - **You decide what is wanted.** Retouche reports every typography override on the components you list and does not grade them. Fix one with a copied prompt, or keep it with the `allow` entry the inspector shows and copies for you.
 - **Any styling.** Tailwind utilities are read by name; any other class, from CSS Modules, plain CSS or CSS-in-JS, by the typography properties the page's stylesheets give it; inline `style` by property. Custom theme tokens need no config: `text-caption` reads as a size because the CSS Tailwind generates for it sets `font-size`.
 - **Typography and corners, not layout.** Retouche watches font size, line height, weight, family, tracking, case, decoration, figures and text color. `mt-4` and `w-full` at a call site stay silent.
-- **Nested corners that fit.** A button in a card's corner, an item in a popover's corner, a toolbar in a bubble menu: when its radius isn't the container's radius minus the gap between them, ±1px, it gets a dot on the corner that breaks and a row under the Corners lens. The inspector shows both radii, the gap and the radius that would fit, the container's code, and a prompt that fixes the corner where the container decides it rather than in the two numbers. Circles, pills at least as round as the curve, scrolled content and fixed elements are left alone.
+- **Nested corners that fit.** A button in a card's corner, an item in a popover's corner, a toolbar in a bubble menu: when its radius isn't the container's radius minus the gap between them, ±1px, a nested-corner icon points to the corner that breaks, and the finding appears under the Corners lens. The inspector shows both radii, the gap and the radius that would fit, the container's code, and a prompt that fixes the corner where the container decides it rather than in the two numbers. Circles, pills at least as round as the curve, scrolled content and fixed elements are left alone.
 - **Overrides shown where they render.** Dots sit on the overridden element; the panel lists each call site once, however many elements it renders, with the class it replaced next to what replaces it, and a property chip narrows both to one property.
 - **Measured, not guessed.** The diff re-renders the element without the override and reads both computed values: `text-5xl 48px → text-6xl 60px`. Hold to compare previews the page without it.
 - **Code in context.** The inspector traces the override from the call site to the component's own source, with the overriding and overridden classes marked, then shows the `allow` entry that would keep it; while you hold to compare, the override is struck and the component's classes come back. Hover or focus either edge of an excerpt to reveal every line on that side in one click: the lines you were reading stay in view while the excerpt grows to show them.
@@ -61,7 +61,7 @@ Paste the prompt into Claude Code, Codex, Cursor or any coding agent working in 
 
 ### 3. Open localhost
 
-Every overridden element in view gets a pin where its visible text ends: at the ellipsis of a truncated title, and none while a scroll area hides the element. The first pin of each call site carries its number, numbered like its row in the panel; the site's other elements get a small plain dot. The floating bar counts the call sites behind them; click it and the bar grows into the panel.
+Every overridden element in view gets a pin where its visible text ends: at the ellipsis of a truncated title, and none while a scroll area hides the element. The first pin of each call site matches the plain number beside its row in the panel; the site's other elements get a small plain dot. The floating bar counts the call sites behind them; click the count and the bar grows into the panel.
 
 | Surface | What it shows |
 | --- | --- |
@@ -197,7 +197,7 @@ bun install
 bun run dev
 ```
 
-The site runs at `http://localhost:4517` with the overlay on. It is built on its own small cva design system, and each Properties card title takes a deliberate override of its property as it scrolls into view, so the page itself is the test bed for the overlay. Production builds prerender to static HTML and pin those overrides with static pins in place of the overlay.
+The site runs at `http://localhost:4517`. In both local development and the static site build, the live overlay marks each Properties example as its override appears on scroll. You can hide the demo's arrows with the toolbar's dots switch; they return when you reload.
 
 The site also hosts the setup: every dev or build run copies the packed tarball to `apps/site/public/retouche.tgz` and writes `apps/site/public/setup.md` pointing at it. In dev the origin is `http://localhost:4517`; a build takes it from `SITE_URL` and fails without it.
 

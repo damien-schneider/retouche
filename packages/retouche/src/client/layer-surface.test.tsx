@@ -195,6 +195,22 @@ describe("override dots on the page", () => {
     expect(dot(panel, /overrides text-lg/)).not.toBeNull();
   });
 
+  it("shows dots again on a fresh visit when visibility isn't remembered", async () => {
+    const demo = <Page headline="text-lg" rememberDotVisibility={false} />;
+    const visit = render(demo);
+    const panel = await waitFor(overlay);
+    await within(panel).findByRole("button", { name: /overrides text-lg/ });
+    fireEvent.click(control(panel, /dots/i));
+    expect(dot(panel, /overrides text-lg/)).toBeNull();
+    visit.unmount();
+
+    render(demo);
+    const nextPanel = await waitFor(overlay);
+    await expect(
+      within(nextPanel).findByRole("button", { name: /overrides text-lg/ })
+    ).resolves.not.toBeNull();
+  });
+
   it("shows only the dots of the property under review while the panel is open", async () => {
     render(<Page headline="text-lg" />);
     const panel = await openPanel();

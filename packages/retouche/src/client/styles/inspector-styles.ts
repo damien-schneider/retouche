@@ -3,7 +3,10 @@ import { HOVER_CAPABLE } from "./tokens";
 export const INSPECTOR_STYLES = `
 .dt-inspector { display: flex; flex-direction: column; gap: 14px; }
 .dt-inspector-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 32px; padding: 0 2px; }
-.dt-inspector-head .dt-num { min-width: 22px; height: 22px; font-size: 11.5px; }
+.dt-inspector-head .dt-num {
+  min-width: 22px; height: 22px; border-radius: var(--rt-pill); background: var(--rt-accent-solid);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%); color: var(--rt-accent-text); font-size: 11.5px;
+}
 .dt-inspector-head h2 { min-width: 0; margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 24px; text-wrap: balance; overflow-wrap: anywhere; }
 .dt-inspector-head h2:focus { outline: none; }
 .dt-section { display: flex; flex-direction: column; gap: 8px; }

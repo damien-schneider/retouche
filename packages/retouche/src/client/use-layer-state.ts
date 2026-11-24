@@ -58,6 +58,19 @@ const STORED_DOTS: StoredPreference<boolean> = {
   schema: z.boolean(),
 };
 
+function useDotVisibility(remember: boolean | undefined) {
+  const [areDotsShown, setAreDotsShown] = useStoredPreference(
+    STORED_DOTS,
+    remember
+  );
+  return {
+    areDotsShown,
+    toggleDots: () => {
+      setAreDotsShown((shown) => !shown);
+    },
+  };
+}
+
 function useSelection(
   navigation: LayerNavigation,
   instances: OverrideInstance[]
@@ -173,9 +186,12 @@ function instanceActions(
   };
 }
 
-export function useLayerState(layerConfig: LayerConfig): LayerState {
+export function useLayerState(
+  layerConfig: LayerConfig,
+  rememberDotVisibility?: boolean
+): LayerState {
   const navigation = useLayerNavigation();
-  const [areDotsShown, setAreDotsShown] = useStoredPreference(STORED_DOTS);
+  const dots = useDotVisibility(rememberDotVisibility);
   const [hovered, setHovered] = useState<OverrideInstance | null>(null);
   const [isHolding, setIsHolding] = useState(false);
   const instances = useOverrideScan({
@@ -198,7 +214,7 @@ export function useLayerState(layerConfig: LayerConfig): LayerState {
   const { selectedSite, shownSites } = siteView;
 
   return {
-    areDotsShown,
+    ...dots,
     corners,
     hovered: instances.find(({ id }) => id === hovered?.id) ?? null,
     instances,
@@ -217,9 +233,6 @@ export function useLayerState(layerConfig: LayerConfig): LayerState {
       if (next) {
         navigation.step(next.lead, instances);
       }
-    },
-    toggleDots: () => {
-      setAreDotsShown((areShown) => !areShown);
     },
   };
 }

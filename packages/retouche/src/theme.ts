@@ -19,7 +19,8 @@ const LIGHT_TOKENS = `
   --rt-primary-text: #ffffff;
   --rt-accent: #ff6900;
   --rt-accent-ink: #b64600;
-  --rt-accent-text: #191919;
+  --rt-accent-solid: #c14900;
+  --rt-accent-text: #ffffff;
   --rt-error: #e5484d;
   --rt-error-ink: #ce2c31;
   --rt-added: #2b9a5f;

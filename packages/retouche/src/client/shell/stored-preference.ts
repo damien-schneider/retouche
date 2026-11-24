@@ -37,11 +37,16 @@ function writeStored<Value>(
 }
 
 export function useStoredPreference<Value>(
-  preference: StoredPreference<Value>
+  preference: StoredPreference<Value>,
+  shouldPersist = true
 ): [Value, Dispatch<SetStateAction<Value>>] {
-  const [value, setValue] = useState(() => readStored(preference));
+  const [value, setValue] = useState(() =>
+    shouldPersist ? readStored(preference) : preference.fallback
+  );
   useEffect(() => {
-    writeStored(preference, value);
-  }, [preference, value]);
+    if (shouldPersist) {
+      writeStored(preference, value);
+    }
+  }, [preference, shouldPersist, value]);
   return [value, setValue];
 }

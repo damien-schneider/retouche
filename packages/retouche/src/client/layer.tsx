@@ -193,11 +193,12 @@ function LayerPanel({
 
 export interface LayerProps {
   config: unknown;
+  rememberDotVisibility?: boolean;
 }
 
 export default function Layer(props: LayerProps) {
   const layerConfig = useLayerConfig(props);
-  const state = useLayerState(layerConfig);
+  const state = useLayerState(layerConfig, props.rememberDotVisibility);
   const route = useDevRoute();
   const { navigation, selection } = state;
   const { isOpen } = navigation;

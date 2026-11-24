@@ -19,7 +19,6 @@ function CornerRow({
       onKeyDown={focusNeighbourRow}
       type="button"
     >
-      <span className="dt-num" />
       <span className="dt-row-text">{pairOf(finding)}</span>
       <span className="dt-row-props">
         <span className="dt-row-names">{placementOf(finding)}</span>

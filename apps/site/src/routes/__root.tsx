@@ -63,7 +63,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <Retouche config={config} />
+        <Retouche config={config} rememberDotVisibility={false} />
         <Scripts />
       </body>
     </html>

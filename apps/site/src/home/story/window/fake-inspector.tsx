@@ -236,7 +236,7 @@ function HoldButton() {
       className={cn(
         "flex h-8 items-center justify-center rounded-full px-3 text-[13px] font-medium transition-[background-color,color,box-shadow,scale] duration-[120ms]",
         isPressed
-          ? "bg-rt-accent text-rt-accent-text scale-[0.96]"
+          ? "bg-rt-accent-solid text-rt-accent-text scale-[0.96]"
           : "bg-rt-card text-rt-text shadow-[inset_0_0_0_1px_var(--rt-border),0_1px_1px_rgb(0_0_0/0.03)]"
       )}
       data-cursor="compare"
@@ -376,7 +376,9 @@ export function FakeInspector() {
         style={{ y }}
       >
         <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-0.5">
-          <span className="rt-num h-[22px] min-w-[22px] text-[11.5px]">2</span>
+          <span className="rt-num bg-rt-accent-solid text-rt-accent-text h-[22px] min-w-[22px] rounded-full text-[11.5px] shadow-[inset_0_1px_0_rgb(255_255_255/0.22)]">
+            2
+          </span>
           <span className="text-[17px]/6 font-semibold tracking-[-0.02em]">
             Text
           </span>

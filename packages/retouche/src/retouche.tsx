@@ -2,6 +2,8 @@
 
 import { lazy, Suspense, useSyncExternalStore } from "react";
 
+import type { LayerProps } from "./client/layer";
+
 const Layer =
   process.env.NODE_ENV === "production"
     ? null
@@ -11,7 +13,7 @@ function subscribeToNothing(): () => void {
   return () => {};
 }
 
-export function Retouche({ config }: { config: unknown }) {
+export function Retouche(props: LayerProps) {
   const isHydrated = useSyncExternalStore(
     subscribeToNothing,
     () => true,
@@ -23,7 +25,7 @@ export function Retouche({ config }: { config: unknown }) {
   }
   return (
     <Suspense fallback={null}>
-      <Layer config={config} />
+      <Layer {...props} />
     </Suspense>
   );
 }

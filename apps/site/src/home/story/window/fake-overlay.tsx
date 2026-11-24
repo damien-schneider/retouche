@@ -32,7 +32,7 @@ function BarFace({ isOpen }: { isOpen: boolean }) {
       </span>
       <span className={cn(ICON_BUTTON, "relative")} data-cursor="bar">
         <Icon className="size-4" name="panel" />
-        <span className="bg-rt-accent text-rt-accent-text absolute top-px right-0 grid h-3.5 min-w-3.5 place-items-center rounded-full px-[3px] text-[10px] leading-none font-[650] tracking-normal tabular-nums shadow-[0_0_0_2px_var(--rt-bg)]">
+        <span className="bg-rt-accent-solid text-rt-accent-text absolute top-px right-0 grid h-3.5 min-w-3.5 place-items-center rounded-full px-[3px] text-[10px] leading-none font-[650] tracking-normal tabular-nums shadow-[0_0_0_2px_var(--rt-bg)]">
           3
         </span>
       </span>

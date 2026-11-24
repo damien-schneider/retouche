@@ -34,9 +34,11 @@ export function Text({
 
 export function Page({
   headline,
+  rememberDotVisibility = true,
   version,
 }: {
   headline?: string;
+  rememberDotVisibility?: boolean;
   version?: number;
 }) {
   return (
@@ -45,7 +47,7 @@ export function Page({
         Pricing
       </Text>
       <Text className="font-bold">Plans</Text>
-      <Layer config={config} />
+      <Layer config={config} rememberDotVisibility={rememberDotVisibility} />
     </>
   );
 }

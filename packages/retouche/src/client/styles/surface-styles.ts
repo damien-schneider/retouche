@@ -86,7 +86,7 @@ export const SURFACE_STYLES = `
 .dt-open-label { padding-left: 3px; color: var(--rt-error-ink); font-size: 12px; font-weight: 550; line-height: 16px; }
 .dt-count {
   position: absolute; top: 1px; right: 0; display: inline-grid; place-items: center; min-width: 14px; height: 14px; padding: 0 3px; overflow: hidden;
-  border-radius: var(--rt-pill); background: var(--rt-accent); box-shadow: 0 0 0 2px var(--rt-bg); color: var(--rt-accent-text);
+  border-radius: var(--rt-pill); background: var(--rt-accent-solid); box-shadow: 0 0 0 2px var(--rt-bg); color: var(--rt-accent-text);
   font-size: 10px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: 0; line-height: 1;
 }
 .dt-count[data-tone="clean"] {
@@ -121,7 +121,7 @@ ${HOVER_CAPABLE} {
 
 .dt-resize {
   --seam: calc(${SURFACE_GAP}px + ${floatingWidth("100%")} - ${SEAM_REACH}px);
-  position: absolute; top: ${SURFACE_GAP}px; bottom: ${SURFACE_GAP}px; display: grid; place-items: center; width: ${SEAM_REACH * 2}px;
+  position: absolute; top: ${SURFACE_GAP}px; bottom: ${SURFACE_GAP}px; display: flex; align-items: center; justify-content: center; width: ${SEAM_REACH * 2}px;
   border-radius: 0; color: var(--rt-text-faint); cursor: ew-resize; pointer-events: auto; touch-action: none;
   animation: rt-fade 160ms var(--rt-ease) 240ms backwards;
   transition: color 140ms var(--rt-ease);

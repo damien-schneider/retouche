@@ -113,7 +113,6 @@ function CornerDot({
       aria-pressed={isPressed}
       className="dt-dot"
       data-aim={AIM_AT[finding.misfit.corner]}
-      data-numbered="false"
       data-out={isOut}
       inert={isOut}
       onClick={() => {
@@ -125,6 +124,19 @@ function CornerDot({
       type="button"
     >
       <DotArrow seed={keyOf(finding)} />
+      <svg
+        aria-hidden="true"
+        className="dt-dot-pin"
+        fill="none"
+        height={14}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={1.6}
+        viewBox="0 0 14 14"
+        width={14}
+      >
+        <path d="M2 12V8a6 6 0 0 1 6-6h4M6 12V8a2 2 0 0 1 2-2h4" />
+      </svg>
     </button>
   );
 }

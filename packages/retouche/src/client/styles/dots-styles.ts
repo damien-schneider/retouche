@@ -59,6 +59,7 @@ ${AIMED}
   animation: dt-pin-in 260ms var(--rt-ease) backwards; animation-delay: inherit;
   transition: scale 200ms var(--rt-ease), opacity 160ms var(--rt-ease);
 }
+svg.dt-dot-pin { margin: auto; }
 ${PLAIN} { --rest: 0; }
 ${PLAIN} .dt-dot-pin { opacity: 0; }
 .dt-dot::before {
