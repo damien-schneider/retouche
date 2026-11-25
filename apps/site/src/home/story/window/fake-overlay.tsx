@@ -9,13 +9,17 @@ import { FakeLenses, FakeList } from "./fake-list";
 const ICON_BUTTON =
   "text-rt-muted grid size-[30px] flex-none place-items-center rounded-full";
 
+const GLASS_RIM =
+  "shadow-[inset_0_1px_0_var(--rt-glass-highlight),inset_0_0_0_1px_var(--rt-glass-rim)]";
+
 const THEME = themeTokens("[data-fake-overlay]");
 
 function BarFace({ isOpen }: { isOpen: boolean }) {
   return (
     <div
       className={cn(
-        "absolute right-0 bottom-0 flex h-10 w-(--bar-w) items-center gap-0.5 p-[5px] transition-[opacity,filter]",
+        "absolute right-0 bottom-0 flex h-10 w-(--bar-w) items-center gap-0.5 rounded-full p-[5px] transition-[opacity,filter]",
+        GLASS_RIM,
         isOpen
           ? "opacity-0 blur-[4px] duration-[90ms]"
           : "opacity-100 blur-none delay-[120ms] duration-[160ms]"
@@ -151,7 +155,7 @@ export function FakeOverlay() {
       </style>
       <div
         className={cn(
-          "bg-rt-bg font-rt text-rt-text ease-rt-morph absolute inset-x-0 top-[194px] bottom-0 text-[13px]/5 tracking-[-0.003em] antialiased shadow-[inset_0_1px_0_var(--rt-glass-highlight),inset_0_0_0_1px_var(--rt-glass-rim)] transition-[clip-path] [--bar-w:124px] @2xl:top-0 @2xl:left-auto @2xl:w-[320px] [&_svg]:[stroke-width:1.8]",
+          "bg-rt-bg font-rt text-rt-text ease-rt-morph absolute inset-x-0 top-[194px] bottom-0 text-[13px]/5 tracking-[-0.003em] antialiased transition-[clip-path] [--bar-w:124px] @2xl:top-0 @2xl:left-auto @2xl:w-[320px] [&_svg]:[stroke-width:1.8]",
           isOpen
             ? "duration-[280ms] [clip-path:inset(0_0_0_0_round_var(--rt-radius-surface))]"
             : "duration-[240ms] [clip-path:inset(calc(100%-40px)_0_0_calc(100%-var(--bar-w))_round_20px)]"
@@ -159,7 +163,8 @@ export function FakeOverlay() {
       >
         <div
           className={cn(
-            "flex h-full flex-col transition-opacity",
+            "rounded-rt-surface flex h-full flex-col transition-opacity",
+            GLASS_RIM,
             isOpen
               ? "opacity-100 delay-75 duration-250"
               : "opacity-0 duration-100"
