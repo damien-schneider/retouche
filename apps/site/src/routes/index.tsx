@@ -6,7 +6,7 @@ import { ConceptSection } from "../home/concepts/concept-section";
 import { PROPERTY_CONCEPTS } from "../home/concepts/property-concepts";
 import { Intro } from "../home/intro";
 import { Sidebar } from "../home/sidebar";
-import { SiteHeader } from "../home/site-header";
+import { SiteCredits, SiteHeader } from "../home/site-header";
 import { OverlayStory } from "../home/story/overlay-story";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -21,6 +21,7 @@ function Home() {
             <Sidebar />
           </div>
         </div>
+        <SiteCredits />
         <div className="mx-auto flex max-w-[640px] flex-col gap-20 px-6 pt-16 @2xl:px-8 @5xl:pt-28">
           <Intro />
           <ConceptSection group={PROPERTY_CONCEPTS} />

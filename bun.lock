@@ -33,6 +33,7 @@
         "retouche": "workspace:*",
         "tailwindcss": "^4.3.3",
         "vite": "^8.3.0",
+        "zod": "^4.6.5",
       },
     },
     "packages/retouche": {
