@@ -34,19 +34,11 @@ export function SiteHeader() {
 
 export function SiteCredits() {
   return (
-    <div className="absolute top-6 right-6 whitespace-nowrap @2xl:top-8 @2xl:right-8">
-      <a
-        className={CREDIT_LINK}
-        href={AUTHOR.href}
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        by {AUTHOR.name}
-      </a>
+    <div className="absolute top-6 right-6 flex flex-col items-end whitespace-nowrap @2xl:top-8 @2xl:right-8">
       {STARS !== null && (
         <a
           aria-label={`Retouche on GitHub, ${STARS} stars`}
-          className={cn(CREDIT_LINK, "ml-3 tabular-nums")}
+          className={cn(CREDIT_LINK, "tabular-nums")}
           href={`https://github.com/${REPOSITORY}`}
           rel="noopener noreferrer"
           target="_blank"
@@ -55,6 +47,14 @@ export function SiteCredits() {
           {STAR_COUNT.format(STARS)}
         </a>
       )}
+      <a
+        className={CREDIT_LINK}
+        href={AUTHOR.href}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        by {AUTHOR.name}
+      </a>
     </div>
   );
 }
