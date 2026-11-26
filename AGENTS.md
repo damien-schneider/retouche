@@ -4,7 +4,7 @@
 
 ## Stack & Commands
 
-Bun workspace. One package (`packages/retouche`, built with tsdown) and one site (`apps/site`, TanStack Start, prerendered to static HTML). React 19, Tailwind v4, zod, Vitest + jsdom; the site alone adds Motion (`motion/react`). The package's components go through the React Compiler in the build and in tests alike (`packages/retouche/react-compiler.ts`), so tests render what ships; the site is not compiled. Lint and format with oxlint and oxfmt on Ultracite presets (`oxlint.config.ts`, `oxfmt.config.ts`); the hard rules below are enforced there.
+Bun workspace. One package (`packages/retouche`, built with tsdown) and one site (`apps/site`, TanStack Start, prerendered to static HTML). React 19, Tailwind v4, zod, Vitest + jsdom; the site alone adds Motion (`motion/react`); the dev route speaks ACP through `@agentclientprotocol/sdk`. The package's components go through the React Compiler in the build and in tests alike (`packages/retouche/react-compiler.ts`), so tests render what ships, and a component it cannot compile fails both. Babel stays on 7: on Babel 8 the compiler skips every component with a destructured default. The site is not compiled. Lint and format with oxlint and oxfmt on Ultracite presets (`oxlint.config.ts`, `oxfmt.config.ts`); the hard rules below are enforced there.
 
 - **Format & fix:** `bun run fix` (oxlint --fix, then oxfmt)
 - **Check:** `bun run check`
