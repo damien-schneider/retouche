@@ -77,11 +77,11 @@ export const PANEL_STYLES = `
 .dt-lens[aria-pressed="true"] b { color: color-mix(in srgb, var(--rt-primary-text) 60%, transparent); }
 
 .dt-body {
-  --gap: 14px;
-  position: relative; display: flex; flex: 1; flex-direction: column; gap: var(--gap); min-height: 0; padding: 4px 12px 16px;
+  --gap: 14px; --pad-top: 4px; --pad-bottom: 16px;
+  position: relative; display: flex; flex: 1; flex-direction: column; gap: var(--gap); min-height: 0; padding: var(--pad-top) 12px var(--pad-bottom);
   overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--rt-border) transparent;
 }
-.dt-lenses ~ .dt-body { padding-top: 12px; }
+.dt-lenses ~ .dt-body { --pad-top: 12px; }
 @supports (animation-timeline: scroll()) {
   .dt-body {
     --edge: 24px;
@@ -99,11 +99,11 @@ export const PANEL_STYLES = `
     opacity: 0; pointer-events: none; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   }
   .dt-body::before {
-    top: 0; margin-bottom: calc(-1 * (var(--edge) + var(--gap))); mask-image: linear-gradient(to top, var(--ramp));
+    top: calc(-1 * var(--pad-top)); margin-bottom: calc(-1 * (var(--edge) + var(--gap))); mask-image: linear-gradient(to top, var(--ramp));
     animation: dt-edge-in linear both; animation-timeline: scroll(nearest); animation-range: 0 var(--edge);
   }
   .dt-body::after {
-    bottom: 0; margin-top: calc(-1 * (var(--edge) + var(--gap))); mask-image: linear-gradient(var(--ramp));
+    bottom: calc(-1 * var(--pad-bottom)); margin-top: calc(-1 * (var(--edge) + var(--gap))); mask-image: linear-gradient(var(--ramp));
     animation: dt-edge-out linear both; animation-timeline: scroll(nearest); animation-range: calc(100% - var(--edge)) 100%;
   }
 }
