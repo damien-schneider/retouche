@@ -37,7 +37,7 @@ export function SiteCredits() {
     <div className="absolute top-6 right-6 flex flex-col items-end whitespace-nowrap @2xl:top-8 @2xl:right-8">
       {STARS !== null && (
         <a
-          aria-label={`Retouche on GitHub, ${STARS} stars`}
+          aria-label={`Retouche on GitHub, ${STARS} ${STARS === 1 ? "star" : "stars"}`}
           className={cn(CREDIT_LINK, "tabular-nums")}
           href={`https://github.com/${REPOSITORY}`}
           rel="noopener noreferrer"
