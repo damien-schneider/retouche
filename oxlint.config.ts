@@ -5,6 +5,9 @@ import react from "ultracite/oxlint/react";
 import tanstack from "ultracite/oxlint/tanstack";
 import vitest from "ultracite/oxlint/vitest";
 
+const HOVER_THROUGH_TARGET =
+  "React skips it when the pointer comes from another React tree: use shell/hover-target.ts.";
+
 export default defineConfig({
   extends: [core, react, tanstack, antiSlop],
   ignorePatterns: ["**/routeTree.gen.ts"],
@@ -56,8 +59,24 @@ export default defineConfig({
     ],
     "no-shadow": "off",
     "no-use-before-define": ["error", { functions: false }],
+    "no-warning-comments": [
+      "error",
+      {
+        location: "start",
+        terms: ["todo", "fixme", "xxx", "oxlint-disable", "eslint-disable"],
+      },
+    ],
     "prefer-arrow-callback": ["error", { allowNamedFunctions: true }],
     "prefer-destructuring": "off",
+    "react/forbid-dom-props": [
+      "error",
+      {
+        forbid: ["onMouseEnter", "onPointerEnter"].map((propName) => ({
+          message: HOVER_THROUGH_TARGET,
+          propName,
+        })),
+      },
+    ],
     "react/function-component-definition": "off",
     "react/jsx-handler-names": "off",
     "require-unicode-regexp": "off",
