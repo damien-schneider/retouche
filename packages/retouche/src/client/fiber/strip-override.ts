@@ -9,6 +9,7 @@ import { flushSync } from "react-dom";
 import { WATCHED_GROUPS, type WatchedGroup } from "../../rules/class-groups";
 import { classTokens } from "../../rules/class-token";
 import { classNameSchema, styleSchema } from "../../rules/find-overrides";
+import { renderUnrecorded } from "../renders/record/render-recorder";
 import { firstHostNode, isProps } from "./react-fiber";
 import type { OverrideInstance, TypographyProps } from "./scan-overrides";
 
@@ -103,14 +104,16 @@ interface PropsPatch {
 // Each overrideProps call copies memoizedProps: two calls in one flush drop the first.
 function applyProps(patches: PropsPatch[]): void {
   const renderer = propsRenderer();
-  flushSync(() => {
-    for (const { fiber, props } of patches) {
-      const latest = getLatestFiber(fiber);
-      renderer?.overrideProps?.(latest, [], {
-        ...latest.memoizedProps,
-        ...props,
-      });
-    }
+  renderUnrecorded(() => {
+    flushSync(() => {
+      for (const { fiber, props } of patches) {
+        const latest = getLatestFiber(fiber);
+        renderer?.overrideProps?.(latest, [], {
+          ...latest.memoizedProps,
+          ...props,
+        });
+      }
+    });
   });
 }
 

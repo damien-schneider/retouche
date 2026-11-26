@@ -5,12 +5,17 @@ import {
   type ServerComponentInfo,
 } from "bippy";
 
+import { WIDGET_MARKER } from "../shell/widget-events";
+
 const MEMO_TYPE = Symbol.for("react.memo");
 const FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
 const MAX_WRAPPER_DEPTH = 3;
 const MAX_CLONE_DEPTH = 3;
 const FIBER_KEY_PREFIXES = ["__reactFiber$", "__reactInternalInstance$"];
 const CONTAINER_KEY_PREFIXES = ["__reactContainer$"];
+const HOST_PORTAL_TAG = 4;
+
+export const COMPOSITE_TAGS: ReadonlySet<number> = new Set([0, 1, 11, 15]);
 
 export interface ComponentInfo extends ServerComponentInfo {
   props?: unknown;
@@ -42,7 +47,7 @@ export function isProps(value: unknown): value is Props {
   return isRecord(value);
 }
 
-function typeName(type: ComponentType, depth = 0): string | null {
+export function typeName(type: ComponentType, depth = 0): string | null {
   if (depth > MAX_WRAPPER_DEPTH) {
     return null;
   }
@@ -147,6 +152,38 @@ export function firstHostNode(fiber: Fiber): Element | null {
     (descendant) => descendant.stateNode instanceof Element
   );
   return host?.stateNode instanceof Element ? host.stateNode : null;
+}
+
+export function isOwnPortal(fiber: Fiber): boolean {
+  const portal = fiber.stateNode;
+  if (fiber.tag !== HOST_PORTAL_TAG || !isRecord(portal)) {
+    return false;
+  }
+  return (
+    "containerInfo" in portal &&
+    portal.containerInfo instanceof ShadowRoot &&
+    portal.containerInfo.host.hasAttribute(WIDGET_MARKER)
+  );
+}
+
+export function hostElementsOf(fiber: Fiber): Element[] {
+  const elements: Element[] = [];
+  const pending: Fiber[] = fiber.child ? [fiber.child] : [];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current) {
+      break;
+    }
+    if (current.sibling) {
+      pending.push(current.sibling);
+    }
+    if (current.stateNode instanceof Element) {
+      elements.push(current.stateNode);
+    } else if (current.child && !isOwnPortal(current)) {
+      pending.push(current.child);
+    }
+  }
+  return elements;
 }
 
 interface PassedElement {

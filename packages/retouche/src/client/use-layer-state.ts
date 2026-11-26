@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { z } from "zod";
 
 import type { CornerFinding } from "./corners/measure/measure-corners";
@@ -14,6 +14,7 @@ import {
   type Lens,
 } from "./panel/property-lenses";
 import { type Picker, usePicker } from "./picker/use-picker";
+import { recordRenders } from "./renders/record/render-recorder";
 import { pickOf, resolveSelection, type Selection } from "./selection";
 import {
   type StoredPreference,
@@ -27,6 +28,7 @@ import {
 
 export interface LayerState {
   areDotsShown: boolean;
+  areRendersShown: boolean;
   corners: CornerFinding[];
   hovered: OverrideInstance | null;
   instances: OverrideInstance[];
@@ -47,6 +49,7 @@ export interface LayerState {
   sites: CallSite[];
   stepBy: (delta: number) => void;
   toggleDots: () => void;
+  toggleRenders: () => void;
 }
 
 const UNLISTED: string[] = [];
@@ -58,15 +61,34 @@ const STORED_DOTS: StoredPreference<boolean> = {
   schema: z.boolean(),
 };
 
-function useDotVisibility(remember: boolean | undefined) {
+const STORED_RENDERS: StoredPreference<boolean> = {
+  fallback: false,
+  key: "retouche-renders",
+  kind: "local",
+  schema: z.boolean(),
+};
+
+function usePageLayerToggles(rememberDots: boolean | undefined) {
   const [areDotsShown, setAreDotsShown] = useStoredPreference(
     STORED_DOTS,
-    remember
+    rememberDots
   );
+  const [areRendersShown, setAreRendersShown] =
+    useStoredPreference(STORED_RENDERS);
+  useEffect(() => {
+    if (!areRendersShown) {
+      return;
+    }
+    return recordRenders();
+  }, [areRendersShown]);
   return {
     areDotsShown,
+    areRendersShown,
     toggleDots: () => {
       setAreDotsShown((shown) => !shown);
+    },
+    toggleRenders: () => {
+      setAreRendersShown((shown) => !shown);
     },
   };
 }
@@ -191,7 +213,7 @@ export function useLayerState(
   rememberDotVisibility?: boolean
 ): LayerState {
   const navigation = useLayerNavigation();
-  const dots = useDotVisibility(rememberDotVisibility);
+  const toggles = usePageLayerToggles(rememberDotVisibility);
   const [hovered, setHovered] = useState<OverrideInstance | null>(null);
   const [isHolding, setIsHolding] = useState(false);
   const instances = useOverrideScan({
@@ -214,7 +236,7 @@ export function useLayerState(
   const { selectedSite, shownSites } = siteView;
 
   return {
-    ...dots,
+    ...toggles,
     corners,
     hovered: instances.find(({ id }) => id === hovered?.id) ?? null,
     instances,

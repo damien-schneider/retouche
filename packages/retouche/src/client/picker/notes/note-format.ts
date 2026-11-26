@@ -1,3 +1,5 @@
+import type { RenderReport } from "../../renders/record/render-changes";
+import { factText, renderFacts } from "../../renders/render-facts";
 import type { TypeReading } from "../element/element-typography";
 import type {
   ElementContext,
@@ -42,6 +44,16 @@ function typographyLines(readings: TypeReading[]): string[] {
   return measured.length > 0 ? [`Measured: ${measured.join(", ")}`] : [];
 }
 
+function renderLines(report: RenderReport | null): string[] {
+  if (report === null) {
+    return [];
+  }
+  const { count, last } = renderFacts(report);
+  return last.length > 0
+    ? [`Renders: ${count}`, `Last render: ${last.map(factText).join("; ")}`]
+    : [`Renders: ${count}`];
+}
+
 function factLines({ context, note, sites }: NoteFacts): string[] {
   const callSite = locationText(sites?.callSite ?? null);
   const component = locationText(sites?.component ?? null);
@@ -53,6 +65,7 @@ function factLines({ context, note, sites }: NoteFacts): string[] {
     classes.length > 0 && `Classes: ${code(classes)}`,
     ...typographyLines(context.typography),
     override && `Override on <${override.component}>: ${code(override.labels)}`,
+    ...renderLines(context.renders),
     note && `Note: ${note}`,
   ].filter((line): line is string => Boolean(line));
 }

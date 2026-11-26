@@ -1,6 +1,7 @@
 import type { OverrideInstance } from "../fiber/scan-overrides";
 import { canStripOverride } from "../fiber/strip-override";
 import { presence } from "../motion/presence";
+import { ElementRenders } from "../picker/element/element-renders";
 import type { DevRouteState } from "../route/use-dev-route";
 import type { OverrideFacts } from "./agent-prompts";
 import { CodeSection } from "./code-section";
@@ -95,6 +96,9 @@ export function Inspector({
         renders={renders}
       />
       <PropertyDiff changes={changes} measurement={measurement} />
+      {instance.node instanceof Element && (
+        <ElementRenders element={instance.node} />
+      )}
       {isMeasurable ? (
         <HoldToCompare instance={instance} onHoldChange={onHoldChange} />
       ) : (

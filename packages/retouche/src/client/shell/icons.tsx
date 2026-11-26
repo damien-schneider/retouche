@@ -32,6 +32,14 @@ export function CloseIcon() {
   );
 }
 
+export function RendersIcon() {
+  return (
+    <Svg>
+      <path d="M3 12.5h3.75L9.5 6l5 12 2.75-6.5H21" />
+    </Svg>
+  );
+}
+
 export function ChevronLeftIcon() {
   return (
     <Svg>

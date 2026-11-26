@@ -8,6 +8,8 @@ import { PanelHead, type Stepper } from "./panel/panel-head";
 import { PropertyLenses } from "./panel/property-lenses";
 import { PickToggle } from "./picker/pick-toggle";
 import { PickerOverlay } from "./picker/picker-overlay";
+import { drawFlashes } from "./renders/flashes/draw-flashes";
+import { RendersFooter } from "./renders/footer/renders-footer";
 import { type DevRouteState, useDevRoute } from "./route/use-dev-route";
 import { ShadowPortal } from "./shell/shadow-portal";
 import { CONTENT_STYLES } from "./styles/content-styles";
@@ -140,6 +142,16 @@ function LayerLenses({ state }: { state: LayerState }) {
   );
 }
 
+function LayerRenders({ state }: { state: LayerState }) {
+  return (
+    <RendersFooter
+      areShown={state.areRendersShown}
+      onInspect={state.navigation.inspectElement}
+      onToggle={state.toggleRenders}
+    />
+  );
+}
+
 function LayerPanel({
   handles,
   head,
@@ -156,6 +168,7 @@ function LayerPanel({
   return (
     <Panel
       chrome={<LayerLenses state={state} />}
+      foot={<LayerRenders state={state} />}
       handles={handles}
       head={head}
       move={navigation.lastMove}
@@ -214,6 +227,9 @@ export default function Layer(props: LayerProps) {
   return (
     <ShadowPortal styles={STYLES}>
       <div className="dt" data-theme={theme.theme} ref={layerKeys(state)}>
+        {state.areRendersShown && (
+          <div aria-hidden="true" className="dt-flashes" ref={drawFlashes} />
+        )}
         <PageLayer
           areDotsShown={state.areDotsShown}
           corners={isOpen ? state.shownCorners : state.corners}

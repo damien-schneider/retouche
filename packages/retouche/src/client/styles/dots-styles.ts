@@ -1,4 +1,5 @@
 import { AIMS, ARROW } from "../dots/arrow/dot-arrow";
+import { FLASH_LABEL } from "../renders/flashes/flash-boxes";
 import { HOVER_CAPABLE, Z_INDEX } from "./tokens";
 
 const BUTTON = 28;
@@ -12,6 +13,7 @@ const AIMED = Object.entries(AIMS)
   )
   .join("\n");
 const DRAWN = "stroke-dasharray: 1 1; stroke-dashoffset: 0;";
+const HALO = 3;
 const UNDRAWN = "stroke-dasharray: 1 1; stroke-dashoffset: 1;";
 
 function chipUnfurled(state: string): string {
@@ -130,4 +132,24 @@ ${HOVER_CAPABLE} {${chipUnfurled(":hover")}
 }
 .dt-outline-mark svg { width: 12px; height: 12px; stroke-width: 2.6; }
 .dt-outline-mark[data-ghost="leaving"] { opacity: 0; scale: .6; transition: opacity 140ms var(--rt-ease-exit), scale 140ms var(--rt-ease-exit); }
+
+.dt-flashes > [data-anchor] { position: absolute; top: 0; left: 0; z-index: ${Z_INDEX.flashes}; width: 0; height: 0; contain: layout; pointer-events: none; }
+.dt-flashes > [data-anchor="screen"] { position: fixed; }
+.dt-flash {
+  --pulse: 0;
+  position: absolute; top: 0; left: 0; border-radius: 4px; pointer-events: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rt-flash) calc(55% + var(--pulse) * 35%), transparent), 0 1px 2px color-mix(in srgb, var(--rt-flash) 14%, transparent);
+}
+.dt-flash[data-innermost="true"] {
+  background: color-mix(in srgb, var(--rt-flash) calc(4% + var(--pulse) * 12%), transparent);
+}
+.dt-flash-label {
+  position: absolute; top: var(--label-y, 0px); left: -${HALO}px; max-width: ${FLASH_LABEL.maxWidth + 2 * HALO}px; padding: 0 ${HALO}px;
+  overflow: hidden; color: var(--rt-flash-ink);
+  font: 500 ${FLASH_LABEL.size}px/${FLASH_LABEL.height}px var(--rt-font-mono); font-variant-numeric: tabular-nums; letter-spacing: 0;
+  white-space: nowrap; text-overflow: ellipsis;
+  text-shadow: 0 0 1px var(--rt-bg), 0 0 2px var(--rt-bg), 0 0 3px var(--rt-bg), 0 0 4px var(--rt-bg);
+}
+.dt-flash-label:empty { display: none; }
+.dt-flash[data-label="inside"] .dt-flash-label { left: ${FLASH_LABEL.gap - HALO}px; max-width: min(${FLASH_LABEL.maxWidth + 2 * HALO}px, calc(100% - ${2 * FLASH_LABEL.gap}px)); }
 `;

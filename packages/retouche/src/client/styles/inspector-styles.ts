@@ -25,6 +25,7 @@ export const INSPECTOR_STYLES = `
 .dt-diff-note { color: var(--rt-text-faint); font-size: 12px; line-height: 16px; }
 .dt-value { color: var(--rt-text-muted); font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: -.025em; line-height: 16px; overflow-wrap: anywhere; }
 .dt-value[data-change="added"] { color: var(--rt-text); }
+.dt-render-facts { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 3px 0; list-style: none; }
 .dt-trace { display: flex; flex-direction: column; gap: 18px; margin: 0; padding: 0; list-style: none; }
 .dt-trace-step { --head-h: 26px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 8px 10px; min-width: 0; }
 .dt-trace .dt-section-title { margin: 0 0 0 2px; line-height: var(--head-h); white-space: nowrap; }

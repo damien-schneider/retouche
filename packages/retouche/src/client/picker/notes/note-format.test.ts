@@ -8,6 +8,7 @@ const HERO: ElementContext = {
   component: "Hero",
   override: null,
   page: "/pricing",
+  renders: null,
   tag: "h1",
   text: "Welcome",
   typography: [
@@ -70,6 +71,45 @@ describe("a note copied for a coding agent", () => {
     );
 
     expect(text).toMatch(/<Text>.*text-lg/);
+  });
+});
+
+describe("render facts in a note copied for a coding agent", () => {
+  it("carries the render facts taken in perf mode", () => {
+    const text = formatNote(
+      facts({
+        context: {
+          ...HERO,
+          renders: {
+            count: 12,
+            last: {
+              contexts: [],
+              kind: "update",
+              owner: "Page",
+              props: [],
+              state: [
+                {
+                  change: {
+                    from: { kind: "primitive", text: "3" },
+                    kind: "changed",
+                    to: { kind: "primitive", text: "4" },
+                  },
+                  index: 1,
+                  kind: "hook",
+                },
+              ],
+            },
+          },
+        },
+      })
+    );
+
+    expect(text).toMatch(/Renders:.*12/);
+    expect(text).toMatch(/Last render:.*state 1.*3.*4/);
+  });
+
+  it("leaves render facts out when perf mode was off", () => {
+    expect(formatNote(facts())).not.toMatch(/render/i);
   });
 });
 

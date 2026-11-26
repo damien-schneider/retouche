@@ -14,6 +14,7 @@ export interface PanelHandles {
 interface PanelProps {
   children: ReactNode;
   chrome: ReactNode;
+  foot: ReactNode;
   handles: PanelHandles;
   head: ReactNode;
   move: PanelMove | null;
@@ -23,6 +24,7 @@ interface PanelProps {
 export function Panel({
   children,
   chrome,
+  foot,
   handles,
   head,
   move,
@@ -58,6 +60,7 @@ export function Panel({
       >
         {children}
       </div>
+      {foot}
     </aside>
   );
 }

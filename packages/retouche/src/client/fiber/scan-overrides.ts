@@ -8,10 +8,11 @@ import {
   type SheetClassGroups,
 } from "../../rules/find-overrides";
 import { creationFrame } from "../code/element-source";
-import { WIDGET_MARKER } from "../shell/widget-events";
 import { readSheetClassGroups } from "../stylesheets/sheet-class-groups";
 import { overrideLabels } from "./call-sites";
+import { entryOfInstance } from "./instance-identity";
 import {
+  COMPOSITE_TAGS,
   type ComponentInfo,
   componentName,
   type ComponentType,
@@ -19,8 +20,8 @@ import {
   creatorOf,
   firstHostNode,
   isComponentType,
+  isOwnPortal,
   isProps,
-  isRecord,
   ownerName,
   type ReactOwner,
   writtenPlace,
@@ -54,26 +55,12 @@ interface ScanContext extends ScanOptions {
   sheetGroups: SheetClassGroups;
 }
 
-const COMPOSITE_TAGS = new Set([0, 1, 11, 15]);
 const HOST_TAGS = new Set([5, 26, 27]);
-const HOST_PORTAL_TAG = 4;
 
 const instanceIds = new WeakMap<ReactOwner, number>();
 let nextInstanceId = 1;
 const typeRevisions = new WeakMap<ComponentType, number>();
 let nextTypeRevision = 1;
-
-function instanceId(identity: ReactOwner, alternate: Fiber | null): number {
-  const known =
-    instanceIds.get(identity) ??
-    (alternate ? instanceIds.get(alternate) : undefined);
-  const id = known ?? nextInstanceId++;
-  instanceIds.set(identity, id);
-  if (alternate) {
-    instanceIds.set(alternate, id);
-  }
-  return id;
-}
 
 function typeRevision(fiber: Fiber): number {
   const type: unknown = fiber.type;
@@ -90,18 +77,6 @@ function hotRevision(fiber: Fiber): string {
   const owner = fiber._debugOwner;
   const ownerRevision = isFiber(owner) ? typeRevision(owner) : 0;
   return `${typeRevision(fiber)}.${ownerRevision}`;
-}
-
-function isOwnPortal(fiber: Fiber): boolean {
-  const portal = fiber.stateNode;
-  if (fiber.tag !== HOST_PORTAL_TAG || !isRecord(portal)) {
-    return false;
-  }
-  return (
-    "containerInfo" in portal &&
-    portal.containerInfo instanceof ShadowRoot &&
-    portal.containerInfo.host.hasAttribute(WIDGET_MARKER)
-  );
 }
 
 function clientInstance(fiber: Fiber, context: ScanContext): Scanned | null {
@@ -126,7 +101,7 @@ function clientInstance(fiber: Fiber, context: ScanContext): Scanned | null {
   }
   return {
     component,
-    id: instanceId(fiber, fiber.alternate),
+    id: entryOfInstance(instanceIds, fiber, () => nextInstanceId++),
     node: firstHostNode(fiber),
     origin: { fiber, kind: "client" },
     overrides,
@@ -166,7 +141,7 @@ function serverInstance(
   }
   return {
     component,
-    id: instanceId(info, null),
+    id: entryOfInstance(instanceIds, info, () => nextInstanceId++),
     node: hostFiber.stateNode,
     origin: { info, kind: "server" },
     overrides,

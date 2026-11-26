@@ -1,3 +1,4 @@
+import { FLASH_MS } from "../renders/flashes/flash-boxes";
 import { HOVER_CAPABLE } from "./tokens";
 
 const CASCADE_SLOTS = 8;
@@ -162,10 +163,41 @@ ${CASCADE_ORDER}
 .dt-row-change mark { background: none; color: inherit; }
 .dt-row-change mark[data-change="removed"] { color: var(--rt-text-faint); }
 
+.dt-renders { display: flex; flex: none; flex-direction: column; max-height: 45%; padding: 4px 6px 6px; border-top: var(--hairline) solid var(--rt-border); }
+.dt-renders-bar { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 6px; }
+.dt-renders-toggle, .dt-renders-more {
+  display: inline-flex; align-items: center; gap: 6px; height: var(--hit); padding: 0 10px 0 8px; border-radius: var(--rt-pill);
+  color: var(--rt-text-muted); font-size: 12px; font-weight: 500; line-height: 16px; transition: color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+}
+.dt-renders-toggle[aria-pressed="true"] { background: color-mix(in srgb, var(--rt-flash) 12%, transparent); color: var(--rt-flash-ink); }
+.dt-renders-seen { min-width: 1ch; font-weight: 550; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.dt-renders-more { gap: 4px; padding: 0 6px 0 10px; font-variant-numeric: tabular-nums; }
+.dt-renders-more svg { transition: rotate 200ms var(--rt-ease); }
+.dt-renders-more[aria-expanded="true"] svg { rotate: 180deg; }
+.dt-renders button:focus-visible { outline-offset: -2px; }
+.dt-rendered {
+  display: grid; flex: 0 1 auto; min-height: 0; margin: 0 0 4px; padding: 0; list-style: none; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: var(--rt-border) transparent;
+}
+.dt-rendered-row {
+  display: flex; align-items: center; gap: 8px; width: 100%; height: 100%; padding: 0 10px 0 8px;
+  border-radius: var(--rt-radius-row); font-size: 12px; line-height: 16px; text-align: left;
+}
+.dt-rendered-row:active:not(:disabled) { scale: 1; background: var(--rt-bg-pressed); }
+.dt-rendered-row:disabled { opacity: 1; color: var(--rt-text-faint); cursor: default; }
+.dt-rendered-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dt-rendered-note { flex: none; color: var(--rt-text-faint); }
+.dt-rendered-count { flex: none; margin-left: auto; color: var(--rt-text-muted); font-variant-numeric: tabular-nums; }
+.dt-rendered-count[data-latest="true"] { animation: dt-rendered-tick ${FLASH_MS}ms linear; }
+@keyframes dt-rendered-tick { from { color: var(--rt-flash-ink); } }
+.dt-rendered-empty { margin: 0; padding: 6px 8px 8px; color: var(--rt-text-muted); font-size: 12px; line-height: 16px; }
+
 .dt-issues { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .dt-issues code { color: var(--rt-error-ink); font-size: 11.5px; }
 ${HOVER_CAPABLE} {
   .dt-lens:not([aria-pressed="true"]):hover { background: var(--rt-bg-hover); color: var(--rt-text); }
+  .dt-renders-more:hover, .dt-renders-toggle[aria-pressed="false"]:hover { background: var(--rt-bg-hover); color: var(--rt-text); }
+  .dt-rendered-row:not(:disabled):hover { background: var(--rt-bg-hover); }
   .dt-row:hover { background: var(--rt-bg-hover); }
   .dt-back:hover, .dt-crumb-trail:has(.dt-back:hover) .dt-title { color: var(--rt-text); }
 }

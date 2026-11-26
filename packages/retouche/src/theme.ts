@@ -24,6 +24,8 @@ const LIGHT_TOKENS = `
   --rt-error: #e5484d;
   --rt-error-ink: #ce2c31;
   --rt-added: #2b9a5f;
+  --rt-flash: #6e56cf;
+  --rt-flash-ink: #5746af;
   --rt-syntax-keyword: #b5306b;
   --rt-syntax-string: #2d7a4f;
   --rt-syntax-type: #7f53ac;
@@ -70,6 +72,8 @@ const DARK_TOKENS = `
   --rt-error: #e5484d;
   --rt-error-ink: #ff8f8d;
   --rt-added: #3dd68c;
+  --rt-flash: #8e7cf0;
+  --rt-flash-ink: #baa7ff;
   --rt-syntax-keyword: #f294b6;
   --rt-syntax-string: #93d3a2;
   --rt-syntax-type: #c9aaee;

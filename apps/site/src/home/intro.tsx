@@ -21,6 +21,11 @@ export function Intro() {
         decide whether to fix it or keep it.
       </Text>
       <Text>
+        It can also highlight renders. Each component flashes as it renders,
+        with a count, and the panel shows what changed: a prop, its state, a
+        context, or nothing at all.
+      </Text>
+      <Text>
         To set it up, give this prompt to Claude Code, Codex or Cursor in your
         React app:
       </Text>

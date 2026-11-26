@@ -4,6 +4,7 @@ import { useInstanceSites } from "../../inspector/use-instance-sites";
 import { presence } from "../../motion/presence";
 import type { DevRouteState } from "../../route/use-dev-route";
 import { useComponentName } from "../notes/element-context";
+import { ElementRenders } from "./element-renders";
 import { ElementTypography } from "./element-typography";
 
 export function ElementView({
@@ -25,6 +26,7 @@ export function ElementView({
         {owner !== null && <span className="dt-chip">{tag}</span>}
       </header>
       <ElementTypography element={element} />
+      <ElementRenders element={element} />
       <CornerFit
         components={components}
         element={element}

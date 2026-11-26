@@ -8,6 +8,8 @@ import {
   locateSites,
   type SiteState,
 } from "../../inspector/use-instance-sites";
+import type { RenderReport } from "../../renders/record/render-changes";
+import { renderReportOf } from "../../renders/record/render-recorder";
 import { fetchSourceFile } from "../../route/dev-route";
 import {
   readTypography,
@@ -20,6 +22,7 @@ export interface ElementContext {
   component: string | null;
   override: { component: string; labels: string[] } | null;
   page: string;
+  renders: RenderReport | null;
   tag: string;
   text: string;
   typography: TypeReading[];
@@ -87,6 +90,7 @@ export function contextOf(
       labels: instance.overrides.map(({ label }) => label),
     },
     page: window.location.pathname,
+    renders: renderReportOf(element),
     tag: element.localName,
     text: excerptOf(element),
     typography: rendersText(element) ? readTypography(element) : [],

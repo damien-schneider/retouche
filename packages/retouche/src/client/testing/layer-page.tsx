@@ -13,7 +13,7 @@ import { ENDPOINTS, STATUS_MARKER } from "../../protocol";
 import Layer from "../layer";
 
 const LENSES_NAME = /filter/i;
-const OPEN_NAME = /open/i;
+export const OPEN_NAME = /open/i;
 const PICK_NAME = /pick/i;
 const OVERRIDE_LINE = 12;
 const SOURCE_LINES = 30;
@@ -215,6 +215,7 @@ export function serveDevRoute(
 }
 
 interface ViewportEntry {
+  boundingClientRect: DOMRectReadOnly;
   isIntersecting: boolean;
   target: Element;
 }
@@ -230,6 +231,7 @@ export function stubViewport(isInReach: (element: Element) => boolean) {
         if (this.#targets.size > 0) {
           onChange(
             [...this.#targets].map((target) => ({
+              boundingClientRect: target.getBoundingClientRect(),
               isIntersecting: isInReach(target),
               target,
             }))
