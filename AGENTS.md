@@ -10,7 +10,7 @@ Bun workspace. One package (`packages/retouche`, built with tsdown) and one site
 - **Check:** `bun run check`
 - **Type check:** `bun run typecheck`
 - **Test:** `bun run test`
-- **Build:** `bun run build` (package), `SITE_URL=<public origin> bun run build:site` (package tarball, then the prerendered site in `apps/site/dist/client` serving `/retouche.tgz` and `/setup.md`; React development build, component names kept, source maps on, so the live overlay works for visitors)
+- **Build:** `bun run build` (package), `SITE_URL=<public origin> bun run build:site` (package tarball, then the prerendered site in `apps/site/dist/client` serving `/retouche.tgz` and `/setup.md`, plus `/robots.txt`, `/sitemap.xml` and the page as markdown at `/index.md`, which `vercel.json` serves at `/` to requests accepting `text/markdown`; React development build, component names kept, source maps on, so the live overlay works for visitors)
 - **Site:** `bun run dev` runs the site with the real overlay on it; the Overlay story is a fake app with no real overrides, so the overlay finds its overrides in the Properties titles, which switch them on as you scroll; verify UI changes there in a real headless browser
 - **Setup prompt:** `bun run --silent prompt`
 

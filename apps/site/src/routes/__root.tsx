@@ -30,6 +30,7 @@ export const Route = createRootRoute({
       { href: INTER, rel: "stylesheet" },
       { href: styles, rel: "stylesheet" },
       { href: FAVICON, rel: "icon", type: "image/svg+xml" },
+      { href: "/index.md", rel: "alternate", type: "text/markdown" },
     ],
     meta: [
       { charSet: "utf-8" },

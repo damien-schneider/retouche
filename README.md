@@ -204,13 +204,15 @@ The site runs at `http://localhost:4517`. In both local development and the stat
 
 The site also hosts the setup: every dev or build run copies the packed tarball to `apps/site/public/retouche.tgz` and writes `apps/site/public/setup.md` pointing at it. In dev the origin is `http://localhost:4517`; a build takes it from `SITE_URL` and fails without it.
 
+For agents and crawlers, a build also writes `/robots.txt` (every crawler allowed, with Content Signals `search=yes, ai-input=yes, ai-train=yes`), `/sitemap.xml`, and the page as markdown at `/index.md`, converted from the prerendered `<main>` without its navigation, its buttons and anything `aria-hidden`. On Vercel, `vercel.json` serves that markdown at `/` to requests whose `Accept` includes `text/markdown`, and points to it from the page with a `Link` header.
+
 ### Commands
 
 | Command | Purpose |
 | --- | --- |
 | `bun run dev` | Pack the package and run the site with the overlay |
 | `bun run build` | Build `packages/retouche/dist` |
-| `SITE_URL=<origin> bun run build:site` | Pack the package, then prerender the site to `apps/site/dist/client` with `/retouche.tgz` and `/setup.md` |
+| `SITE_URL=<origin> bun run build:site` | Pack the package, then prerender the site to `apps/site/dist/client` with `/retouche.tgz`, `/setup.md`, `/robots.txt`, `/sitemap.xml` and `/index.md` |
 | `bun run pack` | Build and pack `packages/retouche/retouche.tgz` |
 | `bun run prompt` | Pack, then print the setup prompt with the tarball path |
 | `bun run test` | Run the package's Vitest suite (jsdom, real React rendering) |

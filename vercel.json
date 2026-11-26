@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "^/$",
+      "headers": {
+        "Link": "</index.md>; rel=\"alternate\"; type=\"text/markdown\"",
+        "Vary": "Accept"
+      },
+      "continue": true
+    },
+    {
+      "src": "^/$",
+      "has": [
+        { "type": "header", "key": "accept", "value": ".*text/markdown.*" }
+      ],
+      "dest": "/index.md"
+    }
+  ]
+}

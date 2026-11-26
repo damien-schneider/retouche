@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -9,12 +10,19 @@ import { retouche } from "retouche/vite";
 import { defineConfig, type Plugin } from "vite";
 import { z } from "zod";
 
+import { pageMarkdown } from "./page-markdown.ts";
 import { REPOSITORY } from "./src/credits.ts";
 
 const DEV_PORT = 4517;
 const PACKAGE = new URL("../../packages/retouche/", import.meta.url);
 const PUBLIC = new URL("public/", import.meta.url);
+const CLIENT_OUTPUT = fileURLToPath(new URL("dist/client/", import.meta.url));
 const TARBALL = "retouche.tgz";
+const ROBOTS_RULES = [
+  "User-agent: *",
+  "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+  "Allow: /",
+];
 
 function siteOrigin(): string {
   const siteUrl = process.env.SITE_URL;
@@ -31,7 +39,6 @@ function writeSetupFiles(origin: string): void {
   if (!existsSync(tarball)) {
     throw new Error(`No ${fileURLToPath(tarball)}: run bun run pack first`);
   }
-  mkdirSync(PUBLIC, { recursive: true });
   copyFileSync(tarball, new URL(TARBALL, PUBLIC));
   const prompt = execFileSync(
     "node",
@@ -45,18 +52,21 @@ function writeSetupFiles(origin: string): void {
   writeFileSync(new URL("setup.md", PUBLIC), prompt);
 }
 
-function hostedSetup(): Plugin {
+function hostedFiles(origin: string): Plugin {
   return {
-    config(_, { command, isPreview }) {
+    config(_, { isPreview }) {
       if (isPreview === true) {
         return;
       }
-      const origin =
-        command === "serve" ? `http://localhost:${DEV_PORT}` : siteOrigin();
+      mkdirSync(PUBLIC, { recursive: true });
       writeSetupFiles(origin);
+      writeFileSync(
+        new URL("robots.txt", PUBLIC),
+        [...ROBOTS_RULES, "", `Sitemap: ${origin}/sitemap.xml`, ""].join("\n")
+      );
       return { define: { "import.meta.env.SITE_URL": JSON.stringify(origin) } };
     },
-    name: "site:hosted-setup",
+    name: "site:hosted-files",
   };
 }
 
@@ -101,15 +111,33 @@ function githubStars(): Plugin {
   };
 }
 
-export default defineConfig({
-  build: { rolldownOptions: { output: { keepNames: true } }, sourcemap: true },
-  plugins: [
-    hostedSetup(),
-    githubStars(),
-    tailwindcss(),
-    tanstackStart({ prerender: { enabled: true } }),
-    react(),
-    retouche(),
-  ],
-  server: { port: DEV_PORT },
+export default defineConfig(({ command }) => {
+  const origin =
+    command === "serve" ? `http://localhost:${DEV_PORT}` : siteOrigin();
+  return {
+    build: {
+      rolldownOptions: { output: { keepNames: true } },
+      sourcemap: true,
+    },
+    plugins: [
+      hostedFiles(origin),
+      githubStars(),
+      tailwindcss(),
+      tanstackStart({
+        prerender: {
+          enabled: true,
+          onSuccess: ({ html, page }) => {
+            writeFileSync(
+              join(CLIENT_OUTPUT, page.path, "index.md"),
+              pageMarkdown(html, `${origin}${page.path}`)
+            );
+          },
+        },
+        sitemap: { enabled: true, host: origin },
+      }),
+      react(),
+      retouche(),
+    ],
+    server: { port: DEV_PORT },
+  };
 });
