@@ -14,7 +14,7 @@ Bun workspace. One package (`packages/retouche`, built with tsdown) and one site
 - **Site:** `bun run dev` runs the site with the real overlay on it; the Overlay story is a fake app with no real overrides, so the overlay finds its overrides in the Properties titles, which switch them on as you scroll; verify UI changes there in a real headless browser
 - **Setup prompt:** `bun run --silent prompt`
 
-Run check, typecheck, test and build before calling a change done.
+Run check, typecheck, test and build before calling a change done. CI (`.github/workflows/ci.yml`) runs the same on every push to main and every pull request.
 
 ## Project Structure
 
