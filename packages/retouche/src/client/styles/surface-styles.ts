@@ -17,7 +17,7 @@ export const SURFACE_STYLES = `
 .dt-stage { --r: 32px; position: fixed; inset: 0; z-index: ${Z_INDEX.surface}; pointer-events: none; container-type: size; }
 .dt-stage [data-side="right"] { --seam-dir: -1; }
 .dt-stage [data-side="left"] { --seam-dir: 1; }
-.dt-frame { position: absolute; inset: 0; isolation: isolate; overflow: hidden; color: var(--rt-canvas); }
+.dt-frame { position: absolute; inset: 0; isolation: isolate; overflow: hidden; color: var(--rt-canvas); transition: color 200ms var(--rt-ease); }
 .dt-frame-under {
   position: absolute; top: 0; bottom: 0; width: ${pinnedWidth("100%")}; background: currentColor; visibility: hidden;
   transition: translate 220ms var(--rt-ease-morph), visibility 0s linear 220ms;
@@ -27,7 +27,7 @@ export const SURFACE_STYLES = `
 .dt-frame-page, .dt-surface::after {
   position: absolute; top: 0; bottom: 0; border-radius: var(--r); opacity: 0; visibility: hidden; pointer-events: none;
   box-shadow: inset calc(var(--seam-dir) * var(--hairline)) 0 0 var(--rt-glass-rim), 0 0 0 var(--hairline) var(--rt-glass-stroke), var(--rt-shadow);
-  transition: opacity 120ms var(--rt-ease-exit), visibility 0s linear 120ms;
+  transition: opacity 120ms var(--rt-ease-exit), visibility 0s linear 120ms, box-shadow 200ms var(--rt-ease);
 }
 .dt-frame-page { z-index: 1; }
 .dt-surface::after { content: ""; z-index: -1; width: 100vw; }
@@ -166,7 +166,7 @@ ${HOVER_CAPABLE} {
   }
   .dt-frame[data-pinned="true"] .dt-frame-page,
   .dt-surface[data-state="panel"][data-pinned="true"]:not([data-dragging="true"])::after {
-    opacity: 1; visibility: visible; transition: opacity 280ms var(--rt-ease), visibility 0s;
+    opacity: 1; visibility: visible; transition: opacity 280ms var(--rt-ease), visibility 0s, box-shadow 200ms var(--rt-ease);
   }
   .dt-surface[data-state="panel"][data-pinned="true"] { --rt-gap: 0px; width: ${pinnedWidth("100%")}; height: 100%; }
   .dt-surface[data-state="panel"][data-pinned="true"]:not([data-dragging="true"]) {
