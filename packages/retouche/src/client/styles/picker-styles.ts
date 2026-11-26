@@ -47,6 +47,7 @@ export const PICKER_STYLES = `
 .dt-notes-page, .dt-card-page { position: absolute; top: 0; left: 0; width: 0; height: 0; contain: layout; }
 .dt-notes-page { z-index: ${Z_INDEX.notes}; }
 .dt-card-page { z-index: ${Z_INDEX.card}; }
+.dt-card-page[data-anchor="screen"] { position: fixed; }
 .dt-marker { position: absolute; top: 0; left: 0; z-index: 1; transition: translate 160ms var(--rt-ease), opacity 160ms var(--rt-ease), scale 160ms var(--rt-ease); animation: dt-marker-in 200ms var(--rt-ease); }
 .dt-marker:has(:focus-visible, [aria-expanded="true"]) { z-index: 2; }
 @keyframes dt-marker-in { from { opacity: 0; scale: .5; } }

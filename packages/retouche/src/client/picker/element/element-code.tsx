@@ -6,7 +6,7 @@ import {
   type CodeMarks,
   ELEMENT_EXCERPT,
   readSource,
-  WIDE_EXCERPT,
+  WHOLE_FILE,
 } from "../../code/source-reading";
 import { SourceView } from "../../code/source-view";
 import { glideHeight } from "../../motion/height-glide";
@@ -198,7 +198,7 @@ export function ElementCode({
           reading={readSource(
             site.file,
             UNMARKED,
-            isExpanded ? WIDE_EXCERPT : ELEMENT_EXCERPT
+            isExpanded ? WHOLE_FILE : ELEMENT_EXCERPT
           )}
         />
       )}

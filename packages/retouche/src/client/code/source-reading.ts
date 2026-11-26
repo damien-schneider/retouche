@@ -29,7 +29,10 @@ export interface ExcerptSize {
 
 const EXCERPT: ExcerptSize = { context: 2, lines: 16 };
 export const ELEMENT_EXCERPT: ExcerptSize = { context: 2, lines: 32 };
-export const WIDE_EXCERPT: ExcerptSize = { context: 20, lines: 64 };
+export const WHOLE_FILE: ExcerptSize = {
+  context: Number.POSITIVE_INFINITY,
+  lines: Number.POSITIVE_INFINITY,
+};
 
 const REGEX_SPECIALS = /[.*+?^${}()|[\]\\]/g;
 

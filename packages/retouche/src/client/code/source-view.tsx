@@ -37,12 +37,34 @@ function useCenteredLine(viewRef: RefObject<HTMLPreElement | null>) {
       return;
     }
     const offset = line.top - view.getBoundingClientRect().top;
-    const covered =
-      Number.parseFloat(getComputedStyle(view).scrollPaddingTop) || 0;
-    view.scrollTop += offset - (view.clientHeight + covered - line.height) / 2;
+    view.scrollTop += offset - (view.clientHeight - line.height) / 2;
   }, [viewRef]);
 
   return targetRef;
+}
+
+function useScrollInBounds(viewRef: RefObject<HTMLPreElement | null>) {
+  useLayoutEffect(() => {
+    const view = viewRef.current;
+    if (!view || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    // WebKit keeps a scroll the user made past the new end when a scroller grows.
+    const observer = new ResizeObserver(() => {
+      const top = view.scrollHeight - view.clientHeight;
+      const left = view.scrollWidth - view.clientWidth;
+      if (view.scrollTop > top) {
+        view.scrollTop = top;
+      }
+      if (view.scrollLeft > left) {
+        view.scrollLeft = left;
+      }
+    });
+    observer.observe(view);
+    return () => {
+      observer.disconnect();
+    };
+  }, [viewRef]);
 }
 
 function lineLabel(number: number, inserted: LineRange | null): string {
@@ -65,6 +87,7 @@ function SourceLines({
   viewRef: RefObject<HTMLPreElement | null>;
 }) {
   const targetRef = useCenteredLine(viewRef);
+  useScrollInBounds(viewRef);
   const { focus, inserted, lines, marked, pattern } = reading;
   const isFileWide = marks.scope === "file";
   return (

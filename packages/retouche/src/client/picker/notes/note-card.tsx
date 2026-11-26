@@ -46,8 +46,7 @@ function useCardPlacement({
     }
     const departs = presence(form);
     const place = () => {
-      const origin = layer.getBoundingClientRect();
-      const { left, maxHeight, maxWidth, side, top } = cardPlacement(
+      const { anchor, left, maxHeight, maxWidth, side, top } = cardPlacement(
         element.getBoundingClientRect(),
         visibleViewport(),
         {
@@ -55,6 +54,8 @@ function useCardPlacement({
           shown: { height: form.offsetHeight, width: form.offsetWidth },
         }
       );
+      layer.dataset.anchor = anchor;
+      const origin = layer.getBoundingClientRect();
       form.style.maxHeight = `${maxHeight}px`;
       form.style.maxWidth = `${maxWidth}px`;
       form.style.translate = `${left - origin.left}px ${top - origin.top}px`;

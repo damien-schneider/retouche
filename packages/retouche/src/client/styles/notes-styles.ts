@@ -38,21 +38,15 @@ const CARD_STYLES = `
 .dt-element-code {
   --head-h: 36px;
   display: flex; flex-direction: column; min-width: 0; min-height: 0; margin: calc(-1 * var(--tuck)) 8px 0; padding-top: var(--tuck); overflow: clip;
-  border-radius: var(--rt-radius-row); background: var(--rt-bg);
+  border-radius: var(--rt-radius-row); background: linear-gradient(var(--rt-card), var(--rt-card)) var(--rt-bg);
   box-shadow: inset 0 0 0 var(--hairline) var(--rt-glass-rim), 0 0 0 var(--hairline) var(--rt-glass-stroke), var(--rt-shadow);
   animation: dt-sheet-in 200ms var(--rt-ease) 50ms backwards; transition: height var(--resize);
 }
 .dt-note[data-side="above"] .dt-element-code { margin: 0 8px calc(-1 * var(--tuck)); padding: 0 0 var(--tuck); }
 @keyframes dt-sheet-in { from { opacity: 0; translate: 0 var(--sheet-from); } }
 .dt-element-code-head {
-  position: relative; z-index: 2; display: flex; flex: none; align-items: center; gap: 8px; min-width: 0; height: var(--head-h); padding: 0 4px 0 12px;
-  background: linear-gradient(var(--rt-card), var(--rt-card)) var(--rt-bg); font-size: 12.5px; line-height: 18px;
-}
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .dt-element-code-head { background-color: color-mix(in srgb, var(--rt-bg) 64%, transparent); -webkit-backdrop-filter: blur(6px) saturate(1.8); backdrop-filter: blur(6px) saturate(1.8); }
-}
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .dt-element-code-head { background-color: var(--rt-bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  display: flex; flex: none; align-items: center; gap: 8px; min-width: 0; height: var(--head-h); padding: 0 4px 0 12px;
+  font-size: 12.5px; line-height: 18px;
 }
 .dt-element-code-head strong { flex: none; font-weight: 600; letter-spacing: -.005em; }
 .dt-element-code-head .icon-btn { margin-left: auto; }
@@ -64,10 +58,23 @@ const CARD_STYLES = `
 .dt-site-step svg { width: 14px; height: 14px; }
 .dt-site-step + .icon-btn { margin-left: 0; }
 .dt-site-step:active { background: var(--rt-bg-pressed); }
-.dt-element-code .dt-code-frame { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; margin-top: calc(-1 * var(--head-h)); }
-.dt-element-code .dt-code { --gutter: 44px; flex: 1 1 auto; max-height: none; border-radius: 0; box-shadow: none; scroll-padding-top: var(--head-h); }
-.dt-element-code .dt-code-lines { padding-top: calc(var(--head-h) + 8px); }
-.dt-element-code .dt-expand[data-edge="above"] { top: calc(var(--head-h) - 8px); z-index: 3; }
+.dt-element-code .dt-code-frame { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+.dt-element-code .dt-code {
+  --gutter: 44px; --fade: 24px; flex: 1 1 auto; max-height: none; border-radius: 0; box-shadow: none; overscroll-behavior: contain;
+  mask:
+    linear-gradient(#0000, #000 var(--fade)) 0 100% / 100% calc(100% + var(--fade)) no-repeat,
+    linear-gradient(#000 calc(100% - var(--fade)), #0000) 0 0 / 100% calc(100% + var(--fade)) no-repeat;
+  mask-composite: intersect;
+}
+@supports (animation-timeline: scroll()) {
+  .dt-element-code .dt-code {
+    animation: rt-fade 180ms var(--rt-ease), dt-code-fade-start linear both, dt-code-fade-end linear both;
+    animation-timeline: auto, --dt-code, --dt-code;
+    animation-range: normal, 0 var(--fade), calc(100% - var(--fade)) 100%;
+  }
+}
+@keyframes dt-code-fade-start { to { mask-position: 0 0, 0 0; } }
+@keyframes dt-code-fade-end { from { mask-size: 100% calc(100% + var(--fade)), 100% 100%; } }
 .dt-element-code .dt-expand[data-edge="below"] { bottom: 10px; }
 .dt-note:has(.dt-element-code[data-expanded="true"]) { --resize: 200ms var(--rt-ease); width: 640px; }
 .dt-note .icon-btn { width: 28px; height: 28px; }

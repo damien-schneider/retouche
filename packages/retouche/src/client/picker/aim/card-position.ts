@@ -3,7 +3,10 @@ import type { VisibleViewport } from "./visible-viewport";
 
 export type CardSide = "above" | "below" | "left" | "right";
 
+type CardAnchor = "page" | "screen";
+
 interface CardSpot {
+  anchor: CardAnchor;
   left: number;
   side: CardSide;
   top: number;
@@ -42,25 +45,38 @@ function spotAround(rect: Box, view: VisibleViewport, card: Size): CardSpot {
 
   const below = rect.bottom + NOTE_GAP;
   if (below >= viewTop && below + card.height <= viewBottom) {
-    return { left: fitLeft(rect.left), side: "below", top: below };
+    return {
+      anchor: "page",
+      left: fitLeft(rect.left),
+      side: "below",
+      top: below,
+    };
   }
   const above = rect.top - NOTE_GAP - card.height;
   if (above >= viewTop && rect.top <= viewBottom) {
-    return { left: fitLeft(rect.left), side: "above", top: above };
+    return {
+      anchor: "page",
+      left: fitLeft(rect.left),
+      side: "above",
+      top: above,
+    };
   }
   const besideTop = fitTop(rect.top);
+  const besideAnchor: CardAnchor = besideTop === rect.top ? "page" : "screen";
   const right = rect.right + NOTE_GAP;
   if (right + card.width <= viewRight) {
-    return { left: right, side: "right", top: besideTop };
+    return { anchor: besideAnchor, left: right, side: "right", top: besideTop };
   }
   const left = rect.left - NOTE_GAP - card.width;
   if (left >= viewLeft) {
-    return { left, side: "left", top: besideTop };
+    return { anchor: besideAnchor, left, side: "left", top: besideTop };
   }
+  const overTop = fitTop(Math.min(rect.bottom, viewBottom) - card.height);
   return {
+    anchor: overTop === rect.bottom - card.height ? "page" : "screen",
     left: fitLeft(rect.left),
     side: "above",
-    top: fitTop(Math.min(rect.bottom, viewBottom) - card.height),
+    top: overTop,
   };
 }
 
@@ -90,6 +106,7 @@ export function cardPlacement(
       : 0;
   const shift = spot.side === "left" ? settled.width - shown.width : 0;
   return {
+    anchor: spot.anchor,
     left: spot.left + shift,
     maxHeight,
     maxWidth: view.width - EDGE_GAP * 2,

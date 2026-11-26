@@ -105,3 +105,28 @@ describe("a note card gliding to a new size", () => {
     expect(gliding.left + shown.width).toBe(landing.left + settled.width);
   });
 });
+
+describe("a note card while the page scrolls", () => {
+  const view = { height: 768, left: 0, top: 0, width: 1009 };
+
+  it("scrolls with the page while it sits beside the picked element", () => {
+    const picked = { bottom: 140, left: 10, right: 200, top: 100 };
+
+    expect(cardPlacement(picked, view, STILL).anchor).toBe("page");
+  });
+
+  it("holds still on the screen once the picked element has scrolled above it", () => {
+    const picked = { bottom: -360, left: 10, right: 200, top: -400 };
+
+    expect(cardPlacement(picked, view, STILL).anchor).toBe("screen");
+  });
+
+  it("holds still on the screen beside a picked element taller than the screen", () => {
+    const picked = { bottom: 1600, left: 10, right: 300, top: -200 };
+
+    const { anchor, side } = cardPlacement(picked, view, STILL);
+
+    expect(side).toBe("right");
+    expect(anchor).toBe("screen");
+  });
+});

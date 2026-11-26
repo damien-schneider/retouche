@@ -144,8 +144,8 @@ describe("stepping between where a component is used and its own code", () => {
 });
 
 describe("expanding the code beside a note", () => {
-  it("expands the code to read more of the file, then collapses it back", async () => {
-    serveDevRoute();
+  it("expands the code to the whole file, then collapses it back", async () => {
+    serveDevRoute({ length: 120 });
     const { layer, panel } = await startPicking(<Landing />);
     clickOn(layer, screen.getByText("Pricing"));
     const code = cardCode(panel);
