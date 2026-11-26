@@ -101,16 +101,24 @@ describe("request guard", () => {
 });
 
 describe("route endpoints", () => {
-  it("reports the editor that open-in-editor links target", async () => {
+  it("reports the editor and the coding agents installed", async () => {
+    const missing = join(sandbox, "missing-agent");
     const handler = createRouteHandler(
       { root: sandbox },
-      { RETOUCHE_EDITOR: "cursor" }
+      {
+        RETOUCHE_CLAUDE_PATH: missing,
+        RETOUCHE_CODEX_PATH: missing,
+        RETOUCHE_MASTRACODE_PATH: missing,
+        RETOUCHE_EDITOR: "cursor",
+      }
     );
     const response = await handler(routeRequest("/status"));
     expect(response.headers.get("cache-control")).toBe("no-store");
     await expect(response.json()).resolves.toStrictEqual({
+      agents: [],
       editor: "cursor",
       marker: "retouche",
+      transcriber: null,
     });
   });
 
@@ -141,6 +149,46 @@ describe("route endpoints", () => {
   });
 });
 
+describe("voice options", () => {
+  it("fails at startup on voice agents that share a name or take a built-in's", () => {
+    const endpoint = {
+      baseUrl: "http://127.0.0.1:11434/v1",
+      kind: "endpoint",
+      model: "llama3.2",
+      name: "Ollama",
+    } as const;
+    expect(() =>
+      createRouteHandler(
+        { root: sandbox, voice: { agents: [endpoint, endpoint] } },
+        {}
+      )
+    ).toThrow(Error);
+    expect(() =>
+      createRouteHandler(
+        {
+          root: sandbox,
+          voice: { agents: [{ ...endpoint, name: "Claude" }] },
+        },
+        {}
+      )
+    ).toThrow(Error);
+  });
+
+  it("fails at startup on a transcriber without a usable address", () => {
+    expect(() =>
+      createRouteHandler(
+        {
+          root: sandbox,
+          voice: {
+            transcriber: { baseUrl: "not a url", model: "m", name: "Nova" },
+          },
+        },
+        {}
+      )
+    ).toThrow(Error);
+  });
+});
+
 describe("Next route", () => {
   const route = createRoute({ root: sandbox });
 
@@ -155,5 +203,32 @@ describe("Next route", () => {
     vi.stubEnv("NODE_ENV", "development");
     const response = await route.GET(routeRequest("/status"));
     expect(response.status).toBe(200);
+  });
+
+  it("accepts posted voice requests under next dev", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const response = await route.POST(
+      routeRequest("/voice/session", {
+        body: JSON.stringify({
+          kind: "create",
+          language: "en-US",
+          origin: ORIGIN,
+          startedAt: 1,
+        }),
+        method: "POST",
+      })
+    );
+    expect(response.status).toBe(200);
+  });
+
+  it("refuses posted bodies over the size limit under next dev", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const response = await route.POST(
+      routeRequest("/voice/session", {
+        body: " ".repeat(26 * 1024 * 1024),
+        method: "POST",
+      })
+    );
+    expect(response.status).toBe(413);
   });
 });

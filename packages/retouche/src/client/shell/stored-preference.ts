@@ -15,7 +15,7 @@ const STORAGES: Record<StorageKind, () => Storage> = {
   session: () => sessionStorage,
 };
 
-function readStored<Value>(preference: StoredPreference<Value>): Value {
+export function readStored<Value>(preference: StoredPreference<Value>): Value {
   try {
     const stored = STORAGES[preference.kind]().getItem(preference.key);
     const parsed = preference.schema.safeParse(JSON.parse(stored ?? "null"));
@@ -25,7 +25,7 @@ function readStored<Value>(preference: StoredPreference<Value>): Value {
   }
 }
 
-function writeStored<Value>(
+export function writeStored<Value>(
   preference: StoredPreference<Value>,
   value: Value
 ): void {
@@ -33,6 +33,14 @@ function writeStored<Value>(
     STORAGES[preference.kind]().setItem(preference.key, JSON.stringify(value));
   } catch {
     // Blocked storage (private mode, quota): the preference just won't persist.
+  }
+}
+
+export function removeStored<Value>(preference: StoredPreference<Value>): void {
+  try {
+    STORAGES[preference.kind]().removeItem(preference.key);
+  } catch {
+    // Blocked storage: there is nothing stored to clear.
   }
 }
 

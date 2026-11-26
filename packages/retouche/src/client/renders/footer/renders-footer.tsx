@@ -1,4 +1,4 @@
-import { useId, useSyncExternalStore } from "react";
+import { type ReactNode, useId, useSyncExternalStore } from "react";
 import { z } from "zod";
 
 import { ChevronUpIcon, RendersIcon } from "../../shell/icons";
@@ -22,18 +22,43 @@ const STORED_LIST: StoredPreference<boolean> = {
 
 interface RendersFooterProps {
   areShown: boolean;
+  end: ReactNode;
   onInspect: (element: Element) => void;
   onToggle: () => void;
 }
 
+function RenderedListToggle({
+  controls,
+  isOpen,
+  onToggle,
+}: {
+  controls: string | undefined;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const { length } = useSyncExternalStore(onRenderReports, renderedComponents);
+  return (
+    <button
+      aria-controls={controls}
+      aria-expanded={isOpen}
+      className="dt-renders-more"
+      onClick={onToggle}
+      type="button"
+    >
+      {length} {length === 1 ? "component" : "components"}
+      <ChevronUpIcon />
+    </button>
+  );
+}
+
 export function RendersFooter({
   areShown,
+  end,
   onInspect,
   onToggle,
 }: RendersFooterProps) {
   const [isListOpen, setIsListOpen] = useStoredPreference(STORED_LIST);
   const seen = useSyncExternalStore(onRenderReports, rendersSeen);
-  const { length } = useSyncExternalStore(onRenderReports, renderedComponents);
   const listId = useId();
   const isListShown = areShown && isListOpen;
   return (
@@ -55,20 +80,18 @@ export function RendersFooter({
             "Highlight renders"
           )}
         </button>
-        {areShown && (
-          <button
-            aria-controls={isListShown ? listId : undefined}
-            aria-expanded={isListOpen}
-            className="dt-renders-more"
-            onClick={() => {
-              setIsListOpen(!isListOpen);
-            }}
-            type="button"
-          >
-            {length} {length === 1 ? "component" : "components"}
-            <ChevronUpIcon />
-          </button>
-        )}
+        <div className="dt-renders-end">
+          {areShown && (
+            <RenderedListToggle
+              controls={isListShown ? listId : undefined}
+              isOpen={isListOpen}
+              onToggle={() => {
+                setIsListOpen(!isListOpen);
+              }}
+            />
+          )}
+          {end}
+        </div>
       </div>
     </footer>
   );

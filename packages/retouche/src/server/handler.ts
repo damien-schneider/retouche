@@ -14,19 +14,34 @@ import {
 import { rejectUntrustedCaller, rejectUntrustedHost } from "./request-guard";
 import { type ProjectRoots, resolveProjectRoots } from "./source/project-roots";
 import { readSourceFile } from "./source/source-file";
+import {
+  createVoiceRoutes,
+  type EndpointRoutes,
+  type VoiceEndpoint,
+  type VoiceRoutes,
+} from "./voice/voice-routes";
 
 export type RouteHandler = (request: Request) => Promise<Response>;
 
+type Endpoint = (typeof ENDPOINTS)[keyof typeof ENDPOINTS];
+
+interface RouteContext {
+  projectRoots: () => ProjectRoots;
+  settings: ResolvedServerOptions;
+  voice: VoiceRoutes;
+}
+
 const TRAILING_SLASHES = /\/+$/;
 
-function routeSubPath(pathname: string): string | null {
+function endpointOf(pathname: string): Endpoint | null {
   const baseIndex = pathname.indexOf(ROUTE_BASE);
   if (baseIndex === -1) {
     return null;
   }
-  return pathname
+  const subPath = pathname
     .slice(baseIndex + ROUTE_BASE.length)
     .replace(TRAILING_SLASHES, "");
+  return Object.values(ENDPOINTS).find((path) => path === subPath) ?? null;
 }
 
 function readInteger(value: string | null, minimum: number): number | null {
@@ -37,36 +52,56 @@ function readInteger(value: string | null, minimum: number): number | null {
   return Number.isInteger(parsed) && parsed >= minimum ? parsed : null;
 }
 
+function coreRoutes(
+  context: RouteContext
+): Record<Exclude<Endpoint, VoiceEndpoint>, EndpointRoutes> {
+  return {
+    [ENDPOINTS.source]: {
+      GET: async (request) => {
+        const { searchParams } = new URL(request.url);
+        return outcomeResponse(
+          await readSourceFile(
+            {
+              column: readInteger(searchParams.get("column"), 0),
+              fileName: searchParams.get("file") ?? "",
+              line: readInteger(searchParams.get("line"), 1),
+            },
+            context.projectRoots()
+          )
+        );
+      },
+    },
+    [ENDPOINTS.status]: {
+      GET: async () =>
+        jsonResponse({
+          agents: await context.voice.agents(),
+          editor: context.settings.editor,
+          marker: STATUS_MARKER,
+          transcriber: context.voice.transcriber(),
+        } satisfies RouteStatus),
+    },
+  };
+}
+
 async function routeRequest(
   request: Request,
-  settings: ResolvedServerOptions,
-  projectRoots: () => ProjectRoots
+  routes: Record<Endpoint, EndpointRoutes>
 ): Promise<Response> {
-  const url = new URL(request.url);
-  const subPath = routeSubPath(url.pathname);
-  const isKnown = subPath === ENDPOINTS.status || subPath === ENDPOINTS.source;
-  if (isKnown && request.method !== "GET") {
-    return errorResponse(`${subPath} only answers GET requests.`, 405);
+  const { pathname } = new URL(request.url);
+  const endpoint = endpointOf(pathname);
+  if (endpoint === null) {
+    return errorResponse(`No Retouche endpoint at ${pathname}.`, 404);
   }
-  if (subPath === ENDPOINTS.status) {
-    return jsonResponse({
-      editor: settings.editor,
-      marker: STATUS_MARKER,
-    } satisfies RouteStatus);
-  }
-  if (subPath === ENDPOINTS.source) {
-    return outcomeResponse(
-      await readSourceFile(
-        {
-          column: readInteger(url.searchParams.get("column"), 0),
-          fileName: url.searchParams.get("file") ?? "",
-          line: readInteger(url.searchParams.get("line"), 1),
-        },
-        projectRoots()
-      )
-    );
-  }
-  return errorResponse(`No Retouche endpoint at ${url.pathname}.`, 404);
+  const methods = routes[endpoint];
+  const route = Object.entries(methods).find(
+    ([method]) => method === request.method
+  )?.[1];
+  return route
+    ? await route(request)
+    : errorResponse(
+        `${endpoint} only answers ${Object.keys(methods).join(" and ")} requests.`,
+        405
+      );
 }
 
 export function createRouteHandler(
@@ -79,6 +114,15 @@ export function createRouteHandler(
     roots ??= resolveProjectRoots(settings.root);
     return roots;
   };
+  const voice = createVoiceRoutes({
+    env,
+    root: () => projectRoots().root,
+    voice: settings.voice,
+  });
+  const routes: Record<Endpoint, EndpointRoutes> = {
+    ...coreRoutes({ projectRoots, settings, voice }),
+    ...voice.routes,
+  };
 
   return async (request) => {
     const rejection =
@@ -88,7 +132,7 @@ export function createRouteHandler(
       return rejection;
     }
     try {
-      return await routeRequest(request, settings, projectRoots);
+      return await routeRequest(request, routes);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       return errorResponse(`Retouche route failed: ${reason}`, 500);

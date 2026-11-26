@@ -17,16 +17,24 @@ interface Exchange {
   response: ServerResponse;
 }
 
+async function answer(
+  handler: RouteHandler,
+  exchange: Exchange
+): Promise<Response> {
+  const { request, response } = exchange;
+  if (!isLoopbackAddress(request.socket.remoteAddress)) {
+    return errorResponse("Retouche only answers this machine.", 403);
+  }
+  const webRequest = await toWebRequest(request, response);
+  return webRequest instanceof Request ? await handler(webRequest) : webRequest;
+}
+
 async function serveRequest(
   handler: RouteHandler,
   exchange: Exchange
 ): Promise<void> {
-  const { request, response } = exchange;
   try {
-    const webResponse = isLoopbackAddress(request.socket.remoteAddress)
-      ? await handler(toWebRequest(request, request.method ?? "GET"))
-      : errorResponse("Retouche only answers this machine.", 403);
-    await sendWebResponse(webResponse, response);
+    await sendWebResponse(await answer(handler, exchange), exchange.response);
   } catch (error) {
     exchange.next(error);
   }

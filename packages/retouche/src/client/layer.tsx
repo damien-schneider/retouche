@@ -32,6 +32,12 @@ import { type ThemeChoice, useTheme } from "./theme/use-theme";
 import { useLayerConfig } from "./use-layer-config";
 import { layerKeys } from "./use-layer-keys";
 import { type LayerState, useLayerState } from "./use-layer-state";
+import { VoicePageLayer } from "./voice/page/voice-page-layer";
+import { useVoice } from "./voice/use-voice";
+import type { Voice } from "./voice/voice";
+import { VOICE_STYLES } from "./voice/voice-styles";
+import { VoiceToggle } from "./voice/voice-toggle";
+import { VoiceView } from "./voice/voice-view";
 
 const STYLES = [
   TOKEN_STYLES,
@@ -42,6 +48,7 @@ const STYLES = [
   DOTS_STYLES,
   PICKER_STYLES,
   NOTES_STYLES,
+  VOICE_STYLES,
   REDUCED_MOTION_STYLES,
 ].join("\n");
 
@@ -57,23 +64,46 @@ function stepperOf(state: LayerState): Stepper | null {
   };
 }
 
-function LayerTools({ state }: { state: LayerState }) {
-  if (!state.layerConfig.config) {
-    return null;
-  }
-  const { picker } = state;
+interface LayerToolsProps {
+  place: "bar" | "panel";
+  state: LayerState;
+  voice: Voice;
+}
+
+function LayerTools({ place, state, voice }: LayerToolsProps) {
+  const { layerConfig, navigation, picker } = state;
   return (
     <>
-      <DotsToggle areShown={state.areDotsShown} onToggle={state.toggleDots} />
-      <PickToggle isPicking={picker.isPicking} onToggle={picker.toggle} />
+      {layerConfig.config && (
+        <>
+          {place === "bar" && (
+            <DotsToggle
+              areShown={state.areDotsShown}
+              onToggle={state.toggleDots}
+            />
+          )}
+          <PickToggle isPicking={picker.isPicking} onToggle={picker.toggle} />
+        </>
+      )}
+      <VoiceToggle onOpen={navigation.openVoice} place={place} voice={voice} />
     </>
   );
 }
 
-function LayerToolbar({ grip, state }: { grip: GripProps; state: LayerState }) {
+function LayerToolbar({
+  grip,
+  state,
+  voice,
+}: {
+  grip: GripProps;
+  state: LayerState;
+  voice: Voice;
+}) {
   const { navigation, selection } = state;
   const resume =
-    selection?.kind === "live" || Boolean(navigation.element?.isConnected);
+    selection?.kind === "live" ||
+    Boolean(navigation.element?.isConnected) ||
+    navigation.isVoice;
   return (
     <Toolbar
       grip={grip}
@@ -84,7 +114,7 @@ function LayerToolbar({ grip, state }: { grip: GripProps; state: LayerState }) {
       }}
       sites={state.sites}
     >
-      <LayerTools state={state} />
+      <LayerTools place="bar" state={state} voice={voice} />
     </Toolbar>
   );
 }
@@ -92,34 +122,43 @@ function LayerToolbar({ grip, state }: { grip: GripProps; state: LayerState }) {
 function LayerPanelHead({
   dock,
   state,
-  theme,
+  voice,
 }: {
   dock: Dock;
   state: LayerState;
-  theme: ThemeChoice;
+  voice: Voice;
 }) {
   const { layerConfig, navigation, selection } = state;
   return (
     <PanelHead
       crumb={{
         hasConfigError: layerConfig.config === null,
-        onBack: selection || navigation.element ? navigation.back : null,
+        onBack:
+          selection || navigation.element || navigation.isVoice
+            ? navigation.back
+            : null,
+        place: navigation.isVoice ? "voice" : "overrides",
         stepper: stepperOf(state),
       }}
       onClose={navigation.close}
       start={
         <>
           <PinToggle isPinned={dock.isPinned} onToggle={dock.togglePin} />
-          <ThemeToggle {...theme} />
+          {layerConfig.config && (
+            <DotsToggle
+              areShown={state.areDotsShown}
+              onToggle={state.toggleDots}
+            />
+          )}
         </>
       }
-      tools={<LayerTools state={state} />}
+      tools={<LayerTools place="panel" state={state} voice={voice} />}
     />
   );
 }
 
 function LayerLenses({ state }: { state: LayerState }) {
-  if (!state.layerConfig.config) {
+  if (!state.layerConfig.config || state.navigation.isVoice) {
     return null;
   }
   const { navigation } = state;
@@ -142,33 +181,85 @@ function LayerLenses({ state }: { state: LayerState }) {
   );
 }
 
-function LayerRenders({ state }: { state: LayerState }) {
+function LayerRenders({
+  state,
+  theme,
+}: {
+  state: LayerState;
+  theme: ThemeChoice;
+}) {
   return (
     <RendersFooter
       areShown={state.areRendersShown}
+      end={<ThemeToggle {...theme} />}
       onInspect={state.navigation.inspectElement}
       onToggle={state.toggleRenders}
     />
   );
 }
 
-function LayerPanel({
-  handles,
-  head,
-  route,
-  state,
-}: {
+interface LayerPanelProps {
+  foot: ReactNode;
   handles: PanelHandles;
   head: ReactNode;
   route: DevRouteState;
   state: LayerState;
-}) {
-  const { layerConfig, navigation, selectedSite, selection } = state;
+  voice: Voice;
+}
 
+function LayerBody({
+  route,
+  state,
+  voice,
+}: Omit<LayerPanelProps, "foot" | "handles" | "head">) {
+  const { layerConfig, navigation, selectedSite, selection } = state;
+  if (navigation.isVoice) {
+    return (
+      <VoiceView
+        editor={route.kind === "ready" ? route.status.editor : null}
+        voice={voice}
+      />
+    );
+  }
+  return (
+    <PanelBody
+      corners={state.shownCorners}
+      element={navigation.element}
+      hoveredKey={
+        navigation.isOpen && state.hovered ? callSiteKey(state.hovered) : null
+      }
+      isHolding={state.isHolding}
+      isOpen={navigation.isOpen}
+      layerConfig={layerConfig}
+      onHoldChange={state.setIsHolding}
+      onHover={state.setHovered}
+      onInspect={navigation.inspectElement}
+      onSelect={state.select}
+      propertyFilter={navigation.propertyFilter}
+      route={route}
+      selectedSite={selectedSite}
+      selection={selection}
+      siteNumbers={state.siteNumbers}
+      sites={state.shownSites}
+    />
+  );
+}
+
+function LayerPanel({
+  foot,
+  handles,
+  head,
+  route,
+  state,
+  voice,
+}: LayerPanelProps) {
+  const { navigation, selectedSite, selection } = state;
+  const hasPlace =
+    selection !== null || navigation.element !== null || navigation.isVoice;
   return (
     <Panel
       chrome={<LayerLenses state={state} />}
-      foot={<LayerRenders state={state} />}
+      foot={foot}
       handles={handles}
       head={head}
       move={navigation.lastMove}
@@ -176,31 +267,45 @@ function LayerPanel({
         instanceId: selectedSite?.lead.id ?? navigation.picked?.id ?? null,
         isOpen: navigation.isOpen,
         isRestored: navigation.isRestored,
-        placeId: selection || navigation.element ? navigation.placeId : null,
+        placeId: hasPlace ? navigation.placeId : null,
         propertyFilter: navigation.propertyFilter,
       }}
     >
-      <PanelBody
-        corners={state.shownCorners}
-        element={navigation.element}
-        hoveredKey={
-          navigation.isOpen && state.hovered ? callSiteKey(state.hovered) : null
-        }
-        isHolding={state.isHolding}
-        isOpen={navigation.isOpen}
-        layerConfig={layerConfig}
-        onHoldChange={state.setIsHolding}
-        onHover={state.setHovered}
-        onInspect={navigation.inspectElement}
-        onSelect={state.select}
-        propertyFilter={navigation.propertyFilter}
-        route={route}
-        selectedSite={selectedSite}
-        selection={selection}
-        siteNumbers={state.siteNumbers}
-        sites={state.shownSites}
-      />
+      <LayerBody route={route} state={state} voice={voice} />
     </Panel>
+  );
+}
+
+function LayerSurface({
+  dock,
+  route,
+  state,
+  theme,
+  voice,
+}: Omit<LayerPanelProps, "foot" | "handles" | "head"> & {
+  dock: Dock;
+  theme: ThemeChoice;
+}) {
+  const { navigation } = state;
+  const { isOpen } = navigation;
+  const { gripProps, surfaceRef } = useSnapDrag({ dock, isOpen });
+  const resize = usePanelResize({ dock, surfaceRef });
+  const handles = {
+    grip: gripProps,
+    sheet: useSheetDrag({ dock, onClose: navigation.close, surfaceRef }),
+  };
+  return (
+    <Surface dock={dock} isOpen={isOpen} ref={surfaceRef} resize={resize}>
+      <LayerToolbar grip={gripProps} state={state} voice={voice} />
+      <LayerPanel
+        foot={<LayerRenders state={state} theme={theme} />}
+        handles={handles}
+        head={<LayerPanelHead dock={dock} state={state} voice={voice} />}
+        route={route}
+        state={state}
+        voice={voice}
+      />
+    </Surface>
   );
 }
 
@@ -213,17 +318,11 @@ export default function Layer(props: LayerProps) {
   const layerConfig = useLayerConfig(props);
   const state = useLayerState(layerConfig, props.rememberDotVisibility);
   const route = useDevRoute();
+  const voice = useVoice({ components: state.picker.components, route });
   const { navigation, selection } = state;
   const { isOpen } = navigation;
   const dock = useDock(isOpen);
-  const { gripProps, surfaceRef } = useSnapDrag({ dock, isOpen });
-  const resize = usePanelResize({ dock, surfaceRef });
-  const handles = {
-    grip: gripProps,
-    sheet: useSheetDrag({ dock, onClose: navigation.close, surfaceRef }),
-  };
   const theme = useTheme();
-
   return (
     <ShadowPortal styles={STYLES}>
       <div className="dt" data-theme={theme.theme} ref={layerKeys(state)}>
@@ -243,15 +342,14 @@ export default function Layer(props: LayerProps) {
           shown={isOpen ? state.shown : state.instances}
           siteNumbers={state.siteNumbers}
         />
-        <Surface dock={dock} isOpen={isOpen} ref={surfaceRef} resize={resize}>
-          <LayerToolbar grip={gripProps} state={state} />
-          <LayerPanel
-            handles={handles}
-            head={<LayerPanelHead dock={dock} state={state} theme={theme} />}
-            route={route}
-            state={state}
-          />
-        </Surface>
+        <VoicePageLayer voice={voice} />
+        <LayerSurface
+          dock={dock}
+          route={route}
+          state={state}
+          theme={theme}
+          voice={voice}
+        />
         <PickerOverlay dock={dock} isPanelOpen={isOpen} picker={state.picker} />
       </div>
     </ShadowPortal>

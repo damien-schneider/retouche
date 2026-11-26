@@ -14,11 +14,19 @@ export interface Stepper {
   total: number;
 }
 
+export type CrumbPlace = "overrides" | "voice";
+
 export interface Crumb {
   hasConfigError: boolean;
   onBack: (() => void) | null;
+  place: CrumbPlace;
   stepper: Stepper | null;
 }
+
+const TITLES: Record<CrumbPlace, string> = {
+  overrides: "Overrides",
+  voice: "Voice session",
+};
 
 function InspectorSteps({ index, onStep, total }: Stepper) {
   return (
@@ -54,7 +62,8 @@ function InspectorSteps({ index, onStep, total }: Stepper) {
   );
 }
 
-function PanelCrumb({ hasConfigError, onBack, stepper }: Crumb) {
+function PanelCrumb({ hasConfigError, onBack, place, stepper }: Crumb) {
+  const isConfigError = hasConfigError && place === "overrides";
   return (
     <div className="dt-crumb" data-nested={onBack !== null}>
       <div className="dt-crumb-trail">
@@ -72,10 +81,10 @@ function PanelCrumb({ hasConfigError, onBack, stepper }: Crumb) {
         )}
         <h2
           className="dt-title"
-          data-tone={hasConfigError ? "error" : undefined}
+          data-tone={isConfigError ? "error" : undefined}
           tabIndex={-1}
         >
-          {hasConfigError ? "Config error" : "Overrides"}
+          {isConfigError ? "Config error" : TITLES[place]}
         </h2>
       </div>
       {stepper && <InspectorSteps {...stepper} />}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { OverrideInstance } from "../fiber/scan-overrides";
+import { COPY_FEEDBACK_MS } from "../shell/prompt-button";
 import type { LayerNavigation } from "../use-layer-navigation";
 import {
   contextOf,
@@ -33,7 +34,6 @@ export interface Picker {
   toggle: () => void;
 }
 
-const FEEDBACK_MS = 1600;
 let feedbackCount = 0;
 
 function takeFeedbackId(): number {
@@ -49,7 +49,7 @@ function useCopy() {
     }
     const timer = window.setTimeout(() => {
       setFeedback(null);
-    }, FEEDBACK_MS);
+    }, COPY_FEEDBACK_MS);
     return () => {
       window.clearTimeout(timer);
     };

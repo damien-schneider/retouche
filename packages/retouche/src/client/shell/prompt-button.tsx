@@ -2,7 +2,7 @@ import { type ReactNode, useState } from "react";
 
 import { AlertIcon, CheckIcon } from "./icons";
 
-const COPIED_FEEDBACK_MS = 1600;
+export const COPY_FEEDBACK_MS = 1600;
 
 type Outcome = "copied" | "failed";
 
@@ -32,7 +32,7 @@ export function PromptButton({
     }
     setTimeout(() => {
       setOutcome(null);
-    }, COPIED_FEEDBACK_MS);
+    }, COPY_FEEDBACK_MS);
   };
 
   return (

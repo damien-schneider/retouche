@@ -20,9 +20,11 @@ export interface LayerNavigation {
   follow: (picked: Picked) => void;
   inspectElement: (element: Element) => void;
   isOpen: boolean;
+  isVoice: boolean;
   isRestored: boolean;
   lastMove: PanelMove | null;
   open: (options: { resume: boolean }) => void;
+  openVoice: () => void;
   picked: Picked | null;
   placeId: string | null;
   propertyFilter: Lens | null;
@@ -32,10 +34,11 @@ export interface LayerNavigation {
 
 interface Place {
   element: Element | null;
+  isVoice: boolean;
   picked: Picked | null;
 }
 
-const OVERVIEW: Place = { element: null, picked: null };
+const OVERVIEW: Place = { element: null, isVoice: false, picked: null };
 const STORED_PANEL: StoredPreference<{ isOpen: boolean }> = {
   fallback: { isOpen: false },
   key: "retouche-panel",
@@ -63,6 +66,7 @@ type PlaceNavigation = Pick<
   | "element"
   | "filterProperty"
   | "follow"
+  | "isVoice"
   | "lastMove"
   | "picked"
   | "placeId"
@@ -77,12 +81,18 @@ interface PlaceState {
   place: Place;
 }
 
+function placeIdOf(place: Place, inspection: number): string | null {
+  if (place.element !== null || place.picked !== null) {
+    return `inspect-${inspection}`;
+  }
+  return place.isVoice ? "voice" : null;
+}
+
 function usePlace(): PlaceState {
   const [place, setPlace] = useState(OVERVIEW);
   const [inspection, setInspection] = useState(0);
   const [lastMove, setLastMove] = useState<PanelMove | null>(null);
   const [propertyFilter, setPropertyFilter] = useState<Lens | null>(null);
-  const isInspecting = place.element !== null || place.picked !== null;
   const move = (next: Place, nextMove: PanelMove | null) => {
     setPlace(next);
     setLastMove(nextMove);
@@ -103,15 +113,23 @@ function usePlace(): PlaceState {
         setLastMove("lens");
       },
       follow: (picked) => {
-        move({ element: null, picked }, lastMove);
+        move({ element: null, isVoice: false, picked }, lastMove);
       },
+      isVoice: place.isVoice,
       lastMove,
       picked: place.picked,
-      placeId: isInspecting ? `inspect-${inspection}` : null,
+      placeId: placeIdOf(place, inspection),
       propertyFilter,
       step: (instance, instances) => {
         revealAfter(instance, () => {
-          move({ element: null, picked: pickOf(instance, instances) }, "step");
+          move(
+            {
+              element: null,
+              isVoice: false,
+              picked: pickOf(instance, instances),
+            },
+            "step"
+          );
         });
       },
     },
@@ -135,7 +153,7 @@ export function useLayerNavigation(): LayerNavigation {
       setIsRestored(false);
     },
     inspectElement: (element) => {
-      show({ element, picked: null });
+      show({ element, isVoice: false, picked: null });
     },
     isOpen,
     isRestored,
@@ -143,9 +161,16 @@ export function useLayerNavigation(): LayerNavigation {
       setIsOpen(true);
       move(resume ? place : OVERVIEW, null);
     },
+    openVoice: () => {
+      show({ element: null, isVoice: true, picked: null });
+    },
     select: (instance, instances) => {
       revealAfter(instance, () => {
-        show({ element: null, picked: pickOf(instance, instances) });
+        show({
+          element: null,
+          isVoice: false,
+          picked: pickOf(instance, instances),
+        });
       });
     },
   };

@@ -181,7 +181,7 @@ function usePickEvents(picker: Picker, aim: Aim): PickRefs {
   return { layerRef, marqueeRef };
 }
 
-function AimLabel({
+export function AimLabel({
   component,
   element,
 }: {

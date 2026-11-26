@@ -39,7 +39,7 @@ export const CONTENT_STYLES = `
 .dt-empty-title { margin: 0 0 4px; color: var(--rt-text); font-weight: 600; text-wrap: balance; }
 .dt-empty p { margin: 0; }
 .dt-hint { margin: 0; padding: 10px 12px; border-radius: var(--rt-radius-card); background: var(--rt-bg-subtle); color: var(--rt-text-muted); text-wrap: pretty; }
-.dt-hint code, .dt-empty code, .dt-status code { padding: 1px 4px; border-radius: var(--rt-radius-tiny); background: var(--rt-bg-hover); font-size: 11.5px; overflow-wrap: anywhere; }
+.dt-hint code, .dt-empty code, .dt-status code, .dt-voice-hint code, .dt-voice-problem code, .dt-voice-reason code { padding: 1px 4px; border-radius: var(--rt-radius-tiny); background: var(--rt-bg-hover); font-size: 11.5px; overflow-wrap: anywhere; }
 .dt-error { margin: 0; color: var(--rt-error-ink); }
 .dt-outcome { display: flex; flex-direction: column; align-items: center; gap: 12px; animation: rt-fade 200ms var(--rt-ease); }
 .dt-outcome .dt-empty-title { margin: 0; }

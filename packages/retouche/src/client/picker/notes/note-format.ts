@@ -24,7 +24,11 @@ export function locationText(site: SiteLocation | null): string | null {
   return site.line === null ? site.path : `${site.path}:${site.line}`;
 }
 
-function headingOf({ component, tag, text }: ElementContext): string {
+export function headingOf({
+  component,
+  tag,
+  text,
+}: Pick<ElementContext, "component" | "tag" | "text">): string {
   const element = component === null ? `<${tag}>` : `<${component}> (${tag})`;
   return text ? `${element} "${text}"` : element;
 }

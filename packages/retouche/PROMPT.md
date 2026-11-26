@@ -62,7 +62,7 @@ An `allow` entry is `{ component?: "Text", classes?: ["text-muted-*"], propertie
 
 **Next.js (App Router)**
 
-- Create `app/api/retouche/[...path]/route.ts`, under `src/app/` when the app uses `src/`, containing `export { GET } from "retouche/next";`.
+- Create `app/api/retouche/[...path]/route.ts`, under `src/app/` when the app uses `src/`, containing `export { GET, POST } from "retouche/next";`.
 - Create or extend `instrumentation-client.ts` at the project root, or in `src/` when the app uses one, with `import "retouche/instrument";` as its first line.
 - Render `<Retouche config={config} />` from `retouche` inside the root layout's `<body>`, with `config` imported from `retouche.config.ts`.
 
@@ -73,4 +73,5 @@ An `allow` entry is `{ component?: "Text", classes?: ["text-muted-*"], propertie
 - Run the project's typecheck, or `tsc --noEmit` when it has none.
 - Start the dev server and open the app. Dots should appear on overridden elements, and the Retouche bar should show a count rather than "Config error".
 - Open a few overrides in the panel. Each call site should be a line written where the app uses the design system. When it sits inside the design system itself, the component whose code it is belongs on the list from step 3: add it and look again rather than allowing the override.
-- Report back: where the design system lives and the styling approaches found, the components watched, the ones left out and why, any `allow` entries and where they come from, and how many overrides the first page shows.
+- Voice sessions, Session on the bar, turn what the developer says while pointing at the page into feedback through their own Claude Code, Codex or Mastra Code CLI, whichever is installed and logged in; Retouche runs it in the background. Other writers, ACP agents or OpenAI-compatible endpoints, and a transcriber go in the `voice` option of `retouche()` or `createRoute()`, typed in the package; add them only when the developer asks, and never write a key into a file. None is required for the rest of Retouche.
+- Report back: where the design system lives and the styling approaches found, the components watched, the ones left out and why, any `allow` entries and where they come from, how many overrides the first page shows, and which of Claude Code, Codex and Mastra Code voice sessions can use.

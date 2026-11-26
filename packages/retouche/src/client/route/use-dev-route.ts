@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
 
-import type { RouteStatus } from "../../protocol";
-import { probeDevRoute } from "./dev-route";
+import { probeDevRoute, type RouteProbe } from "./dev-route";
 
-export type DevRouteState =
-  | { kind: "checking" }
-  | { kind: "missing" }
-  | { kind: "ready"; status: RouteStatus };
+export type DevRouteState = { kind: "checking" } | RouteProbe;
 
 export function useDevRoute(): DevRouteState {
   const [route, setRoute] = useState<DevRouteState>({ kind: "checking" });
@@ -14,14 +10,19 @@ export function useDevRoute(): DevRouteState {
   useEffect(() => {
     let isCurrent = true;
     const probe = async () => {
-      const status = await probeDevRoute();
+      const probed = await probeDevRoute();
       if (isCurrent) {
-        setRoute(status ? { kind: "ready", status } : { kind: "missing" });
+        setRoute(probed);
       }
     };
     void probe();
+    const onFocus = () => {
+      void probe();
+    };
+    window.addEventListener("focus", onFocus);
     return () => {
       isCurrent = false;
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 

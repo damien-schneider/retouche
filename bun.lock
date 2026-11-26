@@ -47,6 +47,7 @@
         "retouche": "./dist/cli.js",
       },
       "dependencies": {
+        "@agentclientprotocol/sdk": "^2.12.0",
         "zod": "^4.6.5",
       },
       "devDependencies": {
@@ -56,6 +57,7 @@
         "@testing-library/react": "^16.3.3",
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
+        "@zumer/snapdom": "^3.8.3",
         "babel-plugin-react-compiler": "^1.0.0",
         "bippy": "^0.7.3",
         "jsdom": "^30.1.0",
@@ -77,6 +79,8 @@
     },
   },
   "packages": {
+    "@agentclientprotocol/sdk": ["@agentclientprotocol/sdk@2.12.0", "", { "peerDependencies": { "@modelcontextprotocol/server": "^2.4.0", "zod": "^3.25.76 || ^4.0.0" }, "optionalPeers": ["@modelcontextprotocol/server"] }, "sha512-nSkamfY4Lw9/AVBU5G5V9p82ScXhANDMBybQwcPH/9+euUtZm04/VFUMaLj4gLFEXxQEy+QP1VQiKgSRbYVIPg=="],
+
     "@asamuzakjp/css-color": ["@asamuzakjp/css-color@7.2.0", "", { "dependencies": { "@csstools/css-calc": "^3.4.3", "@csstools/css-color-parser": "^4.2.7", "@csstools/css-parser-algorithms": "^4.0.2", "@csstools/css-tokenizer": "^4.0.2", "lru-cache": "^11.5.3" } }, "sha512-+JNLVlzePs1XiBT5s9aVkEjOePRoB//tk3bc69BGdzQCz7EICVSQuVPZu6tjc7vAJxBx5fama67LbOltwnXzPQ=="],
 
     "@asamuzakjp/dom-selector": ["@asamuzakjp/dom-selector@10.0.6", "", { "dependencies": { "bidi-js": "^1.1.0", "css-tree": "^3.2.1", "is-potential-custom-element-name": "^1.0.1", "lru-cache": "^11.5.3" } }, "sha512-thWv2/7bV1vrCp+tNo8eR8GfpmFh5PhYmDPMNqoYQsPyhLSd8UhV+IZTpKIQ1TGvKKTIV0h9xwEgx7mpx81Zjw=="],
@@ -456,6 +460,8 @@
     "@yuku-toolchain/win32-arm64": ["@yuku-toolchain/win32-arm64@0.28.1", "", { "os": "win32", "cpu": "arm64" }, "sha512-CUiumoJIwNiH9Utm5SbG5GaEaJRUatEXgG5HcPj2yEWh4kxTmEbigB346C3HEmtc+zbRLY0T0XsFO5RGSZaj2A=="],
 
     "@yuku-toolchain/win32-x64": ["@yuku-toolchain/win32-x64@0.28.1", "", { "os": "win32", "cpu": "x64" }, "sha512-CSTUi/ya58q2PuWTpk//BNSpXgOz7ol45T+SDuU7QfD/vN1FcLjSh99KDQzLf4AbIy43ORUw5UFehhfMGPNj9w=="],
+
+    "@zumer/snapdom": ["@zumer/snapdom@3.8.3", "", {}, "sha512-WW/T0i3S2pYqjzLOsBrOO/lTaHGS/EEu1DQyC+XCWpR+N7sBxlOmWLwy35GAuH29UA37GC1nv7kOgvrKLe8bJg=="],
 
     "acorn": ["acorn@8.19.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw=="],
 

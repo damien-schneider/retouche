@@ -25,11 +25,14 @@ export function layerKeys(state: LayerState): RefCallback<HTMLElement> {
       picker.escape();
     } else if (!navigation.isOpen) {
       return;
-    } else if (isEscape && (selection || navigation.element)) {
+    } else if (
+      isEscape &&
+      (selection || navigation.element || navigation.isVoice)
+    ) {
       navigation.back();
     } else if (isEscape) {
       navigation.close();
-    } else if (step === undefined) {
+    } else if (step === undefined || navigation.isVoice) {
       return;
     } else {
       state.stepBy(step);

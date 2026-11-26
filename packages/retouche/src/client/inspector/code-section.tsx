@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { CodePanel } from "../code/code-panel";
 import type { CodeMarks } from "../code/source-reading";
+import { ROUTE_FIXES } from "../route/route-fixes";
 import type { DevRouteState } from "../route/use-dev-route";
 import { CallSiteIcon, ComponentIcon, ConfigIcon } from "../shell/icons";
 import { PromptButton } from "../shell/prompt-button";
@@ -136,13 +137,11 @@ export function CodeSection(options: TraceOptions) {
   if (options.facts) {
     steps.push(configStep(options.facts, options.route));
   }
+  const { kind } = options.route;
   return (
     <section aria-label="Code" className="dt-section">
-      {options.route.kind === "missing" && (
-        <p className="dt-hint">
-          Reading code needs the Retouche dev route from{" "}
-          <code>retouche/vite</code> or <code>retouche/next</code>.
-        </p>
+      {(kind === "missing" || kind === "outdated") && (
+        <p className="dt-hint">{ROUTE_FIXES[kind]}</p>
       )}
       {(options.facts !== null || options.route.kind === "ready") && (
         <ol className="dt-trace">

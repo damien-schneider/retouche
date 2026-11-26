@@ -233,3 +233,54 @@ export function ArrowUpIcon() {
     </Svg>
   );
 }
+
+export function MicIcon() {
+  return (
+    <Svg>
+      <rect height="11" rx="3" width="6" x="9" y="3.5" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" />
+    </Svg>
+  );
+}
+
+export function ShotIcon() {
+  return (
+    <Svg>
+      <path d="M4 8.5v-2A2.5 2.5 0 0 1 6.5 4h2m7 0h2A2.5 2.5 0 0 1 20 6.5v2m0 7v2a2.5 2.5 0 0 1-2.5 2.5h-2m-7 0h-2A2.5 2.5 0 0 1 4 17.5v-2" />
+      <Dot cx={12} cy={12} r={2.5} />
+    </Svg>
+  );
+}
+
+export function StopIcon() {
+  return (
+    <Svg>
+      <rect height="11" rx="2.5" width="11" x="6.5" y="6.5" {...SOLID} />
+    </Svg>
+  );
+}
+
+export function PauseIcon() {
+  return (
+    <Svg>
+      <rect height="12" rx="1.25" width="3.5" x="7" y="6" {...SOLID} />
+      <rect height="12" rx="1.25" width="3.5" x="13.5" y="6" {...SOLID} />
+    </Svg>
+  );
+}
+
+export function ResumeIcon() {
+  return (
+    <Svg>
+      <path d="M8.5 6.2v11.6L18 12z" {...SOLID} />
+    </Svg>
+  );
+}
+
+export function RetryIcon() {
+  return (
+    <Svg>
+      <path d="M19 12a7 7 0 1 1-2.05-4.95M19 4.5V8h-3.5" />
+    </Svg>
+  );
+}

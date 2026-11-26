@@ -55,6 +55,16 @@ export function useSourceFile(request: SourceRequest): SourceState {
     : LOADING;
 }
 
+export const EDITOR_NAME = "Open in editor";
+
+export function EditorLink({ href, title }: { href: string; title: string }) {
+  return (
+    <a aria-label={EDITOR_NAME} className="icon-btn" href={href} title={title}>
+      <EditorIcon />
+    </a>
+  );
+}
+
 export function CodeHead({
   editor,
   file,
@@ -65,14 +75,7 @@ export function CodeHead({
   return (
     <div className="dt-code-head">
       <SourcePath line={file.line} path={file.path} />
-      <a
-        aria-label="Open in editor"
-        className="icon-btn"
-        href={editorUrl(editor, file)}
-        title="Open in editor"
-      >
-        <EditorIcon />
-      </a>
+      <EditorLink href={editorUrl(editor, file)} title={EDITOR_NAME} />
     </div>
   );
 }

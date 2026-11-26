@@ -28,6 +28,7 @@ Copy the prompt from the site, give it to your coding agent in your app, then op
 - **Code in context.** The inspector traces the override from the call site to the component's own source, with the overriding and overridden classes marked, then shows the `allow` entry that would keep it; while you hold to compare, the override is struck and the component's classes come back. Hover or focus either edge of an excerpt to reveal every line on that side in one click: the lines you were reading stay in view while the excerpt grows to show them.
 - **Any element, picked, with notes for your agent.** The picker, on the bar and in the panel's head, aims at any element on the page, by pointer, by dragging a box around it, or by keyboard. Click it to write a note: each note leaves a numbered marker, and Copy all hands every note to your coding agent as markdown, with the component, its call site and component lines, its classes and its measured typography. `⌘C` copies the aimed element alone; `⇧`-click opens it in the panel: its override's inspector, or its measured typography, the classes that set it and the code that renders it.
 - **Render highlights.** The render switch, at the foot of the panel, outlines each component as it renders. The component whose own state or context started the render is labelled with its name and, from its second render, how many times it rendered since the switch went on; the components its render re-rendered are outlined without a label, and only the innermost outlines are tinted. The outline stays on its element for about a second, even as the page scrolls past sticky or fixed elements, starts bright and fades as the render ages, so the latest renders stand out, and brightens again each time the component renders. While on, the switch shows how many renders the app made since then, starting from 0, so a page that isn't rendering says so. Beside it, the number of components that rendered unfolds the list of them, most renders first, each with its count and how many places it rendered in, the counts of the latest renders tinted: when the count climbs with no outline in view, the list still names who rendered, down to a component that draws nothing. Clicking one opens the element it wrote in the panel. An element opened from that list or with `⇧`-click, or an override's inspector, then shows the renders of the component that wrote it and what changed on its last render: which props, state or context, whether a new function, object or element holds the same contents as before, or nothing but its owner rendering it again. Notes taken meanwhile carry the same facts. Retouche reads React's commits itself and subscribes to none while the switch is off.
+- **Voice sessions.** Session, on the bar or in the panel's head, opens a start screen that says what a session keeps: what you say and when, the element under the pointer and what you click, and a screenshot as each sentence starts or a click changes the screen. Choose how it listens, when feedback is written, while you talk or once you stop, and who writes it: your own Claude Code, Codex or Mastra Code, or any ACP agent or OpenAI-compatible model you add. Retouche runs it in the background, so there is nothing to launch or keep open. The microphone stays off until Start recording. Each card says what to change, quotes you, names the component and its call site, and shows the screenshot with the element outlined and an arrow on it. Copy all hands the session to any coding agent as markdown, with what to do with it and each screenshot saved as a file it can open.
 - **Sized for real pages.** Dots exist only near the viewport and a list rendered from one call site is one row, so a page with two thousand overrides scrolls at full frame rate.
 - **Dev only.** In production builds `<Retouche>` renders nothing and `retouche/instrument` installs nothing; a Vite build ships neither the overlay nor the hook code. The source route answers only in development, on localhost, to requests from the app's own origin.
 
@@ -67,11 +68,12 @@ Every overridden element in view gets a pin where its visible text ends: at the 
 | Surface | What it shows |
 | --- | --- |
 | Dot | One overridden element; hover shows its number, names the component and the overriding classes, opening away from a pinned panel, and pings and lights every element from the same call site |
-| Bar | The call-site count, or a check in the corner of its panel button when there is none, the dots switch and the picker; drag the grip to park it in any corner |
-| Panel | Every overriding call site on the page, grouped by component, with the properties each one changes, the number of elements it renders, and the class or style it replaced next to what replaces it. The chip row counts them: All, then one chip per property that narrows the list and the dots to it. The head keeps the pin and the theme switch on its left, close on its right, and the dots switch and Pick in an island between them; the title sits below, and turns into the way back from the inspector. The chips stay above the inspector, so the head keeps its height: they show what the stepper walks through, and a chip there goes back to the list it narrows. The foot holds the render switch and, unfolded above it, the list of components that rendered since it went on, which never takes more than about half the panel |
+| Bar | The call-site count, or a check in the corner of its panel button when there is none, the dots switch, the picker and Session; drag the grip to park it in any corner. While recording, Session becomes the time, your voice level and the last words heard, with Stop |
+| Panel | Every overriding call site on the page, grouped by component, with the properties each one changes, the number of elements it renders, and the class or style it replaced next to what replaces it. The chip row counts them: All, then one chip per property that narrows the list and the dots to it. The head keeps the pin and the dots switch on its left, close on its right, and Pick and Session in an island between them; the title sits below, and turns into the way back from the inspector. The chips stay above the inspector, so the head keeps its height: they show what the stepper walks through, and a chip there goes back to the list it narrows. The foot holds the render switch, the theme switch on its right and, unfolded above it, the list of components that rendered since it went on, which never takes more than about half the panel |
 | Inspector | The property diff, the renders of the component behind the element while render highlights are on, hold to compare, and the code traced from the call site to the component and the config, each step with the prompt that resolves the override there |
 | Picker | Aim at any element with the pointer, `Tab` or the arrow keys, or drag a box around it: while you drag, the element whose box or text best fills yours is aimed, the innermost one on a near tie, and releasing picks it. The wheel still scrolls the page and the scroll area under the pointer, and the aim follows what comes under it. Click, `Enter` or the end of a drag opens a note card on it: the note field with its copy and add buttons, and tucked under it the element's name, where it is written and its lines of code, the whole element when it fits, as tall as the space above or below the element allows, with the button that opens it in the panel; hovering the code shows how many lines lie above and below, and Expand widens the card to the whole file, scrolled to the element. The card scrolls with the page while it sits by the element, and holds still on the screen once the element has scrolled out from under it. `⇧`-click, `⇧Enter` or a drag ended with `⇧` opens it in the panel directly: one inside an override opens its inspector, any other shows its computed typography, the classes behind each property, and the code from where its component is rendered to the line that renders it |
 | Notes | A numbered marker on each noted element and a tray with Copy all and Clear. Click a marker to edit or remove its note. Notes last until you clear them or reload the page |
+| Voice session | Session, on the bar or in the panel's head, opens this place without recording. Before the first recording it is the start screen: what a session keeps and where, the language, Listening (Browser, On this device where Chrome offers it, or your transcriber), Feedback (While I talk or When I stop), Written by, one row per agent found or added, each saying Signed in, Not signed in, or Unknown where Retouche can't tell before it runs, with the command that signs the chosen one in when it is not, and Start recording, centered, with what keeps it from starting right under it. While recording, an outline names the element you point at, and this place shows the time, Pause and Stop, what you are saying and the element you point at, then the same choices, which you can change as you talk; then the feedback cards, each with its quote, the time you said it, the component and the annotated screenshot, which a click zooms out to the whole screen. Copy a card, open its call site in your editor or dismiss it; re-run the agent or hand the session to another one, Copy all, Record more, or start a new session. What you say and the screenshots are saved as they come, whatever the agent does; after a failed run, While I talk asks the agent again only when you re-run it or stop. The full transcript folds away under the cards |
 
 **Pin**, on the left of the panel head, docks the panel beside the page instead of over it: the page stays flush with the window and sits above the panel like a card, its two corners on the panel's side rounded into the panel, its edge lit by a hairline on the inside and casting a soft shadow onto the panel, so the seam shows against any page. Drag the seam to resize, drag the panel's header to move it to the other side. Pinning adds a margin and a scroll padding of the panel's width to `<html>` on the panel's side, so the picker's note card stays beside it. Only the two rounded corners and the hairline along the seam are drawn over the page. Elements positioned against the viewport ignore the margin, so they sit under the panel. It needs a viewport of 720px or more.
 
@@ -131,7 +133,7 @@ createRoot(root).render(
 
 ```ts
 // app/api/retouche/[...path]/route.ts
-export { GET } from "retouche/next";
+export { GET, POST } from "retouche/next";
 ```
 
 ```ts
@@ -166,11 +168,69 @@ export default defineConfig({
 
 An invalid config pauses scanning and lists every issue in the panel.
 
+### Voice writers and transcription
+
+Voice sessions find Claude Code, Codex and Mastra Code on their own. Any other writer, and a transcriber, go in the dev server's options, never in `retouche.config.ts`: they name commands to run and keys to read, which the browser never sees.
+
+| To | Set up |
+| --- | --- |
+| Record, then copy what you said and the screenshots for any agent | Nothing beyond the dev route |
+| Have Claude Code, Codex or Mastra Code write the feedback | Install it and sign in once from a terminal; Retouche finds it, and checks the sign-in of Claude Code and Codex each time you come back to the page |
+| Have another agent write it | An `acp` entry in `voice.agents` |
+| Have a model write it through its API, or a local one | An `endpoint` entry in `voice.agents` |
+| Listen on this device | Nothing: Chrome offers it per language and downloads it once |
+| Listen in a browser without speech recognition | `voice.transcriber` |
+
+```ts
+// vite.config.ts
+retouche({
+  voice: {
+    agents: [
+      { kind: "acp", name: "Copilot", command: "copilot", args: ["--acp"] },
+      {
+        kind: "endpoint",
+        name: "Mastra Gateway",
+        baseUrl: "https://gateway-api.mastra.ai/v1",
+        model: "anthropic/claude-sonnet-4-5",
+        apiKeyEnv: "MASTRA_GATEWAY_API_KEY",
+      },
+      {
+        kind: "endpoint",
+        name: "Ollama",
+        baseUrl: "http://localhost:11434/v1",
+        model: "qwen2.5vl",
+      },
+    ],
+    transcriber: {
+      name: "Mastra Gateway",
+      baseUrl: "https://gateway-api.mastra.ai/v1",
+      model: "deepgram/nova-3",
+      apiKeyEnv: "MASTRA_GATEWAY_API_KEY",
+    },
+  },
+});
+```
+
+On Next.js, pass the same options to the route: `export const { GET, POST } = createRoute({ voice: { … } })`, with `createRoute` from `retouche/next`.
+
+| Field | Purpose |
+| --- | --- |
+| `voice.agents` | Writers offered next to the built-in ones, in this order. Each `name` is shown in the panel and must differ from the others and from the built-in agents |
+| `kind: "acp"` | Any agent that speaks the [Agent Client Protocol](https://agentclientprotocol.com) on stdio, started with `command` and `args`: `copilot --acp`, `gemini --acp`, `opencode acp` and others. It is listed when `command` is found. It runs in a temporary folder, gets no file system or terminal from Retouche, and of the permissions it asks for, only reading and searching files are granted; what it does without asking is up to the agent |
+| `mode` | Optional, ACP only: the id of one of the agent's session modes to switch to before the run, such as a read-only or faster mode. A mode the agent does not offer fails the run with the ones it does |
+| `kind: "endpoint"` | Any OpenAI-compatible Chat Completions API: Mastra Gateway, OpenRouter, OpenAI, Ollama or LM Studio. `baseUrl` is the part before `/chat/completions`; the model needs image input and structured output |
+| `apiKeyEnv` | The environment variable holding the key, sent as a Bearer token. An agent or transcriber whose variable is empty is not offered. Leave it out for a local server |
+| `voice.transcriber` | An OpenAI-compatible `/audio/transcriptions` API. Each sentence is sent as one short clip; the audio is never written to disk |
+
+Invalid voice options stop the dev server at startup with every issue listed.
+
 ## How it works
 
 The client walks React's fiber tree from the DOM, finds elements rendered by a watched component, and sorts the `className` and `style` props passed at the call site by the typography property they set. Elements a watched component renders itself are the design system's own composition and are not reported, including the ones a library such as Base UI clones from an element the component handed it with the same classes and style. Tailwind classes are grouped by name, variants included, so `md:text-xl` is a font-size override that does not apply at rest. A `text-*` or `font-*` class Tailwind does not ship, such as a theme's `text-caption` or `font-book`, and any other class are resolved through the page's stylesheets: a class counts when a rule targeting it sets a watched property. Tailwind's `var(--tw-…, fallback)` declarations, which give way to any utility on the same element, do not count, so `text-caption` is a size like `text-lg`, not a size and a line height. Stylesheets from another origin cannot be read. Overrides matching an `allow` entry are dropped.
 
 To measure, Retouche re-renders the component through React's DevTools renderer interface with the overriding props removed, reads its classes and computed styles, and restores the original props in the same task. The panel measures each row it lists, for the class the override replaced; the inspector measures the override it opens, for the values too. The dev route reads source files for the code view: the Vite plugin and the Next.js route handler share one handler, which refuses non-localhost hostnames, cross-origin requests, files outside the repository, and `node_modules`. The Vite plugin also refuses non-loopback sockets. When a library hook such as Base UI's `useRender` creates the component's element, the code view shows the component's call to it. Code written inside an installed package, such as a design system from npm, is named by its package instead. A picked element that a library part writes, such as the button of Base UI's `Select.Trigger` or a Radix `Slot`, is named by your component that renders the part, and its code starts at that component's call site in your app; a library component placed in a page as is, such as MUI's `Button`, keeps its own name.
+
+After upgrading Retouche, restart the dev server: until it runs the new version, the overlay says so instead of reading code or saving voice sessions.
 
 The scan reruns about 80 ms after every React commit, so a Fast Refresh update is picked up at once, and every second otherwise. The inspector re-measures when Fast Refresh swaps the component or its call site. A CSS-only edit, such as a theme token or a CSS Module change, does not trigger a React commit: the next scan, within a second, re-reads the stylesheet classes, and reselecting the override measures its values again.
 
@@ -183,6 +243,8 @@ Dots ride the page's own scroll natively. A scroll area inside the page scrolls 
 A dot, note marker or corner dot holds still while the pointer or focus is on it. Moving onto it ends the page's own hover on the element beneath, and an element that shifts or reflows on hover would otherwise carry the dot out from under the pointer; it catches up once the pointer moves on.
 
 Render highlights subscribe to React's commits through the DevTools hook only while the switch is on. Each commit, Retouche walks the components React rendered, skipping the subtrees it bailed out of and the overlay's own, including the components that render nothing but the overlay, counts each one and keeps references to its previous and new props, state and context; what changed is worked out only when the panel or a note asks. The renders Retouche causes itself, to measure a diff or hold to compare, are left out. A component whose props object is the one it had before rendered for its own state or context; one with new props was rendered again by its owner. Each component that rendered keeps one flash for 1.2 s from its last render: one box around the elements it wrote, measured again every frame while lit, and shared by components with the same box. A box whose element held still while the page scrolled goes in a layer fixed to the screen, the others in a layer that scrolls with the page, so the browser scrolls each box the way it scrolls its element, even between frames. Only the boxes started by their component's own state or context are labelled, and only the innermost boxes are tinted. The flash fades over its 1.2 s and pulses its ring, and the tint of an innermost box, on each render; with reduced motion it holds steady instead. Labels that would overlap fold into the label of the larger box, and a box taller than the screen keeps its label at the top of the screen. A component rendered before the overlay loaded starts its count at its next render. The list at the panel's foot keeps one entry per component type rather than per instance: its renders since the switch went on, how many instances rendered, and the fiber that rendered last, so a row opens that instance's element without holding on to the ones that unmounted. It renders only the rows in view and a few around them, in a grid as tall as every row, so a list of hundreds of components scrolls like a short one.
+
+Voice sessions listen in one of three ways. Browser uses the browser's speech recognition, in Chrome, Edge or Safari; Chrome sends the audio to Google's speech service. On this device uses Chrome's on-device recognition, offered when Chrome can run it for the language, after downloading the language once; the audio stays on the computer. A transcriber from the `voice` options gets one clip per sentence, cut after 1.5 s of silence or at 60 s, through the dev route, which never stores it. Recognition is primed with the page's own words, up to 60 short headings, buttons, links and labels plus the components you point at, where the browser supports it; they go nowhere else. Outside a transcriber, the microphone itself only drives the level meter. While you talk, Retouche notes each element the pointer rests on for 350 ms and each click, with its component, call site, text and box, and captures the viewport with snapdom, without the overlay, when you start a sentence or click on a screen that changed since the last capture. Each sentence is linked to what you pointed at from 2 s before it to 1 s after it. The dev route keeps the session, its transcript and screenshots in `node_modules/.cache/retouche/voice/<id>/`, and runs the agent itself, in the background: `claude -p` on Sonnet with no tools, `codex exec` in a read-only sandbox, or `mastracode` headless in fast mode with every tool that writes denied and its MCP servers off, on your existing login and subscription: none can edit a file. It looks for each CLI on `PATH`, in `~/.local/bin` and the usual install folders; `RETOUCHE_CLAUDE_PATH`, `RETOUCHE_CODEX_PATH` and `RETOUCHE_MASTRACODE_PATH` point it at one elsewhere. An ACP agent is started for each run in a temporary folder and stopped after it; an endpoint gets the session and its screenshots in one Chat Completions request. Page text and speech reach the agent marked as untrusted. Each run rewrites the whole list, keeps the ids of the cards it keeps, and leaves out the ones you dismissed. While I talk runs the agent 1.5 s after each new sentence, one run at a time. A reload in the same tab picks the recording up where it was; after more than 20 s away, the panel offers to continue it.
 
 Verified on React 19 client components with Vite, and on Next.js 16 with Turbopack, client and server components alike. Server components are detected from React's server debug info; their diff cannot be measured in the browser. Next's webpack dev server (`next dev --webpack`) is not supported: overrides are detected, but client call sites point at the compiled line and server components show no code. Frameworks other than React are out of scope.
 
@@ -233,13 +295,14 @@ For agents and crawlers, a build also writes `/robots.txt` (every crawler allowe
 | `packages/retouche/src/client/picker` | Pick mode: the capture layer, keyboard aiming, drag-to-pick by area, the picked element's typography and code trace, the note card, markers, tray and the markdown copied for agents |
 | `packages/retouche/src/client/corners` | Nested corner fit: the painted pairs measured near the viewport, their dots, rows, inspector block and prompts |
 | `packages/retouche/src/client/renders` | Render highlights: the commit walk, the counts and what changed in `record/`, the flashes in `flashes/`, the switch and the list of components that rendered at the panel's foot in `footer/`, and the facts the panel and notes show |
+| `packages/retouche/src/client/voice` | Voice sessions: the recorder, speech, pointing and screenshots in `record/`, the session kept in sync with the dev route and the agent runs in `session/`, the panel view in `view/`, the cards and annotated screenshots in `feedback/`, the outline on the page in `page/` |
 | `packages/retouche/src/client/stylesheets` | Typography properties the page's stylesheets give each class |
 | `packages/retouche/src/client/code` | Source excerpt with marked classes, edge expanders that reveal the rest of the file on their side, editor links |
 | `packages/retouche/src/client/route` | Dev route client and its availability state |
 | `packages/retouche/src/client/shell` | Shadow-DOM portal, icons, hover targets, stored preferences, widget events |
 | `packages/retouche/src/client/theme` | The app's light or dark theme read from the page, the choice that overrides it, and its switch |
 | `packages/retouche/src/client/styles` | Overlay CSS as strings, injected into the shadow root |
-| `packages/retouche/src/server` | Dev route handler, Vite plugin, Next.js route, source reader |
+| `packages/retouche/src/server` | Dev route handler, Vite plugin, Next.js route, source reader, and in `voice/` the voice sessions, the writers behind one backend (the Claude Code, Codex and Mastra Code CLIs, ACP agents and OpenAI-compatible endpoints) and the transcriber |
 | `packages/retouche/src/protocol.ts` | The client and server wire contract |
 | `packages/retouche/PROMPT.md` | The setup prompt handed to agents |
 | `packages/retouche/templates` | Starter config |

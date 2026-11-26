@@ -165,6 +165,7 @@ ${CASCADE_ORDER}
 
 .dt-renders { display: flex; flex: none; flex-direction: column; max-height: 45%; padding: 4px 6px 6px; border-top: var(--hairline) solid var(--rt-border); }
 .dt-renders-bar { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 6px; }
+.dt-renders-end { display: flex; align-items: center; gap: 2px; }
 .dt-renders-toggle, .dt-renders-more {
   display: inline-flex; align-items: center; gap: 6px; height: var(--hit); padding: 0 10px 0 8px; border-radius: var(--rt-pill);
   color: var(--rt-text-muted); font-size: 12px; font-weight: 500; line-height: 16px; transition: color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
