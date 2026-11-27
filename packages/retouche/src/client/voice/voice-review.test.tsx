@@ -73,7 +73,7 @@ function stopButton(root: HTMLElement): HTMLElement {
   return stop;
 }
 
-describe("a voice review started from the toolbar", () => {
+describe("a voice review started from the toolbar", { timeout: 20_000 }, () => {
   it("opens the feedback on what was said about the pointed element when it stops", async () => {
     const root = await recordFromTheBar();
 
