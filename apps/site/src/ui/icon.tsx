@@ -62,6 +62,12 @@ const PATHS = {
       ))}
     </g>
   ),
+  mic: (
+    <>
+      <rect height="11" rx="3" width="6" x="9" y="3.5" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" />
+    </>
+  ),
   panel: (
     <>
       <rect height="15" rx="3.5" width="18" x="3" y="4.5" />

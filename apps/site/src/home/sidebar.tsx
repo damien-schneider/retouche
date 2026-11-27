@@ -16,7 +16,7 @@ export function Sidebar() {
   return (
     <nav
       aria-label="On this page"
-      className="group relative mt-31 ml-5 hidden w-fit p-3 pr-8 @5xl:block"
+      className="group relative mt-31 ml-5 hidden w-fit p-3 pr-8 @4xl:block"
     >
       <TrailLines active={active} />
       <div

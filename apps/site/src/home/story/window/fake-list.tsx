@@ -148,7 +148,7 @@ export function FakeList() {
       {GROUPS.map((group) => (
         <div key={group.component}>
           <span className="text-rt-muted mb-1 flex items-baseline gap-1.5 px-2.5 text-[12px]/4 font-medium">
-            {group.component}
+            {`<${group.component} />`}
             <span className="text-rt-faint tabular-nums">
               {group.rows.length}
             </span>

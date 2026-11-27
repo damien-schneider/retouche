@@ -9,6 +9,9 @@ import { FakeLenses, FakeList } from "./fake-list";
 const ICON_BUTTON =
   "text-rt-muted grid size-[30px] flex-none place-items-center rounded-full";
 
+const ISLAND_BUTTON =
+  "flex h-[30px] items-center gap-1.5 rounded-full pr-3 pl-2.5 font-medium";
+
 const GLASS_RIM =
   "shadow-[inset_0_1px_0_var(--rt-glass-highlight),inset_0_0_0_1px_var(--rt-glass-rim)]";
 
@@ -33,6 +36,9 @@ function BarFace({ isOpen }: { isOpen: boolean }) {
       </span>
       <span className={ICON_BUTTON}>
         <Icon className="size-4" name="pick" />
+      </span>
+      <span className={ICON_BUTTON}>
+        <Icon className="size-4" name="mic" />
       </span>
       <span className={cn(ICON_BUTTON, "relative")} data-cursor="bar">
         <Icon className="size-4" name="panel" />
@@ -65,23 +71,35 @@ function Stepper({ isShown }: { isShown: boolean }) {
   );
 }
 
+function ModePill() {
+  return (
+    <span className="bg-rt-card shadow-rt-card flex items-center gap-0.5 rounded-full p-0.5">
+      <span className={ISLAND_BUTTON}>
+        <Icon className="text-rt-muted size-4" name="pick" />
+        Pick
+      </span>
+      <span className={ISLAND_BUTTON}>
+        <Icon className="text-rt-muted size-4" name="mic" />
+        <span className="pr-0.5">Session</span>
+      </span>
+    </span>
+  );
+}
+
 function PanelHead() {
   const isInspecting = useHasReached("inspect");
   const isFixed = useHasReached("fixed");
   return (
     <div className="grid flex-none grid-cols-[1fr_auto_1fr] items-center gap-y-0.5 px-2.5 pt-[9px] pb-0.5">
-      <span className={cn(ICON_BUTTON, "justify-self-start")}>
-        <Icon className="size-4" name="pin" />
-      </span>
-      <span className="bg-rt-card shadow-rt-card flex items-center gap-0.5 rounded-full p-0.5">
+      <span className="flex items-center justify-self-start">
+        <span className={ICON_BUTTON}>
+          <Icon className="size-4" name="pin" />
+        </span>
         <span className={ICON_BUTTON}>
           <Icon className="size-4" name="dots" />
         </span>
-        <span className="flex h-[30px] items-center gap-1.5 rounded-full pr-3 pl-2.5 font-medium">
-          <Icon className="text-rt-muted size-4" name="pick" />
-          Pick
-        </span>
       </span>
+      <ModePill />
       <span className={cn(ICON_BUTTON, "justify-self-end")}>
         <Icon className="size-4" name="close" />
       </span>
@@ -155,7 +173,7 @@ export function FakeOverlay() {
       </style>
       <div
         className={cn(
-          "bg-rt-bg font-rt text-rt-text ease-rt-morph absolute inset-x-0 top-[194px] bottom-0 text-[13px]/5 tracking-[-0.003em] antialiased transition-[clip-path] [--bar-w:124px] @2xl:top-0 @2xl:left-auto @2xl:w-[320px] [&_svg]:[stroke-width:1.8]",
+          "bg-rt-bg font-rt text-rt-text ease-rt-morph absolute inset-x-0 top-[194px] bottom-0 text-[13px]/5 tracking-[-0.003em] antialiased transition-[clip-path] [--bar-w:156px] @2xl:top-0 @2xl:left-auto @2xl:w-[320px] [&_svg]:[stroke-width:1.8]",
           isOpen
             ? "duration-[280ms] [clip-path:inset(0_0_0_0_round_var(--rt-radius-surface))]"
             : "duration-[240ms] [clip-path:inset(calc(100%-40px)_0_0_calc(100%-var(--bar-w))_round_20px)]"

@@ -54,16 +54,22 @@ export function CopyPrompt({ prompt }: { prompt: string }) {
       </p>
       <button
         aria-label="Copy prompt"
-        className="text-muted hover:bg-wash hover:text-ink grid size-8 flex-none place-items-center rounded-lg transition-[background-color,color,scale] duration-150 active:scale-[0.96]"
+        className="group text-muted hover:bg-wash hover:text-ink grid size-8 flex-none place-items-center rounded-lg transition-[background-color,color] duration-150"
         onClick={() => {
           void copy();
         }}
         type="button"
       >
         {state === "copied" ? (
-          <Icon className="text-brand size-3.5" name="check" />
+          <Icon
+            className="text-brand size-3.5 transition-[scale] duration-150 group-active:scale-[0.96]"
+            name="check"
+          />
         ) : (
-          <Icon className="size-3.5" name="copy" />
+          <Icon
+            className="size-3.5 transition-[scale] duration-150 group-active:scale-[0.96]"
+            name="copy"
+          />
         )}
       </button>
       <span aria-live="polite" className="sr-only">

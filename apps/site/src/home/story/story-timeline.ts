@@ -107,11 +107,11 @@ export const CURSOR_PATH: readonly { at: number; target: CursorTarget }[] = [
 
 const CODE_SCROLL: readonly { at: number; y: number | "end" }[] = [
   { at: at("compare", 0.78), y: 0 },
-  { at: at("compare", 0.98), y: -113 },
-  { at: at("code-trace", 0.62), y: -113 },
+  { at: at("compare", 0.98), y: -40 },
+  { at: at("code-trace", 0.62), y: -40 },
   { at: at("code-trace", 0.74), y: "end" },
   { at: at("code-trace", 0.84), y: "end" },
-  { at: at("code-trace", 0.96), y: -113 },
+  { at: at("code-trace", 0.96), y: -40 },
 ];
 
 const GLIDE = cubicBezier(0.77, 0, 0.175, 1);

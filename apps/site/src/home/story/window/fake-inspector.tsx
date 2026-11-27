@@ -209,14 +209,19 @@ function DiffCard() {
 }
 
 function PromptRow({ block }: { block: CodeBlock }) {
-  const isCopied = useHasReached("copy") && block.cursor === "copy";
+  const isTarget = block.cursor === "copy";
+  const isPointedAt = useHasReached("release") && isTarget;
+  const isCopied = useHasReached("copy") && isTarget;
   return (
-    <span
-      className="text-rt-text col-span-full flex min-h-8 items-center justify-between gap-3 rounded-full px-3 py-1.5 text-[12.5px]/4 font-medium shadow-[inset_0_0_0_1px_var(--rt-border)]"
-      data-cursor={block.cursor}
-    >
+    <span className="text-rt-muted col-span-full flex items-center justify-between gap-3 pl-0.5 text-[12.5px]/4">
       {block.action}
-      <span className="text-rt-muted grid justify-items-end text-[12px] font-normal whitespace-nowrap">
+      <span
+        className={cn(
+          "text-rt-text grid h-7 flex-none items-center justify-items-center rounded-full px-2.5 text-[12px] font-medium whitespace-nowrap transition-opacity duration-[140ms]",
+          !isPointedAt && "opacity-0"
+        )}
+        data-cursor={block.cursor}
+      >
         <span className={cn(PROMPT_STATE, isCopied && PROMPT_STATE_HIDDEN)}>
           Copy prompt
         </span>
@@ -234,9 +239,9 @@ function HoldButton() {
   return (
     <span
       className={cn(
-        "flex h-8 items-center justify-center rounded-full px-3 text-[13px] font-medium transition-[background-color,color,box-shadow,scale] duration-[120ms]",
+        "ml-auto flex h-8 items-center justify-center rounded-full px-3 text-[13px] font-medium transition-[background-color,color,box-shadow] duration-[120ms]",
         isPressed
-          ? "bg-rt-accent-solid text-rt-accent-text scale-[0.96]"
+          ? "bg-rt-accent-solid text-rt-accent-text"
           : "bg-rt-card text-rt-text shadow-[inset_0_0_0_1px_var(--rt-border),0_1px_1px_rgb(0_0_0/0.03)]"
       )}
       data-cursor="compare"
@@ -376,15 +381,15 @@ export function FakeInspector() {
         style={{ y }}
       >
         <div className="flex min-h-8 flex-wrap items-center gap-x-2.5 gap-y-1 px-0.5">
-          <span className="rt-num bg-rt-accent-solid text-rt-accent-text h-[22px] min-w-[22px] rounded-full text-[11.5px] shadow-[inset_0_1px_0_rgb(255_255_255/0.22)]">
+          <span className="rt-num h-auto min-w-0 p-0 text-[17px]/6 [text-box:none]">
             2
           </span>
           <span className="text-[17px]/6 font-semibold tracking-[-0.02em]">
-            Text
+            {"<Text />"}
           </span>
+          <HoldButton />
         </div>
         <DiffCard />
-        <HoldButton />
         <div className="flex flex-col gap-[18px]">
           {CODE_TRACE.map((block) => (
             <TraceStep block={block} key={block.title} />
