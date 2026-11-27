@@ -34,12 +34,10 @@ For agents and crawlers, a build also writes `/robots.txt` (every crawler allowe
 
 ## Releasing
 
-The package is published to npm as `retouche-dev` by `.github/workflows/publish.yml`:
+The package is published to npm as `retouche-dev` from the maintainer's machine, never from CI:
 
-1. Bump `version` in `packages/retouche/package.json` and push it to `main`.
-2. Tag that commit `v<version>` and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
-
-The workflow fails when the tag and the version differ, then builds, checks, tests and runs `npm publish` with provenance. It authenticates through npm trusted publishing, so no npm token is stored in the repository.
+1. Bump `version` in `packages/retouche/package.json`, run check, typecheck, test and build, commit `chore(release): <version>` and push it to `main`.
+2. From `packages/retouche`, run `npm publish`. It builds the package first; npm asks for two-factor authentication in the browser unless the npm token in use skips it.
 
 ## Repository layout
 
