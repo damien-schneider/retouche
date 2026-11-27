@@ -12,7 +12,7 @@ const CREDIT_LINK =
 
 export function SiteHeader() {
   return (
-    <header className="px-6 pt-6 @2xl:px-8 @2xl:pt-8">
+    <header className="px-6 pt-6 @2xl:px-8">
       <a
         className="text-ink inline-flex items-baseline gap-[0.28em] font-serif text-base"
         href="/"
@@ -34,7 +34,7 @@ export function SiteHeader() {
 
 export function SiteCredits() {
   return (
-    <div className="absolute top-6 right-6 flex flex-col items-end whitespace-nowrap @2xl:top-8 @2xl:right-8">
+    <div className="absolute top-6 right-6 flex flex-col items-end whitespace-nowrap @2xl:right-8">
       {STARS !== null && (
         <a
           aria-label={`Retouche on GitHub, ${STARS} ${STARS === 1 ? "star" : "stars"}`}

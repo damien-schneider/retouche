@@ -15,14 +15,12 @@ function Home() {
   return (
     <LazyMotion features={domMin} strict>
       <main className="@container relative">
-        <div className="@4xl:pointer-events-none @4xl:absolute @4xl:inset-y-0 @4xl:left-0 @4xl:z-10">
-          <div className="@4xl:pointer-events-auto @4xl:sticky @4xl:top-0">
-            <SiteHeader />
-            <Sidebar />
-          </div>
+        <div className="relative z-10 w-fit @4xl:sticky @4xl:top-0">
+          <SiteHeader />
+          <Sidebar />
         </div>
         <SiteCredits />
-        <div className="mx-auto flex max-w-[640px] flex-col gap-20 px-6 pt-16 @2xl:px-8 @4xl:pt-28">
+        <div className="mx-auto flex max-w-[640px] flex-col gap-20 px-6 pt-16 @2xl:px-8">
           <Intro />
           <ConceptSection group={PROPERTY_CONCEPTS} />
           <OverlayStory />
