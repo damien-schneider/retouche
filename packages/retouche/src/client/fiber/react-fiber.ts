@@ -9,6 +9,10 @@ import { WIDGET_MARKER } from "../shell/widget-events";
 
 const MEMO_TYPE = Symbol.for("react.memo");
 const FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
+const ELEMENT_TYPES: ReadonlySet<unknown> = new Set([
+  Symbol.for("react.transitional.element"),
+  Symbol.for("react.element"),
+]);
 const MAX_WRAPPER_DEPTH = 3;
 const MAX_CLONE_DEPTH = 3;
 const FIBER_KEY_PREFIXES = ["__reactFiber$", "__reactInternalInstance$"];
@@ -186,20 +190,31 @@ export function hostElementsOf(fiber: Fiber): Element[] {
   return elements;
 }
 
-interface PassedElement {
-  _owner: unknown;
-  props: Props;
+export interface ElementFields {
+  key: unknown;
+  props: unknown;
   type: unknown;
 }
 
-function isPassedElement(value: unknown): value is PassedElement {
+interface PassedElement extends ElementFields {
+  _owner: unknown;
+  props: Props;
+}
+
+export function isElement(value: unknown): value is ElementFields {
   return (
     isRecord(value) &&
+    !("then" in value && typeof value.then === "function") &&
+    "$$typeof" in value &&
+    ELEMENT_TYPES.has(value.$$typeof) &&
     "type" in value &&
-    "_owner" in value &&
-    "props" in value &&
-    isProps(value.props)
+    "key" in value &&
+    "props" in value
   );
+}
+
+function isPassedElement(value: unknown): value is PassedElement {
+  return isElement(value) && "_owner" in value && isProps(value.props);
 }
 
 function sameStyling(passed: Props, rendered: Props): boolean {

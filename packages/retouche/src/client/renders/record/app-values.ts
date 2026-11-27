@@ -3,7 +3,9 @@ import { z } from "zod";
 
 import {
   type ComponentType,
+  type ElementFields,
   isComponentType,
+  isElement,
   isRecord,
   typeName,
 } from "../../fiber/react-fiber";
@@ -16,33 +18,12 @@ export type ShownValue =
   | { kind: "primitive"; text: string }
   | { kind: "string"; text: string };
 
-interface ElementFields {
-  key: unknown;
-  props: unknown;
-  type: unknown;
-}
-
 type AppFunction = (...parameters: never[]) => void;
 
-const ELEMENT_TYPES: ReadonlySet<unknown> = new Set([
-  Symbol.for("react.transitional.element"),
-  Symbol.for("react.element"),
-]);
 const UNREADABLE: ShownValue = { kind: "object" };
 
 export function isArrayValue(value: unknown): value is readonly unknown[] {
   return Array.isArray(value);
-}
-
-export function isElement(value: unknown): value is ElementFields {
-  return (
-    isRecord(value) &&
-    "$$typeof" in value &&
-    ELEMENT_TYPES.has(value.$$typeof) &&
-    "type" in value &&
-    "key" in value &&
-    "props" in value
-  );
 }
 
 export function isPlainObject(value: unknown): value is Props {

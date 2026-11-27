@@ -29,7 +29,7 @@ packages/retouche/src/
   hand-arrow.ts        → hand-drawn arrow strokes seeded by a string, so each dot's arrow is its own and keeps its shape: the dots and the site's story pins
   rules/               → config schema, class/style groups, allow matching, override detection, diff (pure, no DOM)
   voice/               → voice session logic shared by client and server (pure, no DOM): each word of a spoken passage tied to the moment pointed at or clicked while it was said, from the passage's word times or spread over it when it has none, for the client's links and the agent's material; the passages no feedback covers yet; the session's items and their markdown for agents; follow-cards the states a following agent reports per card, and follow-prompt the prompt and commands that start it
-  client/fiber/        → fiber scan, call-site grouping, strip and measure; commits/ rescans the page after its React commits
+  client/fiber/        → fiber scan and call-site grouping, never probing an app value past its `$$typeof` or `then`, since a prop can be a framework's Proxy; strip/ strips an override and measures; commits/ rescans the page after its React commits
   client/layer.tsx     → composition root: page layer, surface, panel
   client/use-layer-*   → overlay state, navigation between list and inspector, keys
   client/selection.ts  → keeps the inspected override across edits: by id, then by call-site key

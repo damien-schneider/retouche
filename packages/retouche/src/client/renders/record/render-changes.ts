@@ -1,10 +1,9 @@
 import type { ContextDependency, Fiber, MemoizedState, Props } from "bippy";
 
-import { isRecord, ownerName } from "../../fiber/react-fiber";
+import { isElement, isRecord, ownerName } from "../../fiber/react-fiber";
 import {
   isAppFunction,
   isArrayValue,
-  isElement,
   isPlainObject,
   type ShownValue,
   shownValueSchema,
