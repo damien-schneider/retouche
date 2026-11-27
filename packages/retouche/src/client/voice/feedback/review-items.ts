@@ -1,8 +1,5 @@
-import type {
-  VoiceMoment,
-  VoicePassage,
-  VoiceSession,
-} from "../../../protocol";
+import type { VoiceMoment, VoiceSession } from "../../../protocol";
+import { pendingPassages } from "../../../voice/session-items";
 
 interface ItemBase {
   id: string;
@@ -25,14 +22,6 @@ export interface PassageItem extends ItemBase {
 }
 
 export type ReviewItem = FeedbackItem | PassageItem;
-
-export function pendingPassages(session: VoiceSession): VoicePassage[] {
-  const covered = new Set(session.feedback.flatMap((item) => item.passageIds));
-  return session.passages.filter(
-    (passage, index) =>
-      index >= session.analysis.passageCount && !covered.has(passage.id)
-  );
-}
 
 function pointedAt(
   session: VoiceSession,

@@ -25,7 +25,8 @@ function SessionKeeps() {
         </li>
       </ul>
       <p className="dt-voice-hint">
-        Saved in <code>node_modules/.cache/retouche</code>
+        Kept on this computer, outside your project, until you delete it from
+        History.
       </p>
     </div>
   );
@@ -48,7 +49,7 @@ export function VoiceSettings({ voice }: { voice: Voice }) {
           type="button"
         >
           <span aria-hidden="true" className="dt-voice-record-dot" />
-          {START_NAME}
+          <span>{START_NAME}</span>
         </button>
         {problem !== null && <StartReason id={reasonId} problem={problem} />}
       </div>

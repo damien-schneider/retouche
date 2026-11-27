@@ -1,4 +1,4 @@
-import type { VoiceShot } from "../../../protocol";
+import { STREAMED_TRANSCRIBERS, type VoiceShot } from "../../../protocol";
 import { locate } from "../../picker/notes/element-context";
 import type { Hearing, VoiceProblem } from "../voice";
 import { createLiveFeed, type LiveFeed } from "./live-feed";
@@ -23,6 +23,7 @@ import {
   type SpeechSource,
 } from "./speech/speech-source";
 import { SpeechStream } from "./speech/speech-stream";
+import { StreamSource } from "./speech/transcriber/stream-source";
 import { TranscriberSource } from "./speech/transcriber/transcriber-source";
 
 export interface SpokenPassage {
@@ -30,6 +31,7 @@ export interface SpokenPassage {
   openingId: string | null;
   startMs: number;
   text: string;
+  wordMs: number[];
 }
 
 export interface RecorderEvents {
@@ -48,6 +50,7 @@ export interface RecordingStart {
 export interface RecordingOpening {
   hearing: Hearing;
   language: string;
+  transcriber: string | null;
 }
 
 interface RecordingRun {
@@ -59,7 +62,11 @@ interface RecordingRun {
 const SOURCES: Record<Hearing, (context: SourceContext) => SpeechSource> = {
   browser: (context) => new SpeechStream(context, false),
   device: (context) => new DeviceSpeech(context),
-  transcriber: (context) => new TranscriberSource(context),
+  transcriber: (context) =>
+    context.transcriber !== null &&
+    STREAMED_TRANSCRIBERS.includes(context.transcriber)
+      ? new StreamSource(context, context.transcriber)
+      : new TranscriberSource(context),
 };
 
 const INSTALLS: Partial<
@@ -77,6 +84,7 @@ export class VoiceRecorder {
   #speech: SpeechSource | null = null;
   #log: MomentLog;
   #meter: MicMeter | null = null;
+  #rested: Element | null = null;
   #frame = 0;
   #generation = 0;
   #run: RecordingRun = { base: 0, since: 0, until: 0 };
@@ -149,6 +157,7 @@ export class VoiceRecorder {
       level: () => this.feed.read().level,
       phrases: this.#phrases,
       stream: mic.meter.stream,
+      transcriber: opening.transcriber,
     });
     this.#speech.start(opening.language);
     return null;
@@ -188,7 +197,7 @@ export class VoiceRecorder {
       onProblem: this.#events.onProblem,
       onUtterance: () => {
         this.#shots.ensure();
-        this.#log.utteranceStarted(this.feed.read().pointed);
+        this.#log.utteranceStarted(this.#rested);
       },
     };
   }
@@ -201,6 +210,7 @@ export class VoiceRecorder {
     this.#meter?.close();
     this.#meter = null;
     this.#pointer.stop();
+    this.#rested = null;
     this.#watch.stop();
     cancelAnimationFrame(this.#frame);
     this.#log.leave();
@@ -237,7 +247,13 @@ export class VoiceRecorder {
     const { openingId } = heard;
     const startMs = this.#timeAt(heard.startAt);
     const endMs = Math.max(startMs, this.#timeAt(heard.endAt));
-    this.#events.onPassage({ endMs, openingId, startMs, text: heard.text });
+    this.#events.onPassage({
+      endMs,
+      openingId,
+      startMs,
+      text: heard.text,
+      wordMs: heard.wordsAt.map((at) => this.#timeAt(at)),
+    });
   }
 
   #timeAt(time: number): number {
@@ -253,9 +269,8 @@ export class VoiceRecorder {
   }
 
   #aimed(target: Element | null): void {
-    if (this.feed.read().pointed !== null) {
-      this.feed.update({ pointed: null });
-    }
+    this.#rested = null;
+    this.feed.update({ pointed: target });
     if (target && this.#isSpeaking()) {
       this.#point(target);
     } else if (this.#log.activeElement !== target) {
@@ -264,7 +279,7 @@ export class VoiceRecorder {
   }
 
   #dwelled(target: Element): void {
-    this.feed.update({ pointed: target });
+    this.#rested = target;
     this.#point(target);
   }
 

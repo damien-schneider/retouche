@@ -1,6 +1,8 @@
 import { useState } from "react";
 
+import { elementTag } from "../../../panel/element-names";
 import { useComponentName } from "../../../picker/notes/element-context";
+import { useHeldSpace } from "../../page/use-held-space";
 import type { VoiceFeed } from "../../voice";
 import { useLive } from "./live-values";
 
@@ -9,18 +11,33 @@ const POINTED_TEXT = 80;
 const WORD_GAPS = /\s+/;
 const WHITESPACE = /\s+/g;
 const STAGGER = { most: 35, span: 900 } as const;
+const INSTALLING = "Downloading the language…";
 
-function useQuietText(feed: VoiceFeed): string {
-  const isInstalling = useLive(feed, (live) => live.isInstalling);
-  return isInstalling ? "Downloading the language…" : "Listening…";
+export function SpaceHint({ isHeld }: { isHeld: boolean }) {
+  if (isHeld) {
+    return <>Outline hidden</>;
+  }
+  return (
+    <>
+      Hold <kbd>Space</kbd> to hide the outline
+    </>
+  );
 }
 
 export function BarCaption({ feed }: { feed: VoiceFeed }) {
   const tail = useLive(feed, ({ interim }) => interim.slice(-BAR_TAIL));
-  const quiet = useQuietText(feed);
+  const isInstalling = useLive(feed, (live) => live.isInstalling);
+  const isHeld = useHeldSpace(true);
+  if (tail) {
+    return (
+      <span aria-hidden="true" className="dt-voice-ticker">
+        <span>{tail}</span>
+      </span>
+    );
+  }
   return (
-    <span aria-hidden="true" className="dt-voice-ticker">
-      {tail ? <span>{tail}</span> : <span data-idle="true">{quiet}</span>}
+    <span aria-hidden="true" className="dt-voice-ticker" data-idle="true">
+      <span>{isInstalling ? INSTALLING : <SpaceHint isHeld={isHeld} />}</span>
     </span>
   );
 }
@@ -41,7 +58,8 @@ export function LiveCaption({
   settled: string | null;
 }) {
   const interim = useLive(feed, (live) => live.interim);
-  const quiet = useQuietText(feed);
+  const isInstalling = useLive(feed, (live) => live.isInstalling);
+  const quiet = isInstalling ? INSTALLING : "Listening…";
   const words = interim.split(WORD_GAPS).filter(Boolean);
   const [reveal, setReveal] = useState({ from: 0, text: "", words });
   if (interim !== reveal.text) {
@@ -88,7 +106,7 @@ export function PointedChip({ feed }: { feed: VoiceFeed }) {
     .slice(0, POINTED_TEXT);
   return (
     <p className="dt-voice-pointing">
-      Pointing at <code>{`<${component ?? pointed.localName}>`}</code>
+      Pointing at <code>{elementTag(component, pointed.localName)}</code>
       {text && <q>{text}</q>}
     </p>
   );

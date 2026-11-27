@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { z } from "zod";
 
 import { EDITORS, type EditorId } from "../protocol";
+import { PRESET_KEY_ENVS } from "./voice/transcribers/transcriber-list";
 import {
   type ResolvedVoiceOptions,
   type VoiceOptions,
@@ -26,6 +27,7 @@ export interface ResolvedServerOptions {
 }
 
 const DEFAULT_EDITOR: EditorId = "vscode";
+const OWN_PREFIX = "RETOUCHE_";
 
 function isEditorId(value: string | undefined): value is EditorId {
   return EDITORS.some((editor) => editor === value);
@@ -55,6 +57,27 @@ function resolveVoice(voice: VoiceOptions | undefined): ResolvedVoiceOptions {
     );
   }
   return parsed.data;
+}
+
+function optionKeyEnvs(voice: VoiceOptions | undefined): string[] {
+  const parsed = voiceOptionsSchema.safeParse(voice ?? {});
+  if (!parsed.success) {
+    return [];
+  }
+  const { agents, transcriber } = parsed.data;
+  return [...agents, transcriber].flatMap((each) =>
+    each !== null && "apiKeyEnv" in each && each.apiKeyEnv !== undefined
+      ? [each.apiKeyEnv]
+      : []
+  );
+}
+
+export function withEnvFiles(files: RouteEnv, options: ServerOptions) {
+  const read = new Set([...PRESET_KEY_ENVS, ...optionKeyEnvs(options.voice)]);
+  const picked = Object.entries(files).filter(
+    ([name]) => name.startsWith(OWN_PREFIX) || read.has(name)
+  );
+  return { ...process.env, ...Object.fromEntries(picked) } satisfies RouteEnv;
 }
 
 export function resolveServerOptions(

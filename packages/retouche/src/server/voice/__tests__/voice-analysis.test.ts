@@ -5,7 +5,11 @@ import { join } from "node:path";
 
 import { afterAll, describe, expect, it } from "vitest";
 
-import type { BuiltInAgentId, VoiceSession } from "../../../protocol";
+import type {
+  BuiltInAgentId,
+  VoiceFigureUpload,
+  VoiceSession,
+} from "../../../protocol";
 import { createRouteHandler, type RouteHandler } from "../../handler";
 import {
   claudeReply,
@@ -21,7 +25,7 @@ import {
   recordedSession,
   routeRequest,
   sessionFrom,
-  withoutBuiltInAgents,
+  sandboxEnv,
   writeFakeAgent,
 } from "./voice-fixture";
 
@@ -50,7 +54,7 @@ function handlerWith(agent: BuiltInAgentId, reply: FakeReply): AgentHandler {
   const handler = createRouteHandler(
     { root: sandbox },
     {
-      ...withoutBuiltInAgents(sandbox),
+      ...sandboxEnv(sandbox),
       PATH: process.env.PATH ?? "",
       [OVERRIDES[agent]]: fake.path,
     }
@@ -156,9 +160,12 @@ describe("voice analysis reruns", () => {
     const feedback = before.feedback[0]?.id ?? "";
     const image = dataUrl("png", PNG_BYTES);
     const figured = await sessionFrom(
-      await first.handler(
-        routeRequest("/voice/figure", { feedback, image, session: id })
-      )
+      await postFigure(first.handler, {
+        feedback,
+        image,
+        moment: "m1",
+        session: id,
+      })
     );
     const figure = figured.feedback[0]?.figure ?? "";
     expect(readFileSync(figure)).toStrictEqual(PNG_BYTES);
@@ -194,6 +201,84 @@ describe("voice analysis reruns", () => {
     ]);
     const again = await handler(routeRequest("/voice/session", dismiss));
     expect(again.status).toBe(200);
+  });
+});
+
+const REDRAWN_PNG = Buffer.from([...PNG_BYTES, 3]);
+
+async function postFigure(
+  handler: RouteHandler,
+  upload: VoiceFigureUpload
+): Promise<Response> {
+  return await handler(routeRequest("/voice/figure", upload));
+}
+
+async function pointedTwice(): Promise<{ feedback: string; id: string }> {
+  const { handler } = handlerWith("codex", codexReply({ items: [item({})] }));
+  const { id, moments } = await recordedSession(handler);
+  const later = moments.map((moment) => ({ ...moment, atMs: 5000, id: "m2" }));
+  await handler(
+    routeRequest("/voice/session", {
+      id,
+      kind: "record",
+      moments: later,
+      passages: [],
+    })
+  );
+  const analyzed = await analyze(handler, id, "codex");
+  return { feedback: analyzed.feedback[0]?.id ?? "", id };
+}
+
+async function rerunOn(id: string, moment: string): Promise<RouteHandler> {
+  const { handler } = handlerWith(
+    "codex",
+    codexReply({ items: [item({ id: "F1", moment })] })
+  );
+  const after = await analyze(handler, id, "codex");
+  expect(after.feedback).toMatchObject([{ figure: null, momentId: "m2" }]);
+  return handler;
+}
+
+describe("voice figures when a rerun moves feedback to another moment", () => {
+  it("keeps the figure an earlier copy names", async () => {
+    const { feedback, id } = await pointedTwice();
+    const { handler } = handlerWith("codex", codexReply({ items: [] }));
+    const upload = { feedback, session: id };
+    const before = await sessionFrom(
+      await postFigure(handler, {
+        ...upload,
+        image: dataUrl("png", PNG_BYTES),
+        moment: "m1",
+      })
+    );
+    const rerun = await rerunOn(id, "M2");
+    const after = await sessionFrom(
+      await postFigure(rerun, {
+        ...upload,
+        image: dataUrl("png", REDRAWN_PNG),
+        moment: "m2",
+      })
+    );
+    const first = before.feedback[0]?.figure ?? "";
+    const second = after.feedback[0]?.figure ?? "";
+    expect(readFileSync(first)).toStrictEqual(PNG_BYTES);
+    expect(readFileSync(second)).toStrictEqual(REDRAWN_PNG);
+  });
+
+  it("refuses a figure drawn for the moment the feedback left", async () => {
+    const { feedback, id } = await pointedTwice();
+    const handler = await rerunOn(id, "M2");
+    const late = await postFigure(handler, {
+      feedback,
+      image: dataUrl("png", PNG_BYTES),
+      moment: "m1",
+      session: id,
+    });
+    await expect(errorFrom(late)).resolves.toStrictEqual(expect.any(String));
+    const stored = await sessionFrom(
+      await handler(routeRequest(`/voice/session?id=${id}`))
+    );
+    expect(stored.feedback[0]?.figure).toBeNull();
   });
 });
 

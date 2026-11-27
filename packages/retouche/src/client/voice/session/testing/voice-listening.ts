@@ -8,8 +8,9 @@ export async function chooseHearing(
 ): Promise<void> {
   showVoicePage(routeState);
   await wait(0);
+  const transcriber = voice().transcribers[0]?.id ?? null;
   await press(() => {
-    voice().actions.setPreferences({ hearing });
+    voice().actions.setPreferences({ hearing, transcriber });
   });
 }
 

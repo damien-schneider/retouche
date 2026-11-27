@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { AgentBackend, AgentPrompt } from "../agents/agent-backend";
 import { jsonAnswer, jsonAnswerInstruction } from "../agents/text-answer";
 import type { EndpointAgentConfig } from "../voice-options";
-import { callEndpoint } from "./endpoint-call";
+import { callEndpoint, endpointKey } from "./endpoint-call";
 
 const chatCompletionSchema = z.object({
   choices: z
@@ -79,7 +79,7 @@ export function createEndpointBackend(
         answer: chatCompletionSchema,
         body: await chatRequest(config, prompt),
         config,
-        env,
+        key: endpointKey(config, env),
         path: "/chat/completions",
         signal,
       });

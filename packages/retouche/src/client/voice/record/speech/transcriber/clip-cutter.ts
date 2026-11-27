@@ -1,8 +1,10 @@
-import { LEAD_MS, SPEAKING_TAIL_MS } from "../speech-source";
+import { LEAD_MS } from "../speech-source";
+import { SpeechGate } from "./speech-gate";
 
 export interface CutClip {
   audio: Promise<Blob>;
   endAt: number;
+  recordedAt: number;
   startAt: number;
 }
 
@@ -18,16 +20,7 @@ interface Take {
   startedAt: number;
 }
 
-interface OpenClip {
-  loudAt: number;
-  speechAt: number;
-  take: Take;
-}
-
-const POLL_MS = 50;
-const SPEECH_LEVEL = 0.35;
 const REARM_MS = 2000;
-const MAX_CLIP_MS = 60_000;
 const BITS_PER_SECOND = 64_000;
 const FALLBACK_TYPE = "audio/webm";
 
@@ -57,119 +50,72 @@ function finish(take: Take): void {
 
 export class ClipCutter {
   readonly #stream: MediaStream;
-  readonly #level: () => number;
-  readonly #events: CutterEvents;
+  readonly #gate: SpeechGate;
   #takes: Take[] = [];
-  #clip: OpenClip | null = null;
-  #timer = 0;
-  #tracks = new AbortController();
+  #take: Take | null = null;
 
   constructor(
     source: { level: () => number; stream: MediaStream },
     events: CutterEvents
   ) {
     this.#stream = source.stream;
-    this.#level = source.level;
-    this.#events = events;
+    this.#gate = new SpeechGate(source, {
+      onClose: ({ endAt, startAt }) => {
+        const take = this.#take;
+        this.#take = null;
+        if (take) {
+          finish(take);
+          events.onClip({
+            audio: take.audio,
+            endAt,
+            recordedAt: take.startedAt,
+            startAt: startAt - LEAD_MS,
+          });
+        }
+      },
+      onIdle: (now) => {
+        this.#keepArmed(now);
+      },
+      onLost: () => {
+        this.#disarm();
+        events.onLost();
+      },
+      onOpen: () => {
+        this.#open();
+        events.onSpeech();
+      },
+    });
   }
 
   get isSpeaking(): boolean {
-    return this.#clip !== null;
+    return this.#gate.isOpen;
   }
 
   start(): void {
-    this.#halt();
-    this.#tracks = new AbortController();
-    for (const track of this.#stream.getTracks()) {
-      track.addEventListener("ended", this.#lose, {
-        signal: this.#tracks.signal,
-      });
-    }
-    this.#timer = window.setInterval(this.#poll, POLL_MS);
-    this.#poll();
+    this.#gate.start();
   }
 
   stop(): void {
-    this.#halt();
-    this.#cut();
+    this.#gate.stop();
     this.#disarm();
   }
 
   abort(): void {
-    this.#halt();
-    const clip = this.#clip;
-    this.#clip = null;
-    if (clip) {
-      finish(clip.take);
+    this.#gate.abort();
+    if (this.#take) {
+      finish(this.#take);
+      this.#take = null;
     }
     this.#disarm();
   }
 
-  readonly #lose = (): void => {
-    this.stop();
-    this.#events.onLost();
-  };
-
-  readonly #poll = (): void => {
-    try {
-      this.#sample(Date.now());
-    } catch {
-      this.#lose();
-    }
-  };
-
-  #halt(): void {
-    window.clearInterval(this.#timer);
-    this.#tracks.abort();
-  }
-
-  #sample(now: number): void {
-    const isLoud = this.#level() >= SPEECH_LEVEL;
-    const clip = this.#clip;
-    if (clip) {
-      this.#follow(clip, { isLoud, now });
-    } else if (isLoud) {
-      this.#open(now);
-    } else {
-      this.#keepArmed(now);
-    }
-  }
-
-  #open(now: number): void {
+  #open(): void {
     const [take = record(this.#stream), ...spares] = this.#takes;
     this.#takes = [];
     for (const spare of spares) {
       finish(spare);
     }
-    this.#clip = { loudAt: now, speechAt: now, take };
-    this.#events.onSpeech();
-  }
-
-  #follow(clip: OpenClip, sample: { isLoud: boolean; now: number }): void {
-    const { isLoud, now } = sample;
-    if (isLoud) {
-      clip.loudAt = now;
-    }
-    const isSilent = now - clip.loudAt > SPEAKING_TAIL_MS;
-    const isFull = now - clip.take.startedAt > MAX_CLIP_MS;
-    if (isSilent || isFull) {
-      this.#cut();
-      this.#keepArmed(now);
-    }
-  }
-
-  #cut(): void {
-    const clip = this.#clip;
-    if (!clip) {
-      return;
-    }
-    this.#clip = null;
-    finish(clip.take);
-    this.#events.onClip({
-      audio: clip.take.audio,
-      endAt: clip.loudAt,
-      startAt: clip.speechAt - LEAD_MS,
-    });
+    this.#take = take;
   }
 
   #keepArmed(now: number): void {

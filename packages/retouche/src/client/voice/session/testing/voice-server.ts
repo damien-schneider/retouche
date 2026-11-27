@@ -4,17 +4,25 @@ import { z } from "zod";
 import {
   BUILT_IN_AGENTS,
   ENDPOINTS,
+  type ListedTranscriber,
   ROUTE_BASE,
   STATUS_MARKER,
+  TRANSCRIBER_PROVIDER_NAMES,
   type VoiceAgent,
   type VoiceSession,
   type VoiceSessionRequest,
   voiceAnalysisRequestSchema,
   voiceFigureUploadSchema,
+  voiceHistoryRequestSchema,
+  voiceKeyRequestSchema,
   voiceSessionRequestSchema,
   voiceShotUploadSchema,
+  voiceStreamRequestSchema,
   voiceTranscriptRequestSchema,
 } from "../../../../protocol";
+import { sessionSummary } from "../../../../server/voice/history/session-summary";
+import { wordOffsetsOf } from "./fake-media-recorder";
+import { forgetWordsSaid, wordsSaid } from "./voice-browser";
 
 export interface RouteCall {
   body: unknown;
@@ -32,7 +40,9 @@ export interface VoiceServer {
   goDown: () => void;
   holdAnalysis: () => () => void;
   holdTranscriptOf: (spoken: string) => () => void;
+  refuseKeysWith: (error: string) => void;
   sessions: Map<string, VoiceSession>;
+  transcribers: ListedTranscriber[];
 }
 
 interface ServerState extends VoiceServer {
@@ -40,6 +50,7 @@ interface ServerState extends VoiceServer {
   analysisGate: Promise<null> | null;
   isAnalysisDropped: boolean;
   isDown: boolean;
+  keyError: string | null;
   transcriptError: string | null;
   transcriptGates: Map<string, Promise<null>>;
 }
@@ -197,7 +208,40 @@ async function transcriptRoute(
   if (server.transcriptError !== null) {
     return Response.json({ error: server.transcriptError }, { status: 502 });
   }
-  return Response.json({ text: spoken });
+  const wordOffsetMs = wordOffsetsOf(spoken);
+  return Response.json(
+    wordOffsetMs ? { text: spoken, wordOffsetMs } : { text: spoken }
+  );
+}
+
+function streamRoute(server: ServerState, call: RouteCall): Response {
+  const request = voiceStreamRequestSchema.parse(call.body);
+  if (server.transcriptError !== null) {
+    return Response.json({ error: server.transcriptError }, { status: 502 });
+  }
+  const stream =
+    request.action === "open"
+      ? `stream-${server.calls.length}`
+      : request.stream;
+  const text = wordsSaid();
+  if (request.action === "end") {
+    forgetWordsSaid();
+  }
+  return Response.json({ stream, text });
+}
+
+function keyRoute(server: ServerState, call: RouteCall): Response {
+  const { key, provider } = voiceKeyRequestSchema.parse(call.body);
+  if (server.keyError !== null) {
+    return Response.json({ error: server.keyError }, { status: 400 });
+  }
+  const others = server.transcribers.filter(({ id }) => id !== provider);
+  const name = TRANSCRIBER_PROVIDER_NAMES[provider];
+  server.transcribers =
+    key === null
+      ? others
+      : [{ id: provider, name, source: "saved" }, ...others];
+  return Response.json({ transcribers: server.transcribers });
 }
 
 function figureRoute(server: ServerState, call: RouteCall): Response {
@@ -213,6 +257,19 @@ function figureRoute(server: ServerState, call: RouteCall): Response {
     : MISSING();
 }
 
+function historyRoute(server: ServerState, call: RouteCall): Response {
+  if (call.method === "POST") {
+    const request = voiceHistoryRequestSchema.parse(call.body);
+    if (!server.sessions.delete(request.delete)) {
+      return MISSING();
+    }
+  }
+  const sessions = [...server.sessions.values()]
+    .map(sessionSummary)
+    .toSorted((first, second) => second.startedAt - first.startedAt);
+  return Response.json({ sessions });
+}
+
 type RouteHandler = (
   server: ServerState,
   call: RouteCall
@@ -221,18 +278,21 @@ type RouteHandler = (
 const ROUTES = new Map<string, RouteHandler>([
   [
     ENDPOINTS.status,
-    () =>
+    (server) =>
       Response.json({
-        agents: [{ ...agentOf("claude"), state: "ready" }],
+        agents: [{ ...agentOf("claude"), kind: "command", state: "ready" }],
         editor: "vscode",
         marker: STATUS_MARKER,
-        transcriber: null,
+        transcribers: server.transcribers,
       }),
   ],
   [ENDPOINTS.voiceAnalysis, analysisRoute],
   [ENDPOINTS.voiceFigure, figureRoute],
+  [ENDPOINTS.voiceHistory, historyRoute],
+  [ENDPOINTS.voiceKey, keyRoute],
   [ENDPOINTS.voiceSession, sessionRoute],
   [ENDPOINTS.voiceShot, shotRoute],
+  [ENDPOINTS.voiceStream, streamRoute],
   [ENDPOINTS.voiceTranscript, transcriptRoute],
 ]);
 
@@ -297,9 +357,14 @@ function serverState(): ServerState {
     },
     isAnalysisDropped: false,
     isDown: false,
+    keyError: null,
+    refuseKeysWith: (error) => {
+      server.keyError = error;
+    },
     sessions: new Map(),
     transcriptError: null,
     transcriptGates: new Map(),
+    transcribers: [],
   };
   return server;
 }

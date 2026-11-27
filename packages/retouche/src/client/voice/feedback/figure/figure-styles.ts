@@ -5,7 +5,7 @@ export const FIGURE_STYLES = `
   box-shadow: inset 0 0 0 1px var(--rt-border); cursor: zoom-out;
 }
 .dt-voice-figure[aria-pressed="false"] { cursor: zoom-in; }
-.dt-voice-figure:active:not(:disabled) { scale: .99; }
+.dt-voice-figure:active > * { scale: none; }
 .dt-voice-shot { position: absolute; inset: 0; transform-origin: 0 0; transition: transform 240ms var(--rt-ease); }
 .dt-voice-shot img { display: block; width: 100%; height: 100%; user-select: none; }
 .dt-voice-shot-wait { position: absolute; inset: 0; background: var(--rt-bg-hover); animation: rt-fade 200ms var(--rt-ease); }

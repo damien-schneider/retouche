@@ -81,7 +81,7 @@ describe("a voice review started from the toolbar", () => {
     expect(
       within(card).getByRole("heading", { name: /far too bold/i })
     ).toBeTruthy();
-    expect(within(card).getByText("<Text>")).toBeTruthy();
+    expect(within(card).getByText(/^<Text\b/)).toBeTruthy();
   });
 
   it("goes back to the overrides from the review, by the title or Escape", async () => {

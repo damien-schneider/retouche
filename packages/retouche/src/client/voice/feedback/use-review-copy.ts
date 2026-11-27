@@ -31,14 +31,24 @@ async function withFigure(options: {
     return item;
   }
   const shot = voice.session?.shots.find(({ id }) => id === moment.shotId);
-  const imageUrl = shot && voice.shotUrls.get(shot.id);
-  if (shot === undefined || imageUrl === undefined) {
+  if (shot === undefined) {
+    return item;
+  }
+  const imageUrl =
+    voice.shotUrls.get(shot.id) ?? (await voice.actions.loadShot(shot.id));
+  if (imageUrl === null) {
     return item;
   }
   const plan = planFigure({ rect: moment.rect, seed: item.id, shot });
   const png = await composeFigure({ accent, imageUrl, plan, shot });
   const figure =
-    png === null ? null : await voice.actions.uploadFigure(item.id, png);
+    png === null
+      ? null
+      : await voice.actions.uploadFigure({
+          feedback: item.id,
+          image: png,
+          moment: moment.id,
+        });
   return figure === null ? item : { ...item, figure };
 }
 

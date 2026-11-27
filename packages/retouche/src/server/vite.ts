@@ -1,12 +1,12 @@
 import type { ServerResponse } from "node:http";
 
-import type { Connect, Plugin } from "vite";
+import { type Connect, loadEnv, type Plugin } from "vite";
 
 import { ROUTE_BASE } from "../protocol";
 import { createRouteHandler, type RouteHandler } from "./handler";
 import { errorResponse } from "./json-response";
 import { sendWebResponse, toWebRequest } from "./node-http";
-import type { ServerOptions } from "./options";
+import { type ServerOptions, withEnvFiles } from "./options";
 import { isLoopbackAddress } from "./request-guard";
 
 export type { ServerOptions } from "./options";
@@ -46,10 +46,10 @@ export function retouche(options: ServerOptions = {}): Plugin {
   return {
     apply: "serve",
     configResolved(config) {
-      handler = createRouteHandler({
-        ...options,
-        root: options.root ?? config.root,
-      });
+      handler = createRouteHandler(
+        { ...options, root: options.root ?? config.root },
+        withEnvFiles(loadEnv(config.mode, config.envDir, ""), options)
+      );
     },
     configureServer(server) {
       server.middlewares.use(ROUTE_BASE, (request, response, next) => {

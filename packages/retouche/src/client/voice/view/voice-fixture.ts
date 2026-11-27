@@ -51,12 +51,17 @@ function fakeFeed() {
 function fakeActions(): FakeActions {
   return {
     analyze: vi.fn<VoiceActions["analyze"]>(),
-    discard: vi.fn<VoiceActions["discard"]>(),
     dismiss: vi.fn<VoiceActions["dismiss"]>(),
-    loadShot: vi.fn<VoiceActions["loadShot"]>(),
+    forgetKey: vi.fn<VoiceActions["forgetKey"]>().mockResolvedValue(null),
+    loadShot: vi.fn<VoiceActions["loadShot"]>().mockResolvedValue(null),
+    newSession: vi.fn<VoiceActions["newSession"]>(),
+    openSession: vi
+      .fn<VoiceActions["openSession"]>()
+      .mockResolvedValue("found"),
     pause: vi.fn<VoiceActions["pause"]>(),
     resume: vi.fn<VoiceActions["resume"]>(),
     retrySave: vi.fn<VoiceActions["retrySave"]>(),
+    saveKey: vi.fn<VoiceActions["saveKey"]>().mockResolvedValue(null),
     setPreferences: vi.fn<VoiceActions["setPreferences"]>(),
     start: vi.fn<VoiceActions["start"]>(),
     stop: vi.fn<VoiceActions["stop"]>(),
@@ -75,24 +80,25 @@ export function fakeVoice(
     voice: {
       actions,
       agents: [
-        { id: "claude", name: "Claude Code", state: "ready" },
-        { id: "codex", name: "Codex", state: "ready" },
+        { id: "claude", kind: "command", name: "Claude Code", state: "ready" },
+        { id: "codex", kind: "command", name: "Codex", state: "ready" },
       ],
       analysis: { kind: "idle" },
+      canAddKey: false,
       feed,
       hearings: ["browser"],
-      isSupported: true,
       phase: "idle",
       preferences: {
         agent: "claude",
         hearing: "browser",
         isLive: false,
         language: "en-US",
+        transcriber: null,
       },
       problem: null,
       session: null,
       shotUrls: new Map(),
-      transcriber: null,
+      transcribers: [],
       ...overrides,
     },
   };

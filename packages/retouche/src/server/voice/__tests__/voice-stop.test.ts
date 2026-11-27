@@ -18,7 +18,7 @@ import {
   recordedSession,
   routeRequest,
   sessionFrom,
-  withoutBuiltInAgents,
+  sandboxEnv,
 } from "./voice-fixture";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-voice-stop-"));
@@ -57,7 +57,7 @@ describe("stopping a coding agent that ignores the request to stop", () => {
     const handler = createRouteHandler(
       { root: sandbox },
       {
-        ...withoutBuiltInAgents(sandbox),
+        ...sandboxEnv(sandbox),
         RETOUCHE_CLAUDE_PATH: writeStubbornAgent(),
         PATH: process.env.PATH ?? "",
       }

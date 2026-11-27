@@ -77,7 +77,7 @@ function coreRoutes(
           agents: await context.voice.agents(),
           editor: context.settings.editor,
           marker: STATUS_MARKER,
-          transcriber: context.voice.transcriber(),
+          transcribers: await context.voice.transcribers(),
         } satisfies RouteStatus),
     },
   };

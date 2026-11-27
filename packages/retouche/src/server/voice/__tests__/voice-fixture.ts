@@ -13,10 +13,13 @@ import {
 import type {
   VoiceAnalysisRequest,
   VoiceFigureUpload,
+  VoiceHistoryRequest,
   VoiceMoment,
   VoiceSession,
   VoiceSessionRequest,
+  VoiceKeyRequest,
   VoiceShotUpload,
+  VoiceStreamRequest,
   VoiceTranscriptRequest,
 } from "../../../protocol";
 import type { RouteHandler } from "../../handler";
@@ -39,16 +42,20 @@ export function dataUrl(type: string, bytes: Buffer): string {
 type VoiceBody =
   | VoiceAnalysisRequest
   | VoiceFigureUpload
+  | VoiceHistoryRequest
   | VoiceSessionRequest
   | VoiceShotUpload
+  | VoiceKeyRequest
+  | VoiceStreamRequest
   | VoiceTranscriptRequest;
 
-export function withoutBuiltInAgents(folder: string) {
+export function sandboxEnv(folder: string) {
   const missing = join(folder, "missing-agent");
   return {
     RETOUCHE_CLAUDE_PATH: missing,
     RETOUCHE_CODEX_PATH: missing,
     RETOUCHE_MASTRACODE_PATH: missing,
+    XDG_DATA_HOME: join(folder, "data"),
   };
 }
 

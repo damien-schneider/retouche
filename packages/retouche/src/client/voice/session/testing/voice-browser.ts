@@ -16,6 +16,7 @@ const microphone = {
   isActivated: false,
   isDenied: false,
   loudness: 0,
+  said: new Array<string>(),
   tracks: new Array<EventTarget>(),
 };
 const recognitions: FakeRecognition[] = [];
@@ -101,12 +102,22 @@ export function speakAt(loudness: number): void {
 
 export function sayAloud(text: string): void {
   microphone.loudness = 0.3;
+  microphone.said.push(text);
   hearAloud(text);
 }
 
 export function sayQuietly(text: string): void {
   microphone.loudness = 0.002;
+  microphone.said.push(text);
   hearAloud(text);
+}
+
+export function wordsSaid(): string {
+  return microphone.said.join(" ").trim();
+}
+
+export function forgetWordsSaid(): void {
+  microphone.said = [];
 }
 
 export function withActivation(action: () => void): void {
@@ -158,8 +169,22 @@ export function denyMicrophone(): void {
   microphone.isDenied = true;
 }
 
+function fakeWorkletNode() {
+  return {
+    port: Object.assign(new EventTarget(), {
+      close: () => null,
+      start: () => null,
+    }),
+  };
+}
+
 function fakeAudioContext() {
   return {
+    audioWorklet: {
+      addModule: async () => {
+        await Promise.resolve();
+      },
+    },
     close: async () => {
       await Promise.resolve();
     },
@@ -173,6 +198,7 @@ function fakeAudioContext() {
     resume: async () => {
       await Promise.resolve();
     },
+    sampleRate: 48_000,
   };
 }
 
@@ -191,6 +217,7 @@ export function fakeVoiceBrowser(): void {
   microphone.isActivated = false;
   microphone.loudness = 0;
   microphone.tracks = [];
+  microphone.said = [];
   recognitions.length = 0;
   forgetRecorders();
   installs.length = 0;
@@ -199,6 +226,7 @@ export function fakeVoiceBrowser(): void {
   vi.stubGlobal("SpeechRecognition", FakeRecognition);
   vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
   vi.stubGlobal("AudioContext", fakeAudioContext);
+  vi.stubGlobal("AudioWorkletNode", fakeWorkletNode);
   Object.defineProperty(Element.prototype, "checkVisibility", {
     configurable: true,
     value(this: Element) {

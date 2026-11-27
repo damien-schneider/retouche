@@ -11,14 +11,19 @@ import {
   type PhraseBook,
   type SourceContext,
   type SpeechEvents,
+  SPEECH_LEVEL,
   type SpeechSource,
 } from "./speech-source";
+import { WordClock } from "./word-clock";
 
 const RESTART_WINDOW_MS = 10_000;
 const MAX_RESTARTS = 5;
 const NETWORK_RETRIES = 2;
 const PHRASE_BOOST = 2;
 const PHRASES_REFUSED = "phrases-not-supported";
+const SILENCE_CHECK_MS = 500;
+const UNHEARD_LIMIT_MS = 4000;
+const HEARD_LAG_MS = 400;
 
 const SPEECH_PROBLEMS = new Map(
   Object.entries({
@@ -37,17 +42,21 @@ const LOCAL_PROBLEMS = new Map([
 export class SpeechStream implements SpeechSource {
   readonly #events: SpeechEvents;
   readonly #phrases: PhraseBook;
+  readonly #level: () => number;
   readonly #isLocal: boolean;
+  readonly #words = new WordClock(HEARD_LAG_MS);
   #recognition: Recognition | null = null;
   #language = "";
   #interim = "";
   #utteranceAt: number | null = null;
   #restarts: number[] = [];
   #networkFailures = 0;
+  #silence = 0;
 
   constructor(context: SourceContext, isLocal: boolean) {
     this.#events = context.events;
     this.#phrases = context.phrases;
+    this.#level = context.level;
     this.#isLocal = isLocal;
   }
 
@@ -55,6 +64,7 @@ export class SpeechStream implements SpeechSource {
     this.#language = language;
     this.#restarts = [];
     this.#networkFailures = 0;
+    this.#watchSilence();
     this.#open();
   }
 
@@ -71,14 +81,28 @@ export class SpeechStream implements SpeechSource {
   }
 
   stop(): void {
+    window.clearInterval(this.#silence);
     this.#flush();
     this.#close();
   }
 
   abort(): void {
+    window.clearInterval(this.#silence);
     this.#close();
     this.#interim = "";
+    this.#words.hear("");
     this.#utteranceAt = null;
+  }
+
+  #watchSilence(): void {
+    let loudMs = 0;
+    window.clearInterval(this.#silence);
+    this.#silence = window.setInterval(() => {
+      loudMs += this.#level() >= SPEECH_LEVEL ? SILENCE_CHECK_MS : 0;
+      if (loudMs >= UNHEARD_LIMIT_MS) {
+        this.#give("speech-silent");
+      }
+    }, SILENCE_CHECK_MS);
   }
 
   #open(): void {
@@ -147,6 +171,7 @@ export class SpeechStream implements SpeechSource {
   }
 
   #hear(event: Event): void {
+    window.clearInterval(this.#silence);
     this.#restarts = [];
     this.#networkFailures = 0;
     let interim = "";
@@ -161,6 +186,7 @@ export class SpeechStream implements SpeechSource {
   }
 
   #setInterim(text: string): void {
+    this.#words.hear(text);
     if (!text) {
       this.#utteranceAt = null;
     } else if (this.#utteranceAt === null) {
@@ -190,6 +216,7 @@ export class SpeechStream implements SpeechSource {
       openingId,
       startAt,
       text: spoken,
+      wordsAt: this.#words.take(spoken),
     });
   }
 

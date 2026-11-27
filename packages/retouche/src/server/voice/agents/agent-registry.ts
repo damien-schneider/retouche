@@ -23,6 +23,7 @@ export interface RegisteredAgent {
   agent: VoiceAgent;
   backend: AgentBackend;
   checkSignIn: (() => Promise<AgentState>) | null;
+  kind: ListedAgent["kind"];
 }
 
 export interface AgentRegistry {
@@ -60,6 +61,7 @@ async function builtInAgent(
     agent,
     backend: createCliBackend({ agent, cli, command }),
     checkSignIn: async () => await signInState(command, cli.signIn, env),
+    kind: "command",
   };
 }
 
@@ -70,7 +72,12 @@ async function configuredAgent(
   const agent = { id: agentIdOf(config.name), name: config.name };
   if (config.kind === "endpoint") {
     return isEndpointReady(config, env)
-      ? { agent, backend: createEndpointBackend(config), checkSignIn: null }
+      ? {
+          agent,
+          backend: createEndpointBackend(config),
+          checkSignIn: null,
+          kind: "endpoint",
+        }
       : null;
   }
   const command = await findCommand(config.command, env);
@@ -80,6 +87,7 @@ async function configuredAgent(
         agent,
         backend: createAcpBackend({ ...config, command }),
         checkSignIn: null,
+        kind: "command",
       };
 }
 
@@ -98,8 +106,9 @@ async function listAgents(
   registered: RegisteredAgent[]
 ): Promise<ListedAgent[]> {
   return await Promise.all(
-    registered.map(async ({ agent, checkSignIn }) => ({
+    registered.map(async ({ agent, checkSignIn, kind }) => ({
       ...agent,
+      kind,
       state: checkSignIn ? await checkSignIn() : "unchecked",
     }))
   );

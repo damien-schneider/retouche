@@ -6,7 +6,11 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { statusSchema, voiceTranscriptSchema } from "../../../protocol";
+import {
+  type ListedTranscriber,
+  statusSchema,
+  voiceTranscriptSchema,
+} from "../../../protocol";
 import { createRouteHandler, type RouteHandler } from "../../handler";
 import {
   type EndpointAnswer,
@@ -14,7 +18,7 @@ import {
   formOf,
   startEndpoint,
 } from "./endpoint-fixture";
-import { errorFrom, routeRequest, withoutBuiltInAgents } from "./voice-fixture";
+import { errorFrom, routeRequest, sandboxEnv } from "./voice-fixture";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-voice-transcript-"));
 const endpoints: FakeEndpoint[] = [];
@@ -32,9 +36,12 @@ afterAll(async () => {
 
 const AUDIO = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4]);
 
+const CONFIGURED = "configured";
+
 function transcriptRequest(type: string, bytes: Buffer = AUDIO): Request {
   return routeRequest("/voice/transcript", {
     audio: `data:${type};base64,${bytes.toString("base64")}`,
+    transcriber: CONFIGURED,
   });
 }
 
@@ -62,13 +69,15 @@ function handlerWith(
         },
       },
     },
-    { ...withoutBuiltInAgents(sandbox), ...env }
+    { ...sandboxEnv(sandbox), ...env }
   );
 }
 
-async function transcriberOf(handler: RouteHandler): Promise<string | null> {
+async function transcribersOf(
+  handler: RouteHandler
+): Promise<ListedTranscriber[]> {
   const response = await handler(routeRequest("/status"));
-  return statusSchema.parse(await response.json()).transcriber;
+  return statusSchema.parse(await response.json()).transcribers;
 }
 
 describe("server transcription", () => {
@@ -110,14 +119,16 @@ describe("server transcription", () => {
 });
 
 describe("transcriber status and failures", () => {
-  it("names the configured transcriber in the status", async () => {
+  it("lists the configured transcriber in the status once its key is set", async () => {
     const endpoint = await endpointAnswering(HEARD);
     await expect(
-      transcriberOf(handlerWith(endpoint.baseUrl, KEY_ENV))
-    ).resolves.toBe("Nova");
+      transcribersOf(handlerWith(endpoint.baseUrl, KEY_ENV))
+    ).resolves.toStrictEqual([
+      { id: CONFIGURED, name: "Nova", source: "config" },
+    ]);
     await expect(
-      transcriberOf(handlerWith(endpoint.baseUrl, { GATEWAY_KEY: "" }))
-    ).resolves.toBeNull();
+      transcribersOf(handlerWith(endpoint.baseUrl, { GATEWAY_KEY: "" }))
+    ).resolves.toStrictEqual([]);
   });
 
   it("reports a transcriber failure with its reason", async () => {
@@ -137,11 +148,8 @@ describe("transcriber status and failures", () => {
 
 describe("server transcription refusals", () => {
   it("refuses when no transcriber is configured", async () => {
-    const handler = createRouteHandler(
-      { root: sandbox },
-      withoutBuiltInAgents(sandbox)
-    );
-    await expect(transcriberOf(handler)).resolves.toBeNull();
+    const handler = createRouteHandler({ root: sandbox }, sandboxEnv(sandbox));
+    await expect(transcribersOf(handler)).resolves.toStrictEqual([]);
     const response = await handler(transcriptRequest("audio/webm"));
     expect(response.status).toBe(400);
     await expect(errorFrom(response)).resolves.toStrictEqual(

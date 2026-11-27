@@ -3,6 +3,7 @@ import { cleanup } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { ENDPOINTS } from "../../../protocol";
+import type { SessionLoad } from "./sync/session-sync";
 import {
   denyMicrophone,
   isAnyoneListening,
@@ -198,24 +199,69 @@ describe("feedback cards", () => {
     await record("the price is misaligned");
     await stop();
     const [card] = voice().session?.feedback ?? [];
-    const figure = await voice().actions.uploadFigure(
-      card?.id ?? "",
-      "data:image/png;base64,AAAA"
-    );
+    const figure = await voice().actions.uploadFigure({
+      feedback: card?.id ?? "",
+      image: "data:image/png;base64,AAAA",
+      moment: "moment-1",
+    });
 
     expect(figure).toStrictEqual(expect.any(String));
   });
+});
 
-  it("forgets a discarded review", async () => {
+describe("past sessions", () => {
+  it("keeps the session on disk when a new one begins", async () => {
     await record("the avatar is stretched");
+    await stop();
     await press(() => {
-      voice().actions.discard();
+      voice().actions.newSession();
     });
 
     expect(voice()).toMatchObject({ phase: "idle", session: null });
+    expect(route.server().sessions.has("session-1")).toBeTruthy();
+    expect(
+      route.server().calls.filter(({ method }) => method === "POST")
+    ).not.toContainEqual(
+      expect.objectContaining({ path: ENDPOINTS.voiceHistory })
+    );
 
     await reload();
 
+    expect(voice().session).toBeNull();
+  });
+
+  it("reopens a past session with its feedback, and keeps it open across a reload", async () => {
+    await record("the avatar is stretched");
+    await stop();
+    await press(() => {
+      voice().actions.newSession();
+    });
+    let opening: Promise<SessionLoad> | null = null;
+    await press(() => {
+      opening = voice().actions.openSession("session-1");
+    });
+    await wait(100);
+
+    await expect(opening).resolves.toBe("found");
+    expect(voice().phase).toBe("idle");
+    expect(voice().session?.feedback).toHaveLength(1);
+    expect(isAnyoneListening()).toBeFalsy();
+
+    await reload();
+
+    expect(voice().session?.id).toBe("session-1");
+  });
+
+  it("says when a past session's files are gone", async () => {
+    showVoicePage();
+    await wait(100);
+    let opening: Promise<SessionLoad> | null = null;
+    await press(() => {
+      opening = voice().actions.openSession("session-404");
+    });
+    await wait(100);
+
+    await expect(opening).resolves.toBe("missing");
     expect(voice().session).toBeNull();
   });
 });
@@ -248,7 +294,7 @@ describe("reloading the page", () => {
     await stop();
     await reload();
     await press(() => {
-      voice().actions.loadShot("shot-1");
+      void voice().actions.loadShot("shot-1");
     });
 
     expect(voice().shotUrls.get("shot-1")).toStrictEqual(expect.any(String));

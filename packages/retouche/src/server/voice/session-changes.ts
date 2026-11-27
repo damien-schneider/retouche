@@ -69,10 +69,17 @@ export function dismissFeedback(
 
 export function attachFigure(
   session: VoiceSession,
-  figure: { feedbackId: string; path: string }
+  figure: { feedbackId: string; momentId: string; path: string }
 ): RouteOutcome<VoiceSession> {
-  if (!session.feedback.some(({ id }) => id === figure.feedbackId)) {
+  const item = session.feedback.find(({ id }) => id === figure.feedbackId);
+  if (!item) {
     return failure(`No feedback ${figure.feedbackId} in this session.`, 404);
+  }
+  if (item.momentId !== figure.momentId) {
+    return failure(
+      `Feedback ${figure.feedbackId} no longer points at moment ${figure.momentId}.`,
+      409
+    );
   }
   return {
     ok: true,

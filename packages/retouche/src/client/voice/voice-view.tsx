@@ -3,11 +3,12 @@ import { FeedbackList } from "./feedback/feedback-list";
 import { reviewItems } from "./feedback/review-items";
 import { useReviewCopy } from "./feedback/use-review-copy";
 import { AnalysisLine } from "./view/analysis-line";
+import { SessionHistoryPlace } from "./view/history/session-history";
 import { VoiceRecording } from "./view/live/voice-recording";
 import { SessionActions } from "./view/session-actions";
 import { VoiceOptions } from "./view/settings/voice-options";
 import { VoiceSettings } from "./view/settings/voice-settings";
-import { VoiceProblemHint } from "./view/voice-problem";
+import { PROBLEM_CHOICES, VoiceProblemHint } from "./view/voice-problem";
 import { VoiceTranscript } from "./view/voice-transcript";
 import type { RecorderPhase, Voice } from "./voice";
 
@@ -44,19 +45,23 @@ export function VoiceView({
   const isStart = phase === "idle" && !hasPassages;
   const hasOptions =
     phase !== "idle" ||
-    problem === "speech-language" ||
-    problem === "speech-pack";
+    (problem !== null && PROBLEM_CHOICES[problem] !== undefined);
   return (
     <div className="dt-voice">
       <p aria-live="polite" className="dt-sr-only">
         {news(voice)}
       </p>
+      {phase === "idle" && (
+        <SessionHistoryPlace current={isStart ? null : session} voice={voice} />
+      )}
       {!isStart && <VoiceProblemHint voice={voice} />}
       {phase !== "idle" && <VoiceRecording voice={voice} />}
       {!isStart && hasOptions && <VoiceOptions place="live" voice={voice} />}
       {isStart && <VoiceSettings voice={voice} />}
       <AnalysisLine isAgentChoiceShown={isStart || hasOptions} voice={voice} />
-      <SessionActions copier={copier} items={items} voice={voice} />
+      {!isStart && (
+        <SessionActions copier={copier} items={items} voice={voice} />
+      )}
       <FeedbackList
         copier={copier}
         editor={editor}

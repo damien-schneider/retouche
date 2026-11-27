@@ -9,6 +9,15 @@ export const RESUME_RECORDING_NAME = "Resume recording";
 
 type Remedy = "blocked" | "resume" | "retry" | "save";
 
+export const PROBLEM_CHOICES: Partial<
+  Record<VoiceProblem, "hearing" | "language">
+> = {
+  "speech-language": "language",
+  "speech-network": "hearing",
+  "speech-pack": "language",
+  "speech-silent": "hearing",
+};
+
 const HINTS: Record<VoiceProblem, { remedy: Remedy; text: ReactNode }> = {
   interrupted: {
     remedy: "resume",
@@ -54,18 +63,17 @@ const HINTS: Record<VoiceProblem, { remedy: Remedy; text: ReactNode }> = {
     remedy: "retry",
     text: "This device can’t recognize this language: pick another.",
   },
+  "speech-silent": {
+    remedy: "retry",
+    text: "Your browser hears you but returns no words: pick another way to listen.",
+  },
   "transcript-failed": {
     remedy: "retry",
     text: "The transcriber couldn’t turn what you said into text.",
   },
   unsupported: {
     remedy: "blocked",
-    text: (
-      <>
-        No speech recognition in this browser: use Chrome, Edge or Safari, or
-        set <code>voice.transcriber</code>.
-      </>
-    ),
+    text: "This browser can’t recognize speech: add a speech-to-text key under Listening, or use Chrome, Edge or Safari.",
   },
 };
 
@@ -90,7 +98,7 @@ function RemedyControls({ remedy, voice }: { remedy: Remedy; voice: Voice }) {
       <div className="dt-voice-remedy">
         <button className="dt-btn" onClick={voice.actions.resume} type="button">
           <ResumeIcon />
-          {RESUME_RECORDING_NAME}
+          <span>{RESUME_RECORDING_NAME}</span>
         </button>
       </div>
     );
@@ -99,7 +107,7 @@ function RemedyControls({ remedy, voice }: { remedy: Remedy; voice: Voice }) {
     <div className="dt-voice-remedy">
       <button className="dt-btn" onClick={retryOf(remedy, voice)} type="button">
         <RetryIcon />
-        {RETRY_NAME}
+        <span>{RETRY_NAME}</span>
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ import {
 import {
   click,
   hover,
+  moveOver,
   press,
   readyRoute,
   setUpVoicePage,
@@ -57,11 +58,7 @@ describe("before recording", () => {
       voice().actions.start();
     });
 
-    expect(voice()).toMatchObject({
-      isSupported: false,
-      phase: "idle",
-      problem: "unsupported",
-    });
+    expect(voice()).toMatchObject({ phase: "idle", problem: "unsupported" });
   });
 
   it("explains that nothing can be saved without the dev route", async () => {
@@ -81,9 +78,16 @@ describe("before recording", () => {
 
     expect(voice()).toMatchObject({ phase: "idle", problem: "route-outdated" });
   });
+});
 
+describe("the agents on offer", () => {
   it("only offers the agents the dev server found", async () => {
-    const codex: ListedAgent = { id: "codex", name: "Codex", state: "ready" };
+    const codex: ListedAgent = {
+      id: "codex",
+      kind: "command",
+      name: "Codex",
+      state: "ready",
+    };
     showVoicePage(readyRoute([codex]));
     await wait(0);
 
@@ -94,8 +98,13 @@ describe("before recording", () => {
   it("picks a signed-in agent until you choose one", async () => {
     showVoicePage(
       readyRoute([
-        { id: "claude", name: "Claude Code", state: "signed-out" },
-        { id: "codex", name: "Codex", state: "ready" },
+        {
+          id: "claude",
+          kind: "command",
+          name: "Claude Code",
+          state: "signed-out",
+        },
+        { id: "codex", kind: "command", name: "Codex", state: "ready" },
       ])
     );
     await wait(0);
@@ -158,6 +167,20 @@ describe("while recording", () => {
 
     const [passage] = voice().session?.passages ?? [];
     expect(passage?.startMs).toBeLessThan(5000);
+  });
+});
+
+describe("following the pointer", () => {
+  it("outlines each element as soon as the pointer reaches it", async () => {
+    await startRecording();
+    const heading = screen.getByRole("heading");
+    await moveOver(heading);
+
+    expect(voice().feed.read().pointed).toBe(heading);
+
+    await moveOver(upgradeButton());
+
+    expect(voice().feed.read().pointed).toBe(upgradeButton());
   });
 });
 
@@ -276,6 +299,43 @@ describe("when something goes wrong", () => {
       phase: "idle",
       problem: "mic-denied",
       session: null,
+    });
+  });
+});
+
+describe("when the browser hears speech but returns no words", () => {
+  it("pauses with the cause", async () => {
+    await startRecording();
+    speakAt(0.6);
+    await wait(6000);
+
+    expect(voice()).toMatchObject({
+      phase: "paused",
+      problem: "speech-silent",
+    });
+  });
+
+  it("keeps recording once the browser returns words", async () => {
+    await startRecording();
+    speakAt(0.6);
+    listening().say("the header");
+    await wait(6000);
+
+    expect(voice()).toMatchObject({ phase: "recording", problem: null });
+  });
+});
+
+describe("when the browser's speech service keeps stopping", () => {
+  it("pauses with the cause instead of retrying forever", async () => {
+    await startRecording();
+    for (let attempt = 0; attempt < 6; attempt++) {
+      listening().end();
+      await wait(100);
+    }
+
+    expect(voice()).toMatchObject({
+      phase: "paused",
+      problem: "speech-failed",
     });
   });
 });

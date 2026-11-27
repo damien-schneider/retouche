@@ -11,14 +11,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { ListedAgent } from "../../../protocol";
 import type { VoiceProblem } from "../voice";
 import { VoiceView } from "../voice-view";
-import { RERUN_NAME, WRITE_NAME } from "./analysis-line";
+import { RERUN_NAME, RERUN_WITH_NAME, WRITE_NAME } from "./analysis-line";
 import { PAUSE_NAME } from "./live/voice-recording";
-import {
-  DISCARD_NAME,
-  NEW_SESSION_NAME,
-  RECORD_MORE_NAME,
-} from "./session-actions";
+import { NEW_SESSION_NAME, RECORD_MORE_NAME } from "./session-actions";
 import { AGENT_NAME } from "./settings/agent-choice";
+import { LISTENING_GROUP_NAME } from "./settings/hearing-choice";
 import {
   FEEDBACK_GROUP_NAME,
   LANGUAGE_NAME,
@@ -31,12 +28,19 @@ import { TRANSCRIPT_NAME } from "./voice-transcript";
 
 const CLAUDE: ListedAgent = {
   id: "claude",
+  kind: "command",
   name: "Claude Code",
   state: "ready",
 };
-const CODEX: ListedAgent = { id: "codex", name: "Codex", state: "ready" };
+const CODEX: ListedAgent = {
+  id: "codex",
+  kind: "command",
+  name: "Codex",
+  state: "ready",
+};
 const MASTRA: ListedAgent = {
   id: "mastracode",
+  kind: "command",
   name: "Mastra Code",
   state: "unchecked",
 };
@@ -48,6 +52,10 @@ const spoken = voiceSession({
     voicePassage("p1", { startMs: 1000, text: "The header feels heavy" }),
     voicePassage("p2", { startMs: 9000, text: "Make the save button blue" }),
   ],
+});
+const written = voiceSession({
+  ...spoken,
+  analysis: { agent: CLAUDE, at: Date.now(), error: null, passageCount: 2 },
 });
 
 function blockedStartFor(problem: VoiceProblem): string {
@@ -306,16 +314,7 @@ describe("changing course while recording", () => {
   });
 
   it("offers each agent once, in the choice that applies to what comes next", () => {
-    const session = voiceSession({
-      ...spoken,
-      analysis: {
-        agent: CLAUDE,
-        at: Date.now(),
-        error: null,
-        passageCount: 2,
-      },
-    });
-    const { voice } = fakeVoice({ phase: "recording", session });
+    const { voice } = fakeVoice({ phase: "recording", session: written });
     render(<VoiceView editor={null} voice={voice} />);
 
     const offers = [
@@ -353,6 +352,21 @@ describe("a language speech recognition does not know", () => {
   });
 });
 
+describe("a browser that hears speech but returns no words", () => {
+  it("offers another way to listen while paused", () => {
+    const { voice } = fakeVoice({
+      phase: "paused",
+      problem: "speech-silent",
+      session: spoken,
+    });
+    render(<VoiceView editor={null} voice={voice} />);
+
+    expect(
+      screen.getAllByRole("group", { name: LISTENING_GROUP_NAME })
+    ).toHaveLength(1);
+  });
+});
+
 describe("after recording", () => {
   it("shows each passage raw until feedback is written", () => {
     const { actions, voice } = fakeVoice({ session: spoken });
@@ -379,20 +393,27 @@ describe("after recording", () => {
   });
 
   it("re-runs a finished analysis", () => {
-    const session = voiceSession({
-      ...spoken,
-      analysis: {
-        agent: CLAUDE,
-        at: Date.now(),
-        error: null,
-        passageCount: 2,
-      },
-    });
-    const { actions, voice } = fakeVoice({ session });
+    const { actions, voice } = fakeVoice({ session: written });
     render(<VoiceView editor={null} voice={voice} />);
 
     fireEvent.click(screen.getByRole("button", { name: RERUN_NAME }));
 
+    expect(actions.analyze).toHaveBeenCalledOnce();
+  });
+
+  it("re-runs with another agent picked from the writer line", () => {
+    const { actions, voice } = fakeVoice({ session: written });
+    render(<VoiceView editor={null} voice={voice} />);
+
+    expect(
+      screen.queryByRole("button", { name: new RegExp(CODEX.name) })
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: RERUN_WITH_NAME }));
+    fireEvent.click(
+      screen.getByRole("button", { name: new RegExp(CODEX.name) })
+    );
+
+    expect(actions.setPreferences).toHaveBeenCalledWith({ agent: "codex" });
     expect(actions.analyze).toHaveBeenCalledOnce();
   });
 });
@@ -419,14 +440,12 @@ describe("the session afterwards", () => {
     expect(actions.resume).toHaveBeenCalledOnce();
   });
 
-  it("asks before throwing the session away", () => {
+  it("starts a new session at once, leaving this one in the history", () => {
     const { actions, voice } = fakeVoice({ session: spoken });
     render(<VoiceView editor={null} voice={voice} />);
 
     fireEvent.click(screen.getByRole("button", { name: NEW_SESSION_NAME }));
-    expect(actions.discard).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: DISCARD_NAME }));
 
-    expect(actions.discard).toHaveBeenCalledOnce();
+    expect(actions.newSession).toHaveBeenCalledOnce();
   });
 });

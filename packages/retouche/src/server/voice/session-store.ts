@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readdir, readFile, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -9,6 +9,7 @@ import {
 } from "../../protocol";
 import { failure, type RouteOutcome } from "../json-response";
 import { createKeyedQueue } from "./keyed-queue";
+import { writePrivateFile } from "./user-folders";
 
 export interface NewSession {
   language: string;
@@ -21,8 +22,10 @@ export type SessionChange = (
 ) => Promise<RouteOutcome<VoiceSession>> | RouteOutcome<VoiceSession>;
 
 export interface SessionStore {
-  create: (fields: NewSession) => Promise<VoiceSession>;
+  create: (fields: NewSession) => Promise<RouteOutcome<VoiceSession>>;
+  list: () => Promise<VoiceSession[]>;
   read: (id: string) => Promise<VoiceSession | null>;
+  remove: (id: string) => Promise<RouteOutcome<null>>;
   update: (
     id: string,
     change: SessionChange
@@ -69,60 +72,105 @@ async function readSessionFile(folder: string): Promise<VoiceSession | null> {
 }
 
 async function writeSessionFile(session: VoiceSession): Promise<void> {
-  await mkdir(session.folder, { recursive: true });
   const target = join(session.folder, SESSION_FILE);
   const draft = `${target}.${randomBytes(4).toString("hex")}.tmp`;
-  await writeFile(draft, JSON.stringify(session));
+  await writePrivateFile(draft, JSON.stringify(session));
   await rename(draft, target);
 }
 
-export function createSessionStore(baseFolder: () => string): SessionStore {
-  const sessions = new Map<string, VoiceSession>();
-  const serialize = createKeyedQueue();
-  const folderOf = (id: string): string => join(baseFolder(), id);
+async function sessionsIn(base: string): Promise<VoiceSession[]> {
+  const names = await readdir(base).catch((): string[] => []);
+  const found = await Promise.all(
+    names
+      .filter((name) => VOICE_ID.test(name))
+      .map(async (name) => await readSessionFile(join(base, name)))
+  );
+  return found
+    .filter((session) => session !== null)
+    .toSorted((first, second) => second.startedAt - first.startedAt);
+}
 
-  const read = async (id: string): Promise<VoiceSession | null> => {
-    if (!VOICE_ID.test(id)) {
+const NO_FOLDER = "Retouche found no home folder to keep voice sessions in.";
+
+export class SessionFiles implements SessionStore {
+  readonly #sessions = new Map<string, VoiceSession>();
+  readonly #serialize = createKeyedQueue();
+  readonly #baseFolder: () => string | null;
+
+  constructor(baseFolder: () => string | null) {
+    this.#baseFolder = baseFolder;
+  }
+
+  async read(id: string): Promise<VoiceSession | null> {
+    const base = this.#baseFolder();
+    if (base === null || !VOICE_ID.test(id)) {
       return null;
     }
-    const known = sessions.get(id);
+    const known = this.#sessions.get(id);
     if (known) {
       return known;
     }
-    const loaded = await readSessionFile(folderOf(id));
+    const loaded = await readSessionFile(join(base, id));
     if (loaded) {
-      sessions.set(id, loaded);
+      this.#sessions.set(id, loaded);
     }
     return loaded;
-  };
+  }
 
-  const create = async (fields: NewSession): Promise<VoiceSession> => {
+  async create(fields: NewSession): Promise<RouteOutcome<VoiceSession>> {
+    const base = this.#baseFolder();
+    if (base === null) {
+      return failure(NO_FOLDER, 500);
+    }
     let id = sessionId(new Date());
-    while (await read(id)) {
+    while (await this.read(id)) {
       id = sessionId(new Date());
     }
-    const session = blankSession(fields, { folder: folderOf(id), id });
-    sessions.set(id, session);
+    const session = blankSession(fields, { folder: join(base, id), id });
+    this.#sessions.set(id, session);
     await writeSessionFile(session);
-    return session;
-  };
+    return { ok: true, value: session };
+  }
 
-  const update = async (
+  async list(): Promise<VoiceSession[]> {
+    const base = this.#baseFolder();
+    const sessions = base === null ? [] : await sessionsIn(base);
+    const kept = new Set(sessions.map(({ id }) => id));
+    for (const id of this.#sessions.keys()) {
+      if (!kept.has(id)) {
+        this.#sessions.delete(id);
+      }
+    }
+    return sessions;
+  }
+
+  async remove(id: string): Promise<RouteOutcome<null>> {
+    return await this.#serialize(id, async () => {
+      const session = await this.read(id);
+      if (!session) {
+        return failure<null>(`No voice session ${id}.`, 404);
+      }
+      this.#sessions.delete(id);
+      await rm(session.folder, { force: true, recursive: true });
+      return { ok: true, value: null };
+    });
+  }
+
+  async update(
     id: string,
     change: SessionChange
-  ): Promise<RouteOutcome<VoiceSession>> =>
-    await serialize(id, async () => {
-      const session = await read(id);
+  ): Promise<RouteOutcome<VoiceSession>> {
+    return await this.#serialize(id, async () => {
+      const session = await this.read(id);
       if (!session) {
         return failure<VoiceSession>(`No voice session ${id}.`, 404);
       }
       const outcome = await change(session);
       if (outcome.ok && outcome.value !== session) {
         await writeSessionFile(outcome.value);
-        sessions.set(id, outcome.value);
+        this.#sessions.set(id, outcome.value);
       }
       return outcome;
     });
-
-  return { create, read, update };
+  }
 }

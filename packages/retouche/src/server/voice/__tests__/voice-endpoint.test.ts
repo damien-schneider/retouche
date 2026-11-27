@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { statusSchema } from "../../../protocol";
+import { type ListedAgent, statusSchema } from "../../../protocol";
 import { createRouteHandler, type RouteHandler } from "../../handler";
 import type { VoiceOptions } from "../voice-options";
 import {
@@ -21,7 +21,7 @@ import {
   recordedSession,
   routeRequest,
   sessionFrom,
-  withoutBuiltInAgents,
+  sandboxEnv,
   writeFakeAgent,
 } from "./voice-fixture";
 
@@ -71,7 +71,7 @@ function gatewayHandler(baseUrl: string): RouteHandler {
         ],
       },
     },
-    { ...withoutBuiltInAgents(sandbox), ...KEY_ENV }
+    { ...sandboxEnv(sandbox), ...KEY_ENV }
   );
 }
 
@@ -91,17 +91,17 @@ async function analysisError(answer: EndpointAnswer): Promise<string> {
   return session.analysis.error ?? "";
 }
 
-async function agentNames(
+async function agentsListed(
   voice: VoiceOptions,
   env: Record<string, string>
-): Promise<string[]> {
+): Promise<Pick<ListedAgent, "kind" | "name">[]> {
   const handler = createRouteHandler(
     { root: sandbox, voice },
-    { ...withoutBuiltInAgents(sandbox), ...env }
+    { ...sandboxEnv(sandbox), ...env }
   );
   const response = await handler(routeRequest("/status"));
   const status = statusSchema.parse(await response.json());
-  return status.agents.map((agent) => agent.name);
+  return status.agents.map(({ kind, name }) => ({ kind, name }));
 }
 
 describe("feedback written through an OpenAI-compatible endpoint", () => {
@@ -197,7 +197,7 @@ describe("endpoint failures", () => {
 });
 
 describe("agents listed in the status", () => {
-  it("lists configured agents in order and hides an endpoint whose key is missing", async () => {
+  it("lists configured agents in order, says which run here, and hides an endpoint whose key is missing", async () => {
     const acp = writeFakeAgent(sandbox, "acp-agent", { stdout: [] });
     const voice: VoiceOptions = {
       agents: [
@@ -220,8 +220,12 @@ describe("agents listed in the status", () => {
       ],
     };
     await expect(
-      agentNames(voice, { OPENROUTER_KEY: " ", PATH: sandbox })
-    ).resolves.toStrictEqual(["Gemini", "On path", "Ollama"]);
+      agentsListed(voice, { OPENROUTER_KEY: " ", PATH: sandbox })
+    ).resolves.toStrictEqual([
+      { kind: "command", name: "Gemini" },
+      { kind: "command", name: "On path" },
+      { kind: "endpoint", name: "Ollama" },
+    ]);
   });
 
   it("lists an endpoint once its key is set", async () => {
@@ -237,7 +241,7 @@ describe("agents listed in the status", () => {
       ],
     };
     await expect(
-      agentNames(voice, { OPENROUTER_KEY: "sk-or" })
-    ).resolves.toStrictEqual(["OpenRouter"]);
+      agentsListed(voice, { OPENROUTER_KEY: "sk-or" })
+    ).resolves.toStrictEqual([{ kind: "endpoint", name: "OpenRouter" }]);
   });
 });

@@ -2,16 +2,18 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { z } from "zod";
 
 import type { VoiceAgent } from "../../protocol";
-import type { DevRouteState } from "../route/use-dev-route";
+import type { DevRouteState, RefreshRoute } from "../route/use-dev-route";
 import {
   type StoredPreference,
   useStoredPreference,
 } from "../shell/stored-preference";
+import { storeSession } from "./session/sync/voice-storage";
 import {
   VoiceController,
   type VoiceSettings,
 } from "./session/voice-controller";
-import { useHearings } from "./use-hearings";
+import { transcriberKeyActions } from "./transcriber-keys";
+import { useListening } from "./use-listening";
 import {
   HEARINGS,
   type Voice,
@@ -31,6 +33,7 @@ const VOICE_PREFERENCES: StoredPreference<VoicePreferences> = {
       typeof navigator === "undefined"
         ? DEFAULT_LANGUAGE
         : navigator.language || DEFAULT_LANGUAGE,
+    transcriber: null,
   },
   key: "retouche-voice-preferences",
   kind: "local",
@@ -39,6 +42,7 @@ const VOICE_PREFERENCES: StoredPreference<VoicePreferences> = {
     hearing: z.enum(HEARINGS).default("browser"),
     isLive: z.boolean(),
     language: z.string().min(1),
+    transcriber: z.string().nullable().default(null),
   }),
 };
 
@@ -51,22 +55,18 @@ function blockerOf(
   isSupported: boolean,
   route: DevRouteState
 ): VoiceProblem | null {
-  if (!isSupported) {
-    return "unsupported";
+  const routeProblem = ROUTE_PROBLEMS[route.kind];
+  if (routeProblem !== undefined) {
+    return routeProblem;
   }
-  return ROUTE_PROBLEMS[route.kind] ?? null;
+  return isSupported ? null : "unsupported";
 }
 
 function useVoicePreferences(route: DevRouteState) {
   const [stored, setStored] = useStoredPreference(VOICE_PREFERENCES);
   const status = route.kind === "ready" ? route.status : null;
   const agents = status?.agents ?? null;
-  const transcriber = status?.transcriber ?? null;
-  const { hearing, hearings } = useHearings({
-    language: stored.language,
-    status,
-    stored: stored.hearing,
-  });
+  const { listening, offer } = useListening({ status, stored });
   const agent =
     agents?.find(({ id }) => id === stored.agent) ??
     agents?.find(({ state }) => state !== "signed-out") ??
@@ -74,10 +74,10 @@ function useVoicePreferences(route: DevRouteState) {
     null;
   return {
     agents,
-    hearings,
-    preferences: { ...stored, agent: agent?.id ?? null, hearing },
+    isSupported: listening !== null,
+    offer,
+    preferences: { ...stored, ...listening, agent: agent?.id ?? null },
     setStored,
-    transcriber,
   };
 }
 
@@ -87,15 +87,25 @@ function useControllerLifecycle(
   isRouteReady: boolean
 ): void {
   const { agents, components } = settings;
-  const { agent, hearing, isLive, language } = settings.preferences;
+  const { agent, hearing, isLive, language, transcriber } =
+    settings.preferences;
 
   useEffect(() => {
     controller.configure({
       agents,
       components,
-      preferences: { agent, hearing, isLive, language },
+      preferences: { agent, hearing, isLive, language, transcriber },
     });
-  }, [agent, agents, components, controller, hearing, isLive, language]);
+  }, [
+    agent,
+    agents,
+    components,
+    controller,
+    hearing,
+    isLive,
+    language,
+    transcriber,
+  ]);
 
   useEffect(() => {
     if (isRouteReady) {
@@ -111,14 +121,7 @@ function useControllerLifecycle(
   }, [controller]);
 }
 
-export function useVoice(options: {
-  components: readonly string[];
-  route: DevRouteState;
-}): Voice {
-  const { components, route } = options;
-  const { agents, hearings, preferences, setStored, transcriber } =
-    useVoicePreferences(route);
-  const settings = { agents: agents ?? NO_AGENTS, components, preferences };
+function useVoiceController(settings: VoiceSettings) {
   const [controller, setController] = useState(
     () => new VoiceController(settings)
   );
@@ -127,38 +130,63 @@ export function useVoice(options: {
     controller.read,
     controller.read
   );
-  const blocker = blockerOf(hearings.length > 0, route);
+  const leave = (): VoiceController => {
+    controller.leave();
+    const next = new VoiceController(settings);
+    setController(next);
+    return next;
+  };
+  const sessionActions = {
+    newSession: () => {
+      leave();
+    },
+    openSession: async (id: string) => {
+      const next = leave();
+      storeSession({ beatAt: 0, elapsedMs: 0, id, isRecording: false });
+      return (await next.restore()) ?? "failed";
+    },
+  } satisfies Pick<Voice["actions"], "newSession" | "openSession">;
+  return { controller, sessionActions, state };
+}
+
+export function useVoice(options: {
+  components: readonly string[];
+  refreshRoute: RefreshRoute;
+  route: DevRouteState;
+}): Voice {
+  const { components, refreshRoute, route } = options;
+  const { agents, isSupported, offer, preferences, setStored } =
+    useVoicePreferences(route);
+  const settings = { agents: agents ?? NO_AGENTS, components, preferences };
+  const { controller, sessionActions, state } = useVoiceController(settings);
+  const blocker = blockerOf(isSupported, route);
   useControllerLifecycle(controller, settings, route.kind === "ready");
   const unlessBlocked = (action: () => void) => () => {
     if (blocker === null) {
       action();
     }
   };
-
+  const setPreferences = (next: Partial<VoicePreferences>) => {
+    controller.setPreferences(next);
+    setStored((current) => ({ ...current, ...next }));
+  };
   return {
+    ...offer,
     actions: {
       ...controller.actions,
-      discard: () => {
-        controller.discard();
-        setController(new VoiceController(settings));
-      },
+      ...transcriberKeyActions({ choose: setPreferences, refreshRoute }),
+      ...sessionActions,
       resume: unlessBlocked(controller.actions.resume),
-      setPreferences: (next) => {
-        controller.setPreferences(next);
-        setStored((current) => ({ ...current, ...next }));
-      },
+      setPreferences,
       start: unlessBlocked(controller.actions.start),
     },
     agents,
     analysis: state.analysis,
     feed: controller.recorder.feed,
-    hearings,
-    isSupported: hearings.length > 0,
     phase: state.phase,
     preferences,
     problem: blocker ?? state.problem,
     session: state.session,
     shotUrls: state.shotUrls,
-    transcriber,
   };
 }

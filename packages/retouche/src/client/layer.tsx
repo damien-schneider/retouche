@@ -317,8 +317,12 @@ export interface LayerProps {
 export default function Layer(props: LayerProps) {
   const layerConfig = useLayerConfig(props);
   const state = useLayerState(layerConfig, props.rememberDotVisibility);
-  const route = useDevRoute();
-  const voice = useVoice({ components: state.picker.components, route });
+  const [route, refreshRoute] = useDevRoute();
+  const voice = useVoice({
+    components: state.picker.components,
+    refreshRoute,
+    route,
+  });
   const { navigation, selection } = state;
   const { isOpen } = navigation;
   const dock = useDock(isOpen);

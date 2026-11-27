@@ -1,6 +1,4 @@
-import { useState } from "react";
-
-import { MicIcon, TrashIcon } from "../../shell/icons";
+import { MicIcon } from "../../shell/icons";
 import { CopyButton } from "../feedback/feedback-card";
 import type { ReviewItem } from "../feedback/review-items";
 import type { ReviewCopy } from "../feedback/use-review-copy";
@@ -10,42 +8,6 @@ import type { Voice } from "../voice";
 export const COPY_ALL_NAME = "Copy all";
 export const RECORD_MORE_NAME = "Record more";
 export const NEW_SESSION_NAME = "New session";
-export const DISCARD_NAME = "Discard this session";
-const KEEP_NAME = "Keep";
-
-function NewSession({ voice }: { voice: Voice }) {
-  const [isConfirming, setIsConfirming] = useState(false);
-  return (
-    <span className="dt-voice-discard" data-confirming={isConfirming}>
-      <button
-        className="dt-btn"
-        data-variant={isConfirming ? "danger" : undefined}
-        onClick={
-          isConfirming
-            ? voice.actions.discard
-            : () => {
-                setIsConfirming(true);
-              }
-        }
-        type="button"
-      >
-        <TrashIcon />
-        {isConfirming ? DISCARD_NAME : NEW_SESSION_NAME}
-      </button>
-      {isConfirming && (
-        <button
-          className="dt-btn"
-          onClick={() => {
-            setIsConfirming(false);
-          }}
-          type="button"
-        >
-          {KEEP_NAME}
-        </button>
-      )}
-    </span>
-  );
-}
 
 export function SessionActions({
   copier,
@@ -57,25 +19,33 @@ export function SessionActions({
   voice: Voice;
 }) {
   const { phase, session } = voice;
-  if (session === null || phase !== "idle" || items.length === 0) {
+  if (session === null || phase !== "idle") {
     return null;
   }
   return (
     <div className="dt-voice-actions">
-      <CopyButton
-        copier={copier}
-        label={COPY_ALL_NAME}
-        request={{
-          format: (copied) => sessionMarkdown(session, copied),
-          items,
-          key: session.id,
-        }}
-      />
+      {items.length > 0 && (
+        <CopyButton
+          copier={copier}
+          label={COPY_ALL_NAME}
+          request={{
+            format: (copied) => sessionMarkdown(session, copied),
+            items,
+            key: session.id,
+          }}
+        />
+      )}
       <button className="dt-btn" onClick={voice.actions.resume} type="button">
         <MicIcon />
-        {RECORD_MORE_NAME}
+        <span>{RECORD_MORE_NAME}</span>
       </button>
-      <NewSession voice={voice} />
+      <button
+        className="dt-btn dt-voice-new"
+        onClick={voice.actions.newSession}
+        type="button"
+      >
+        <span>{NEW_SESSION_NAME}</span>
+      </button>
     </div>
   );
 }

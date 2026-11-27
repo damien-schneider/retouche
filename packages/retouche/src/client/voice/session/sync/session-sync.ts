@@ -1,6 +1,7 @@
 import {
   ENDPOINTS,
   type VoiceAgent,
+  type VoiceFigureUpload,
   type VoiceSession,
   type VoiceSessionRequest,
   type VoiceShot,
@@ -221,19 +222,21 @@ export class SessionSync {
     return session;
   }
 
-  async uploadFigure(feedback: string, image: string): Promise<string | null> {
+  async uploadFigure(
+    upload: Omit<VoiceFigureUpload, "session">
+  ): Promise<string | null> {
     const { signal } = this.#aborter;
     const id = this.#id;
     const session =
       id === null
         ? null
         : await this.#call({
-            body: { feedback, image, session: id },
+            body: { ...upload, session: id },
             endpoint: ENDPOINTS.voiceFigure,
             save: null,
             signal,
           });
-    const item = session?.feedback.find(({ id }) => id === feedback);
+    const item = session?.feedback.find(({ id }) => id === upload.feedback);
     return item?.figure ?? null;
   }
 

@@ -13,6 +13,7 @@ import { editorUrl } from "../../code/editor-url";
 import { captureClipboard } from "../../testing/layer-page";
 import { COPY_ALL_NAME } from "../view/session-actions";
 import {
+  type FakeVoice,
   fakeVoice,
   voiceFeedback,
   voiceMoment,
@@ -21,7 +22,7 @@ import {
   voiceShot,
 } from "../view/voice-fixture";
 import { VoiceView } from "../voice-view";
-import { DISMISS_NAME } from "./feedback-card";
+import { COPY_NAME, DISMISS_NAME } from "./feedback-card";
 import { ZOOM_NAME } from "./figure/feedback-figure";
 
 afterEach(() => {
@@ -115,7 +116,7 @@ describe("a feedback card", () => {
     expect(card.textContent).toContain("Use the primary blue");
     expect(card.textContent).toContain("this button should be blue");
     expect(card.textContent).toContain("1:15");
-    expect(card.textContent).toContain("<SaveButton>");
+    expect(card.textContent).toContain("SaveButton");
   });
 
   it("opens the call site in the editor", () => {
@@ -147,6 +148,53 @@ describe("a feedback card", () => {
     fireEvent.click(screen.getByRole("button", { name: DISMISS_NAME }));
 
     expect(actions.dismiss).toHaveBeenCalledWith("f1");
+  });
+});
+
+function rowHolding(element: Element, text: string): Element | null {
+  const row = element.parentElement;
+  if (row === null || row.textContent?.includes(text)) {
+    return row;
+  }
+  return rowHolding(row, text);
+}
+
+describe("a card's tools", () => {
+  it("sit with the time, leaving the title and detail the whole card", () => {
+    const { voice } = fakeVoice({ session: reviewed });
+    render(<VoiceView editor="vscode" voice={voice} />);
+    const card = screen.getByRole("article");
+    const tools = [
+      within(card).getByRole("button", { name: COPY_NAME }),
+      within(card).getByRole("link", { name: EDITOR_NAME }),
+      within(card).getByRole("button", { name: DISMISS_NAME }),
+    ];
+
+    for (const tool of tools) {
+      const row = rowHolding(tool, "1:15");
+      expect(row).toBeTruthy();
+      expect(row?.contains(within(card).getByRole("heading"))).toBeFalsy();
+      expect(row?.textContent).not.toContain("Use the primary blue");
+    }
+  });
+
+  it("stay out of the words the agent is still writing up", () => {
+    const { voice } = fakeVoice({
+      analysis: {
+        agent: { id: "claude", name: "Claude Code" },
+        kind: "running",
+      },
+      session: voiceSession({
+        passages: [voicePassage("p1", { startMs: 75_000 })],
+      }),
+    });
+    render(<VoiceView editor={null} voice={voice} />);
+    const card = screen.getByRole("article");
+    const copy = within(card).getByRole("button", { name: COPY_NAME });
+
+    const row = rowHolding(copy, "1:15");
+    expect(row).toBeTruthy();
+    expect(row?.contains(within(card).getByRole("heading"))).toBeFalsy();
   });
 });
 
@@ -191,8 +239,10 @@ describe("copying the review", () => {
       );
     });
     expect(actions.uploadFigure).toHaveBeenCalledWith(
-      "f1",
-      expect.stringMatching(/^data:image\/png/)
+      expect.objectContaining({ feedback: "f1", moment: "m1" })
+    );
+    expect(actions.uploadFigure.mock.calls[0]?.[0].image).toMatch(
+      /^data:image\/png/
     );
     expect(writeText).toHaveBeenCalledWith(
       expect.stringContaining("src/App.tsx:12")
@@ -219,5 +269,84 @@ describe("copying the review", () => {
       );
     });
     expect(actions.uploadFigure).not.toHaveBeenCalled();
+  });
+});
+
+const SHOT_PATH = voiceShot("h1").path;
+
+async function copiedReview(fake: FakeVoice): Promise<string> {
+  const writeText = captureClipboard();
+  render(<VoiceView editor={null} voice={fake.voice} />);
+  fireEvent.click(screen.getByRole("button", { name: COPY_ALL_NAME }));
+  await waitFor(() => {
+    expect(writeText).toHaveBeenCalledOnce();
+  });
+  return writeText.mock.calls[0]?.[0] ?? "";
+}
+
+describe("the screenshot a copy names", () => {
+  it("waits for a screenshot that has not loaded yet", async () => {
+    stubCanvas();
+    const fake = fakeVoice({ session: reviewed });
+    fake.actions.loadShot.mockResolvedValue("blob:shot");
+    fake.actions.uploadFigure.mockResolvedValue(FIGURE_PATH);
+
+    const copied = await copiedReview(fake);
+
+    expect(copied).toContain(FIGURE_PATH);
+    expect(copied).not.toContain(SHOT_PATH);
+  });
+
+  it("keeps the figure already saved for the card", async () => {
+    const saved = voiceSession({
+      ...reviewed,
+      feedback: reviewed.feedback.map((item) => ({
+        ...item,
+        figure: FIGURE_PATH,
+      })),
+    });
+    const fake = fakeVoice({ session: saved });
+
+    await expect(copiedReview(fake)).resolves.toContain(FIGURE_PATH);
+    expect(fake.actions.uploadFigure).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the plain screenshot when the figure is not saved", async () => {
+    stubCanvas();
+    const fake = fakeVoice({
+      session: reviewed,
+      shotUrls: new Map([["h1", "blob:shot"]]),
+    });
+
+    const copied = await copiedReview(fake);
+
+    expect(fake.actions.uploadFigure).toHaveBeenCalledOnce();
+    expect(copied).toContain(SHOT_PATH);
+  });
+});
+
+describe("a copy without a screenshot", () => {
+  it("names none for a card that points at nothing", async () => {
+    const unpointed = voiceSession({
+      ...reviewed,
+      feedback: reviewed.feedback.map((item) => ({ ...item, momentId: null })),
+    });
+    const fake = fakeVoice({ session: unpointed });
+
+    await expect(copiedReview(fake)).resolves.not.toContain(SHOT_PATH);
+    expect(fake.actions.uploadFigure).not.toHaveBeenCalled();
+  });
+
+  it("leaves out the figure of a dismissed card", async () => {
+    const dismissedFigure = ".retouche/voice/s1/f2.png";
+    const dismissed = voiceSession({
+      ...reviewed,
+      dismissed: [
+        voiceFeedback("f2", { figure: dismissedFigure, momentId: "m1" }),
+      ],
+    });
+    const fake = fakeVoice({ session: dismissed });
+
+    await expect(copiedReview(fake)).resolves.not.toContain(dismissedFigure);
   });
 });

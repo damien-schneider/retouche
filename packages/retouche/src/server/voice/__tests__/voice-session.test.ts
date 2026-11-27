@@ -18,17 +18,13 @@ import {
   dataUrl,
   JPEG_BYTES,
   routeRequest,
+  sandboxEnv,
   sessionFrom,
   writeFakeAgent,
 } from "./voice-fixture";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-voice-session-"));
-const missing = join(sandbox, "missing-agent");
-const env = {
-  RETOUCHE_CLAUDE_PATH: missing,
-  RETOUCHE_CODEX_PATH: missing,
-  RETOUCHE_MASTRACODE_PATH: missing,
-};
+const env = sandboxEnv(sandbox);
 const handler = createRouteHandler({ root: sandbox }, env);
 
 afterAll(() => {
@@ -55,12 +51,11 @@ function passageIds(session: { passages: VoicePassage[] }): string[] {
 }
 
 describe("voice sessions", () => {
-  it("starts a session in the project cache and reads it back", async () => {
+  it("starts a session in the user's data folder and reads it back", async () => {
     const session = await createSession(handler);
     expect(session.id).toMatch(/^\d{8}-\d{6}-[\da-f]{4}$/);
-    expect(session.folder).toContain(
-      join("node_modules", ".cache", "retouche", "voice", session.id)
-    );
+    expect(session.folder.startsWith(env.XDG_DATA_HOME)).toBeTruthy();
+    expect(session.folder.endsWith(session.id)).toBeTruthy();
     const read = await handler(routeRequest(`/voice/session?id=${session.id}`));
     await expect(sessionFrom(read)).resolves.toStrictEqual(session);
   });

@@ -1,11 +1,13 @@
 import "../../../instrument";
-import { cleanup } from "@testing-library/react";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { act, cleanup } from "@testing-library/react";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
   ENDPOINTS,
   type ListedAgent,
+  type ListedTranscriber,
   voiceAnalysisRequestSchema,
+  voiceKeyRequestSchema,
 } from "../../../protocol";
 import {
   finishInstalling,
@@ -25,12 +27,27 @@ import {
   readyRoute,
   setUpVoicePage,
   showVoicePage,
+  TRANSCRIBER,
   voice,
   wait,
 } from "./testing/voice-page";
 
 const route = setUpVoicePage();
-const TRANSCRIBED = readyRoute(undefined, "Groq Whisper");
+const TRANSCRIBED = readyRoute(undefined, [TRANSCRIBER]);
+const FROM_ENV: ListedTranscriber = {
+  id: "openai",
+  keyEnv: "OPENAI_API_KEY",
+  name: "OpenAI",
+  source: "env",
+};
+
+async function saveKey(key: string): Promise<string | null> {
+  let refusal: string | null = null;
+  await act(async () => {
+    refusal = await voice().actions.saveKey("groq", key);
+  });
+  return refusal;
+}
 
 function phrases(): string[] {
   return listening().phrases.map(({ phrase }) => phrase);
@@ -79,14 +96,35 @@ describe("ways of listening", () => {
     expect(voice().hearings).not.toContain("device");
   });
 
-  it("offers the transcriber the dev server names", async () => {
+  it("offers each speech-to-text key the dev server can use", async () => {
     showVoicePage(TRANSCRIBED);
     await wait(0);
 
-    expect(voice().hearings).toContain("transcriber");
-    expect(voice().transcriber).toBe("Groq Whisper");
+    expect(voice().transcribers).toStrictEqual([TRANSCRIBER]);
   });
 
+  it("waits for a key found in the dev server's environment to be picked before sending audio to it", async () => {
+    vi.stubGlobal("SpeechRecognition", null);
+    showVoicePage(readyRoute(undefined, [FROM_ENV]));
+    await wait(0);
+    const before = voice().problem;
+    await press(() => {
+      voice().actions.setPreferences({
+        hearing: "transcriber",
+        transcriber: "openai",
+      });
+    });
+
+    expect(before).toBe("unsupported");
+    expect(voice().problem).toBeNull();
+    expect(voice().preferences).toMatchObject({
+      hearing: "transcriber",
+      transcriber: "openai",
+    });
+  });
+});
+
+describe("keeping the chosen way of listening", () => {
   it("listens through what still works when the saved way is gone", async () => {
     await chooseHearing("transcriber", TRANSCRIBED);
     cleanup();
@@ -244,9 +282,10 @@ describe("words from the page", () => {
 describe("the agent that writes feedback", () => {
   it("lists the configured agents and asks the chosen one", async () => {
     const agents: ListedAgent[] = [
-      { id: "claude", name: "Claude Code", state: "ready" },
+      { id: "claude", kind: "command", name: "Claude Code", state: "ready" },
       {
         id: "openrouter",
+        kind: "endpoint",
         name: "OpenRouter · claude-sonnet-4.5",
         state: "unchecked",
       },
@@ -278,5 +317,48 @@ describe("the agent that writes feedback", () => {
     expect(analysis.kind === "failed" ? analysis.error : "").toContain(
       "Claude Code"
     );
+  });
+});
+
+describe("a speech-to-text key saved from the start screen", () => {
+  it("is sent to the dev server, then listened through", async () => {
+    showVoicePage();
+    await wait(0);
+    const refusal = await saveKey("gsk-1");
+
+    const sent = route
+      .server()
+      .calls.filter(({ path }) => path === ENDPOINTS.voiceKey)
+      .map(({ body }) => voiceKeyRequestSchema.parse(body));
+    expect(refusal).toBeNull();
+    expect(sent).toStrictEqual([{ key: "gsk-1", provider: "groq" }]);
+    expect(voice().transcribers.map(({ id }) => id)).toStrictEqual(["groq"]);
+    expect(voice().preferences).toMatchObject({
+      hearing: "transcriber",
+      transcriber: "groq",
+    });
+  });
+
+  it("leaves the way of listening alone when the provider refuses it", async () => {
+    route.server().refuseKeysWith("Groq refused this key.");
+    showVoicePage();
+    await wait(0);
+    const refusal = await saveKey("gsk-typo");
+
+    expect(refusal).toBe("Groq refused this key.");
+    expect(voice().transcribers).toStrictEqual([]);
+    expect(voice().preferences.hearing).toBe("browser");
+  });
+
+  it("listens through what still works once the key is forgotten", async () => {
+    showVoicePage();
+    await wait(0);
+    await saveKey("gsk-1");
+    await act(async () => {
+      await voice().actions.forgetKey("groq");
+    });
+
+    expect(voice().transcribers).toStrictEqual([]);
+    expect(voice().preferences.hearing).toBe("browser");
   });
 });

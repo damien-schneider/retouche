@@ -4,7 +4,15 @@ import { probeDevRoute, type RouteProbe } from "./dev-route";
 
 export type DevRouteState = { kind: "checking" } | RouteProbe;
 
-export function useDevRoute(): DevRouteState {
+export type RefreshRoute = () => Promise<void>;
+
+function settled(current: DevRouteState, probed: RouteProbe): DevRouteState {
+  return current.kind === "ready" && probed.kind === "missing"
+    ? current
+    : probed;
+}
+
+export function useDevRoute(): readonly [DevRouteState, RefreshRoute] {
   const [route, setRoute] = useState<DevRouteState>({ kind: "checking" });
 
   useEffect(() => {
@@ -12,7 +20,7 @@ export function useDevRoute(): DevRouteState {
     const probe = async () => {
       const probed = await probeDevRoute();
       if (isCurrent) {
-        setRoute(probed);
+        setRoute((current) => settled(current, probed));
       }
     };
     void probe();
@@ -26,5 +34,9 @@ export function useDevRoute(): DevRouteState {
     };
   }, []);
 
-  return route;
+  const refresh = async () => {
+    const probed = await probeDevRoute();
+    setRoute((current) => settled(current, probed));
+  };
+  return [route, refresh] as const;
 }

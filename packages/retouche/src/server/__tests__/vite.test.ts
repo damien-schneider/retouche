@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { IncomingMessage, ServerResponse } from "node:http";
 import { Socket } from "node:net";
 import { tmpdir } from "node:os";
@@ -9,13 +9,14 @@ import { join } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { REQUEST_HEADER, ROUTE_BASE } from "../../protocol";
+import { REQUEST_HEADER, ROUTE_BASE, statusSchema } from "../../protocol";
 import { retouche } from "../vite";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-vite-"));
 let server: ViteDevServer;
 
 beforeAll(async () => {
+  vi.stubEnv("XDG_DATA_HOME", join(sandbox, "data"));
   server = await createServer({
     appType: "custom",
     configFile: false,
@@ -34,14 +35,20 @@ afterAll(async () => {
 interface PluginCall {
   body?: Buffer;
   path?: string;
+  remoteAddress?: string;
+  target?: ViteDevServer;
 }
 
-async function statusFrom(
-  remoteAddress: string,
-  call: PluginCall = {}
-): Promise<number> {
+interface PluginAnswer {
+  body: string;
+  status: number;
+}
+
+async function answerFrom(call: PluginCall): Promise<PluginAnswer> {
   const socket = new Socket();
-  Object.defineProperty(socket, "remoteAddress", { value: remoteAddress });
+  Object.defineProperty(socket, "remoteAddress", {
+    value: call.remoteAddress ?? "127.0.0.1",
+  });
   const request = new IncomingMessage(socket);
   request.method = call.body === undefined ? "GET" : "POST";
   request.url = `${ROUTE_BASE}${call.path ?? "/status"}`;
@@ -56,11 +63,21 @@ async function statusFrom(
   };
   const response = new ServerResponse(request);
   const end = vi.spyOn(response, "end");
-  server.middlewares(request, response);
+  (call.target ?? server).middlewares(request, response);
   await vi.waitFor(() => {
     expect(end).toHaveBeenCalledWith(expect.any(Buffer));
   });
-  return response.statusCode;
+  const sent: unknown = end.mock.calls[0]?.[0];
+  const body = Buffer.isBuffer(sent) ? sent.toString("utf-8") : "";
+  return { body, status: response.statusCode };
+}
+
+async function statusFrom(
+  remoteAddress: string,
+  call: PluginCall = {}
+): Promise<number> {
+  const { status } = await answerFrom({ ...call, remoteAddress });
+  return status;
 }
 
 describe("retouche vite plugin", () => {
@@ -120,5 +137,35 @@ describe("retouche vite plugin options", () => {
         server: { middlewareMode: true },
       })
     ).rejects.toThrow(Error);
+  });
+});
+
+describe("keys kept in the project's env files", () => {
+  it("reads a key from .env.local that the voice options name", async () => {
+    const project = mkdtempSync(join(tmpdir(), "retouche-vite-env-"));
+    writeFileSync(join(project, ".env.local"), "SPEECH_TEST_KEY=from-file\n");
+    vi.stubEnv("XDG_CONFIG_HOME", project);
+    const transcriber = {
+      apiKeyEnv: "SPEECH_TEST_KEY",
+      baseUrl: "https://speech.example/v1",
+      model: "whisper",
+      name: "Speech",
+    };
+    const target = await createServer({
+      appType: "custom",
+      configFile: false,
+      logLevel: "silent",
+      plugins: [retouche({ root: project, voice: { transcriber } })],
+      root: project,
+      server: { middlewareMode: true },
+    });
+    const { body } = await answerFrom({ target });
+    await target.close();
+    vi.unstubAllEnvs();
+    rmSync(project, { force: true, recursive: true });
+
+    expect(statusSchema.parse(JSON.parse(body)).transcribers).toContainEqual(
+      expect.objectContaining({ name: "Speech", source: "config" })
+    );
   });
 });

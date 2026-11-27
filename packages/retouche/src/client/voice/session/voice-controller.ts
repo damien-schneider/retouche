@@ -10,7 +10,7 @@ import type {
 } from "../voice";
 import { AnalysisRunner } from "./sync/analysis-runner";
 import { isFreshBeat, RecordingBeat } from "./sync/recording-beat";
-import { SessionSync } from "./sync/session-sync";
+import { type SessionLoad, SessionSync } from "./sync/session-sync";
 import type { SessionDraft } from "./sync/session-view";
 import { ShotUrls } from "./sync/shot-urls";
 import { readStoredSession, storeSession } from "./sync/voice-storage";
@@ -31,7 +31,7 @@ export interface VoiceState {
 
 export type ControllerActions = Omit<
   VoiceActions,
-  "discard" | "setPreferences"
+  "forgetKey" | "newSession" | "openSession" | "saveKey" | "setPreferences"
 >;
 
 export class VoiceController {
@@ -108,23 +108,23 @@ export class VoiceController {
     });
   }
 
-  async restore(): Promise<void> {
+  async restore(): Promise<SessionLoad | null> {
     const stored = this.#isRestored ? null : readStoredSession();
     this.#isRestored = true;
     if (!stored) {
-      return;
+      return null;
     }
     const generation = this.#generation;
     const outcome = await this.#sync.load(stored.id);
     const session = this.#sync.session;
     if (generation !== this.#generation) {
-      return;
+      return outcome;
     }
     if (outcome === "missing") {
       storeSession(null);
     }
     if (outcome !== "found" || !session) {
-      return;
+      return outcome;
     }
     this.recorder.begin({
       elapsedMs: Math.max(stored.elapsedMs, recordedMs(session)),
@@ -132,15 +132,16 @@ export class VoiceController {
     });
     this.#set({ session: this.#sync.session });
     if (!stored.isRecording) {
-      return;
+      return outcome;
     }
     if (!isFreshBeat(stored.beatAt)) {
       this.#set({ problem: "interrupted" });
       this.#beat.store(false);
-      return;
+      return outcome;
     }
     this.#isAutoResume = true;
     this.#openFrom("idle", null);
+    return outcome;
   }
 
   attach(): void {
@@ -163,7 +164,7 @@ export class VoiceController {
     }
   }
 
-  discard(): void {
+  leave(): void {
     this.#generation++;
     this.#isRestored = true;
     this.#reset();
@@ -221,11 +222,9 @@ export class VoiceController {
       dismiss: (feedbackId) => {
         void this.#sync.dismiss(feedbackId);
       },
-      loadShot: (shotId) => {
+      loadShot: async (shotId) => {
         const { id } = this.#sync;
-        if (id !== null) {
-          void this.#shotUrls.load(id, shotId);
-        }
+        return id === null ? null : await this.#shotUrls.load(id, shotId);
       },
       pause: () => {
         this.#pause();
@@ -242,8 +241,7 @@ export class VoiceController {
       stop: () => {
         void this.#stop();
       },
-      uploadFigure: async (feedbackId, image) =>
-        await this.#sync.uploadFigure(feedbackId, image),
+      uploadFigure: async (upload) => await this.#sync.uploadFigure(upload),
     };
   }
 
@@ -285,8 +283,7 @@ export class VoiceController {
 
   async #open(draft: SessionDraft | null): Promise<void> {
     const generation = ++this.#generation;
-    const { hearing, language } = this.#settings.preferences;
-    const problem = await this.recorder.open({ hearing, language });
+    const problem = await this.recorder.open(this.#settings.preferences);
     if (generation !== this.#generation || this.#state.phase !== "starting") {
       return;
     }

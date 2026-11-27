@@ -9,8 +9,11 @@ export const ENDPOINTS = {
   status: "/status",
   voiceAnalysis: "/voice/analysis",
   voiceFigure: "/voice/figure",
+  voiceHistory: "/voice/history",
   voiceSession: "/voice/session",
   voiceShot: "/voice/shot",
+  voiceKey: "/voice/key",
+  voiceStream: "/voice/stream",
   voiceTranscript: "/voice/transcript",
 } as const;
 
@@ -50,10 +53,48 @@ export const AGENT_STATES = ["ready", "signed-out", "unchecked"] as const;
 export type AgentState = (typeof AGENT_STATES)[number];
 
 const listedAgentSchema = voiceAgentSchema.extend({
+  kind: z.enum(["command", "endpoint"]),
   state: z.enum(AGENT_STATES),
 });
 
 export type ListedAgent = z.infer<typeof listedAgentSchema>;
+
+export const TRANSCRIBER_PROVIDERS = ["groq", "mistral", "openai"] as const;
+
+export type TranscriberProvider = (typeof TRANSCRIBER_PROVIDERS)[number];
+
+export const TRANSCRIBER_PROVIDER_NAMES: Record<TranscriberProvider, string> = {
+  groq: "Groq",
+  mistral: "Mistral",
+  openai: "OpenAI",
+};
+
+export const STREAMED_TRANSCRIBERS: readonly string[] = [
+  "mistral",
+] satisfies TranscriberProvider[];
+
+const transcriberProviderSchema = z.enum(TRANSCRIBER_PROVIDERS);
+
+const listedTranscriberSchema = z.discriminatedUnion("source", [
+  z.object({
+    id: voiceIdSchema,
+    name: z.string().min(1),
+    source: z.literal("config"),
+  }),
+  z.object({
+    id: transcriberProviderSchema,
+    name: z.string().min(1),
+    source: z.literal("saved"),
+  }),
+  z.object({
+    id: transcriberProviderSchema,
+    keyEnv: z.string().min(1),
+    name: z.string().min(1),
+    source: z.literal("env"),
+  }),
+]);
+
+export type ListedTranscriber = z.infer<typeof listedTranscriberSchema>;
 
 export const routeMarkerSchema = z.object({
   marker: z.literal(STATUS_MARKER),
@@ -62,7 +103,7 @@ export const routeMarkerSchema = z.object({
 export const statusSchema = routeMarkerSchema.extend({
   agents: z.array(listedAgentSchema).default([]),
   editor: z.enum(EDITORS),
-  transcriber: z.string().nullable().default(null),
+  transcribers: z.array(listedTranscriberSchema).default([]),
 });
 
 export type RouteStatus = z.infer<typeof statusSchema>;
@@ -110,6 +151,8 @@ const voiceMomentSchema = z.object({
 
 export type VoiceMoment = z.infer<typeof voiceMomentSchema>;
 
+const wordTimesSchema = z.array(z.number().nonnegative()).max(2000);
+
 const voicePassageSchema = z.object({
   endMs: z.number().nonnegative(),
   id: voiceIdSchema,
@@ -117,6 +160,7 @@ const voicePassageSchema = z.object({
   page: z.string(),
   startMs: z.number().nonnegative(),
   text: z.string(),
+  wordMs: wordTimesSchema.optional(),
 });
 
 export type VoicePassage = z.infer<typeof voicePassageSchema>;
@@ -198,6 +242,27 @@ export const voiceSessionRequestSchema = z.discriminatedUnion("kind", [
 
 export type VoiceSessionRequest = z.infer<typeof voiceSessionRequestSchema>;
 
+export const voiceSessionSummarySchema = z.object({
+  id: voiceIdSchema,
+  itemCount: z.number().int().nonnegative(),
+  label: z.string(),
+  page: z.string().nullable(),
+  recordedMs: z.number().nonnegative(),
+  startedAt: z.number(),
+});
+
+export type VoiceSessionSummary = z.infer<typeof voiceSessionSummarySchema>;
+
+export const voiceHistorySchema = z.object({
+  sessions: z.array(voiceSessionSummarySchema),
+});
+
+export type VoiceHistory = z.infer<typeof voiceHistorySchema>;
+
+export const voiceHistoryRequestSchema = z.object({ delete: voiceIdSchema });
+
+export type VoiceHistoryRequest = z.infer<typeof voiceHistoryRequestSchema>;
+
 export const voiceShotUploadSchema = z.object({
   image: z.string().startsWith("data:image/"),
   session: voiceIdSchema,
@@ -209,6 +274,7 @@ export type VoiceShotUpload = z.infer<typeof voiceShotUploadSchema>;
 export const voiceFigureUploadSchema = z.object({
   feedback: voiceIdSchema,
   image: z.string().startsWith("data:image/png"),
+  moment: voiceIdSchema,
   session: voiceIdSchema,
 });
 
@@ -223,15 +289,66 @@ export type VoiceAnalysisRequest = z.infer<typeof voiceAnalysisRequestSchema>;
 
 export const voiceTranscriptRequestSchema = z.object({
   audio: z.string().startsWith("data:audio/"),
+  transcriber: voiceIdSchema,
 });
 
 export type VoiceTranscriptRequest = z.infer<
   typeof voiceTranscriptRequestSchema
 >;
 
-export const voiceTranscriptSchema = z.object({ text: z.string() });
+export const voiceTranscriptSchema = z.object({
+  text: z.string(),
+  wordOffsetMs: wordTimesSchema.optional(),
+});
 
 export type VoiceTranscript = z.infer<typeof voiceTranscriptSchema>;
+
+const pcmSchema = z.base64().max(2_000_000);
+
+export const PHRASE_MAX_LENGTH = 100;
+
+export const voiceStreamRequestSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("open"),
+    audio: pcmSchema,
+    language: z.string().max(35),
+    phrases: z.array(z.string().max(PHRASE_MAX_LENGTH)).max(100),
+    sampleRate: z.number().int().min(8000).max(96_000),
+    transcriber: voiceIdSchema,
+  }),
+  z.object({
+    action: z.literal("append"),
+    audio: pcmSchema,
+    stream: voiceIdSchema,
+  }),
+  z.object({
+    action: z.literal("end"),
+    audio: pcmSchema,
+    stream: voiceIdSchema,
+  }),
+]);
+
+export type VoiceStreamRequest = z.infer<typeof voiceStreamRequestSchema>;
+
+export const voiceStreamSchema = z.object({
+  stream: voiceIdSchema,
+  text: z.string(),
+});
+
+export type VoiceStream = z.infer<typeof voiceStreamSchema>;
+
+export const voiceKeyRequestSchema = z.object({
+  key: z.string().trim().min(1).nullable(),
+  provider: transcriberProviderSchema,
+});
+
+export type VoiceKeyRequest = z.infer<typeof voiceKeyRequestSchema>;
+
+export const voiceKeyAnswerSchema = z.object({
+  transcribers: z.array(listedTranscriberSchema),
+});
+
+export type VoiceKeyAnswer = z.infer<typeof voiceKeyAnswerSchema>;
 
 const lineRangeSchema = z.object({
   end: z.number().int(),

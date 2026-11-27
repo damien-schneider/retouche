@@ -1,3 +1,4 @@
+import { PHRASE_MAX_LENGTH } from "../../../../protocol";
 import type { PhraseBook } from "./speech-source";
 
 const LABELLED = [
@@ -32,7 +33,9 @@ function pagePhrases(components: readonly string[]): string[] {
   const phrases: string[] = [];
   for (const phrase of [...components, ...labels]) {
     const key = phrase.toLowerCase();
-    const isShort = phrase.split(" ").length <= MAX_WORDS;
+    const isShort =
+      phrase.length <= PHRASE_MAX_LENGTH &&
+      phrase.split(" ").length <= MAX_WORDS;
     if (phrase !== "" && isShort && !seen.has(key)) {
       seen.add(key);
       phrases.push(phrase);

@@ -1,10 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
   ENDPOINTS,
-  VOICE_ID,
   type ListedAgent,
+  type ListedTranscriber,
+  VOICE_ID,
   type VoiceSession,
   voiceAnalysisRequestSchema,
   voiceFigureUploadSchema,
@@ -23,7 +24,7 @@ import type { RouteEnv } from "../options";
 import { readJson } from "../request-body";
 import { createAgentRegistry } from "./agents/agent-registry";
 import { type Analyzer, createAnalyzer } from "./analysis/voice-analysis";
-import { postTranscript, usableTranscriber } from "./endpoint/transcript-route";
+import { getHistory, postHistory } from "./history/history-route";
 import {
   findShot,
   IMAGE_MEDIA_TYPES,
@@ -36,14 +37,22 @@ import {
   recordShot,
   recordSpeech,
 } from "./session-changes";
-import { createSessionStore, type SessionStore } from "./session-store";
+import { SessionFiles, type SessionStore } from "./session-store";
+import { postKey } from "./transcribers/key-route";
+import { createStreamRoute } from "./transcribers/stream/stream-route";
+import { listedTranscribers } from "./transcribers/transcriber-list";
+import { postTranscript } from "./transcribers/transcript-route";
+import { projectSessionsFolder, writePrivateFile } from "./user-folders";
 import type { ResolvedVoiceOptions } from "./voice-options";
 
 export type VoiceEndpoint = (typeof ENDPOINTS)[
   | "voiceAnalysis"
   | "voiceFigure"
+  | "voiceHistory"
+  | "voiceKey"
   | "voiceSession"
   | "voiceShot"
+  | "voiceStream"
   | "voiceTranscript"];
 
 export type EndpointRoutes = Partial<
@@ -53,7 +62,7 @@ export type EndpointRoutes = Partial<
 export interface VoiceRoutes {
   agents: () => Promise<ListedAgent[]>;
   routes: Record<VoiceEndpoint, EndpointRoutes>;
-  transcriber: () => string | null;
+  transcribers: () => Promise<ListedTranscriber[]>;
 }
 
 export interface VoiceContext {
@@ -73,10 +82,7 @@ async function postSession(
   const change = body.value;
   if (change.kind === "create") {
     const { language, origin, startedAt } = change;
-    return {
-      ok: true,
-      value: await store.create({ language, origin, startedAt }),
-    };
+    return await store.create({ language, origin, startedAt });
   }
   return await store.update(change.id, (session) => {
     if (change.kind === "dismiss") {
@@ -105,8 +111,7 @@ async function postShot(
   const { session: id, shot } = body.value;
   return await store.update(id, async (session) => {
     const path = shotPath(session.folder, shot.id, image.value.type);
-    await mkdir(session.folder, { recursive: true });
-    await writeFile(path, image.value.bytes);
+    await writePrivateFile(path, image.value.bytes);
     return { ok: true, value: recordShot(session, { ...shot, path }) };
   });
 }
@@ -147,13 +152,12 @@ async function postFigure(
   if (image.value.type !== "png") {
     return failure("Figures must be PNG data URLs.", 400);
   }
-  const { feedback: feedbackId, session: id } = body.value;
+  const { feedback: feedbackId, moment: momentId, session: id } = body.value;
   return await store.update(id, async (session) => {
-    const path = join(session.folder, `figure-${feedbackId}.png`);
-    const outcome = attachFigure(session, { feedbackId, path });
+    const path = join(session.folder, `figure-${feedbackId}-${momentId}.png`);
+    const outcome = attachFigure(session, { feedbackId, momentId, path });
     if (outcome.ok) {
-      await mkdir(session.folder, { recursive: true });
-      await writeFile(path, image.value.bytes);
+      await writePrivateFile(path, image.value.bytes);
     }
     return outcome;
   });
@@ -167,14 +171,26 @@ async function postAnalysis(
   return body.ok ? await analyze(body.value, request.signal) : body;
 }
 
+async function getSession(
+  store: SessionStore,
+  request: Request
+): Promise<Response> {
+  const id = new URL(request.url).searchParams.get("id") ?? "";
+  const session = await store.read(id);
+  return session
+    ? jsonResponse(session)
+    : errorResponse(`No voice session ${id}.`, 404);
+}
+
 export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
   const { env, voice } = context;
-  const store = createSessionStore(() =>
-    join(context.root(), "node_modules", ".cache", "retouche", "voice")
+  const store = new SessionFiles(() =>
+    projectSessionsFolder(env, context.root())
   );
   const agents = createAgentRegistry({ agents: voice.agents, env });
   const analyze = createAnalyzer({ agents, env, store });
   const transcription = { env, transcriber: voice.transcriber };
+  const postStream = createStreamRoute(transcription);
   const routes: Record<VoiceEndpoint, EndpointRoutes> = {
     [ENDPOINTS.voiceAnalysis]: {
       POST: async (request) =>
@@ -184,20 +200,26 @@ export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
       POST: async (request) =>
         outcomeResponse(await postFigure(store, request)),
     },
+    [ENDPOINTS.voiceHistory]: {
+      GET: async () => jsonResponse(await getHistory(store)),
+      POST: async (request) =>
+        outcomeResponse(await postHistory(store, request)),
+    },
+    [ENDPOINTS.voiceKey]: {
+      POST: async (request) =>
+        outcomeResponse(await postKey(transcription, request)),
+    },
     [ENDPOINTS.voiceSession]: {
-      GET: async (request) => {
-        const id = new URL(request.url).searchParams.get("id") ?? "";
-        const session = await store.read(id);
-        return session
-          ? jsonResponse(session)
-          : errorResponse(`No voice session ${id}.`, 404);
-      },
+      GET: async (request) => await getSession(store, request),
       POST: async (request) =>
         outcomeResponse(await postSession(store, request)),
     },
     [ENDPOINTS.voiceShot]: {
       GET: async (request) => await getShot(store, request),
       POST: async (request) => outcomeResponse(await postShot(store, request)),
+    },
+    [ENDPOINTS.voiceStream]: {
+      POST: async (request) => outcomeResponse(await postStream(request)),
     },
     [ENDPOINTS.voiceTranscript]: {
       POST: async (request) =>
@@ -207,6 +229,6 @@ export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
   return {
     agents: agents.listed,
     routes,
-    transcriber: () => usableTranscriber(transcription)?.name ?? null,
+    transcribers: async () => await listedTranscribers(transcription),
   };
 }

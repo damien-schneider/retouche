@@ -8,6 +8,7 @@ import type {
   VoiceShot,
   VoiceSite,
 } from "../../../protocol";
+import { passageRuns } from "../../../voice/spoken-timeline";
 import type { AgentImage } from "../agents/agent-backend";
 import { IMAGE_MEDIA_TYPES, type StoredImage } from "../image-files";
 
@@ -16,13 +17,14 @@ export const MAX_IMAGES = 8;
 export const ANALYSIS_SYSTEM = [
   "You turn a developer's spoken walkthrough of their own web app into feedback items a coding agent can act on.",
   "The material lists what the developer said as passages (P#), what they pointed at or clicked as moments (M#), screenshots (S#, some attached as images), the items of the previous run (F#) and the items the developer dismissed.",
+  "Inside a passage, a ⟨M#⟩ mark names the element pointed at or clicked while the words after it were said, up to the next mark; ⟨nothing⟩ marks words said while nothing was pointed at.",
   "Rules:",
   "- One item per distinct need. Merge repetitions and self-corrections into one item. Split a passage that asks for two unrelated things.",
   "- title: imperative and specific, 12 words at most.",
   "- detail: 1 to 2 sentences on what to change and where, only from what was said and seen. Never invent requirements.",
   "- quote: the author's exact words that support the item, 30 words at most.",
   "- passages: the P# aliases the item comes from, at least one.",
-  "- moment: the M# alias of the element the item is about, preferring the candidates listed under its passages. When the item is about an element next to the one pointed at, give the pointed one: its screenshot still shows the place. null only for an item about no particular place.",
+  "- moment: the M# alias of the element the item is about: the ⟨M#⟩ mark just before the words the item quotes, since that is what was pointed at while they were said, even when another element was held longer elsewhere in the passage. Without a mark before them, prefer the candidates listed under its passages. When the item is about an element next to the one pointed at, give the pointed one: its screenshot still shows the place. null only for an item about no particular place.",
   "- id: the F# alias of the previous item this one continues, else null. Never give one F# to two items.",
   "- Keep a continued item's title, detail and quote word for word unless new passages change what it asks.",
   "- Skip chit-chat and narration that asks for nothing. Zero items is a valid answer.",
@@ -136,8 +138,35 @@ function momentLine(
   ].join(" · ");
 }
 
-function passageLines(passage: VoicePassage, labels: Labels): string[] {
-  const head = `${labels.passages.get(passage.id) ?? ""} [${clock(passage.startMs)}–${clock(passage.endMs)}] page ${untrusted(passage.page)}: ${untrusted(passage.text)}`;
+function spokenText(
+  passage: VoicePassage,
+  labels: Labels,
+  moments: readonly VoiceMoment[]
+): string {
+  const byId = new Map(moments.map((moment) => [moment.id, moment]));
+  const runs = passageRuns(passage, moments);
+  if (runs.length === 0) {
+    return untrusted(passage.text);
+  }
+  return runs
+    .map(({ momentId, text }, index) => {
+      const moment = byId.get(momentId ?? "");
+      if (moment === undefined) {
+        return index === 0 ? untrusted(text) : `⟨nothing⟩ ${untrusted(text)}`;
+      }
+      const { component, tag } = moment.element;
+      const name = untrusted(`<${component ?? tag}>`);
+      return `⟨${labels.moments.get(moment.id) ?? ""} ${name}⟩ ${untrusted(text)}`;
+    })
+    .join(" ");
+}
+
+function passageLines(
+  passage: VoicePassage,
+  labels: Labels,
+  moments: readonly VoiceMoment[]
+): string[] {
+  const head = `${labels.passages.get(passage.id) ?? ""} [${clock(passage.startMs)}–${clock(passage.endMs)}] page ${untrusted(passage.page)}: ${spokenText(passage, labels, moments)}`;
   const candidates = aliasList(passage.momentIds, labels.moments);
   return candidates === "" ? [head] : [head, `  candidates: ${candidates}`];
 }
@@ -175,7 +204,9 @@ function materialText(
     `Session: origin ${untrusted(session.origin)}, language ${untrusted(session.language)}, duration ${clock(recordedMs(session))}.`,
     section(
       "Passages",
-      session.passages.flatMap((passage) => passageLines(passage, labels))
+      session.passages.flatMap((passage) =>
+        passageLines(passage, labels, session.moments)
+      )
     ),
     section(
       "Moments",

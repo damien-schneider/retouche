@@ -5,10 +5,15 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { afterEach, beforeEach, vi } from "vitest";
 
-import { type ListedAgent, STATUS_MARKER } from "../../../../protocol";
+import {
+  type ListedAgent,
+  type ListedTranscriber,
+  STATUS_MARKER,
+} from "../../../../protocol";
+import { probeDevRoute } from "../../../route/dev-route";
 import type { DevRouteState } from "../../../route/use-dev-route";
 import { useVoice } from "../../use-voice";
 import type { Voice } from "../../voice";
@@ -17,8 +22,15 @@ import { serveVoiceRoute, type VoiceServer } from "./voice-server";
 
 let shown: Voice | null = null;
 
-function VoiceProbe({ route }: { route: DevRouteState }) {
-  const voice = useVoice({ components: ["PlanCard"], route });
+function VoiceProbe({ first }: { first: DevRouteState }) {
+  const [route, setRoute] = useState(first);
+  const voice = useVoice({
+    components: ["PlanCard"],
+    refreshRoute: async () => {
+      setRoute(await probeDevRoute());
+    },
+    route,
+  });
   useEffect(() => {
     shown = voice;
   });
@@ -36,15 +48,21 @@ function PlanCard() {
   );
 }
 
+export const TRANSCRIBER: ListedTranscriber = {
+  id: "configured",
+  name: "Groq Whisper",
+  source: "config",
+};
+
 export function readyRoute(
   agents: ListedAgent[] = [
-    { id: "claude", name: "Claude Code", state: "ready" },
+    { id: "claude", kind: "command", name: "Claude Code", state: "ready" },
   ],
-  transcriber: string | null = null
+  transcribers: ListedTranscriber[] = []
 ): DevRouteState {
   return {
     kind: "ready",
-    status: { agents, editor: "vscode", marker: STATUS_MARKER, transcriber },
+    status: { agents, editor: "vscode", marker: STATUS_MARKER, transcribers },
   };
 }
 
@@ -52,7 +70,7 @@ export function showVoicePage(route: DevRouteState = readyRoute()): void {
   render(
     <>
       <PlanCard />
-      <VoiceProbe route={route} />
+      <VoiceProbe first={route} />
     </>
   );
 }
@@ -86,10 +104,15 @@ function pointAt(element: Element): void {
   });
 }
 
-export async function hover(element: Element): Promise<void> {
+export async function moveOver(element: Element): Promise<void> {
   pointAt(element);
   fireEvent.pointerMove(element, { clientX: 40, clientY: 30 });
-  await wait(400);
+  await wait(20);
+}
+
+export async function hover(element: Element): Promise<void> {
+  await moveOver(element);
+  await wait(380);
 }
 
 export async function click(element: Element): Promise<void> {

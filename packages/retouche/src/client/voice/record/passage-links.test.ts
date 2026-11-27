@@ -24,7 +24,7 @@ function moment(
   };
 }
 
-const PASSAGE = { endMs: 8000, startMs: 5000 };
+const PASSAGE = { endMs: 8000, startMs: 5000, text: "" };
 
 describe("linking a spoken passage to what the developer pointed at", () => {
   it("prefers a click over a brief glance during the same words", () => {
@@ -59,7 +59,9 @@ describe("linking a spoken passage to what the developer pointed at", () => {
       linkPassage({ moments, openingId: "opening", passage: PASSAGE })[0]
     ).toBe("opening");
   });
+});
 
+describe("which moments a passage keeps", () => {
   it("leaves out moments far from the words", () => {
     const moments = [
       moment("before", { atMs: 1000, durationMs: 500, kind: "click" }),
@@ -80,5 +82,23 @@ describe("linking a spoken passage to what the developer pointed at", () => {
     expect(
       linkPassage({ moments, openingId: null, passage: PASSAGE })
     ).toHaveLength(3);
+  });
+
+  it("keeps what was clicked while particular words were said, past three stronger moments", () => {
+    const moments = [
+      moment("a", { atMs: 4000, durationMs: 1500, kind: "point" }),
+      moment("b", { atMs: 4200, durationMs: 1500, kind: "point" }),
+      moment("c", { atMs: 4400, durationMs: 1600, kind: "point" }),
+      moment("removed", { atMs: 7500, durationMs: 0, kind: "click" }),
+    ];
+    const passage = {
+      ...PASSAGE,
+      text: "this should be removed",
+      wordMs: [7600, 7700, 7800, 7900],
+    };
+
+    expect(linkPassage({ moments, openingId: null, passage })).toContain(
+      "removed"
+    );
   });
 });

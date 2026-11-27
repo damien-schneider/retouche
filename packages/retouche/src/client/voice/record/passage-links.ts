@@ -1,22 +1,22 @@
-import type { VoiceMoment, VoicePassage } from "../../../protocol";
-
-type MomentKind = VoiceMoment["kind"];
+import type { VoiceMoment } from "../../../protocol";
+import {
+  momentWeight,
+  type TimedPassage,
+  wordOwners,
+  wordTimes,
+} from "../../../voice/spoken-timeline";
 
 export interface LinkRequest {
   moments: readonly VoiceMoment[];
   openingId: string | null;
-  passage: Pick<VoicePassage, "endMs" | "startMs">;
+  passage: TimedPassage;
 }
 
 export const LOOK_BEHIND_MS = 2000;
 const LOOK_AHEAD_MS = 1000;
-const FULL_HOLD_MS = 2000;
-const HOLD_HEAD_START_MS = 400;
 const EDGE_PROXIMITY = 0.3;
 const OPENING_BONUS = 0.2;
 const MAX_LINKS = 3;
-
-const KIND_WEIGHTS: Record<MomentKind, number> = { click: 1, point: 0.7 };
 
 function proximity(
   moment: VoiceMoment,
@@ -46,19 +46,15 @@ function isCandidate(
 
 export function linkPassage(request: LinkRequest): string[] {
   const { moments, openingId, passage } = request;
-  return moments
-    .filter((moment) => isCandidate(moment, passage))
+  const nearby = moments.filter((moment) => isCandidate(moment, passage));
+  const owners = new Set(wordOwners(nearby, wordTimes(passage)));
+  return nearby
     .map((moment) => {
-      const hold = Math.min(
-        1,
-        (moment.durationMs + HOLD_HEAD_START_MS) / FULL_HOLD_MS
-      );
       const bonus = moment.id === openingId ? OPENING_BONUS : 0;
-      const score =
-        KIND_WEIGHTS[moment.kind] * hold * proximity(moment, passage) + bonus;
+      const score = momentWeight(moment) * proximity(moment, passage) + bonus;
       return { id: moment.id, score };
     })
     .toSorted((first, second) => second.score - first.score)
-    .slice(0, MAX_LINKS)
+    .filter(({ id }, rank) => rank < MAX_LINKS || owners.has(id))
     .map(({ id }) => id);
 }

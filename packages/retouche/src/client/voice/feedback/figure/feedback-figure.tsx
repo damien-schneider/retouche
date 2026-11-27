@@ -59,7 +59,7 @@ export function FeedbackFigure({
 
   useEffect(() => {
     if (missingShot !== null) {
-      loadShot(missingShot);
+      void loadShot(missingShot);
     }
   }, [loadShot, missingShot]);
 

@@ -2,7 +2,10 @@ import type {
   ErrorBody,
   RouteStatus,
   SourceFile,
+  VoiceHistory,
+  VoiceKeyAnswer,
   VoiceSession,
+  VoiceStream,
   VoiceTranscript,
 } from "../protocol";
 
@@ -19,7 +22,10 @@ type RouteBody =
   | ErrorBody
   | RouteStatus
   | SourceFile
+  | VoiceHistory
+  | VoiceKeyAnswer
   | VoiceSession
+  | VoiceStream
   | VoiceTranscript;
 
 export function jsonResponse(body: RouteBody, status = 200): Response {

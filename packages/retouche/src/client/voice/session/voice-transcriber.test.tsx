@@ -1,5 +1,5 @@
 import "../../../instrument";
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { breakRecorders } from "./testing/fake-media-recorder";
@@ -15,13 +15,17 @@ import {
   press,
   readyRoute,
   setUpVoicePage,
+  TRANSCRIBER,
   upgradeButton,
   voice,
   wait,
 } from "./testing/voice-page";
 
 const route = setUpVoicePage();
-const TRANSCRIBED = readyRoute(undefined, "Groq Whisper");
+const TRANSCRIBED = readyRoute(undefined, [TRANSCRIBER]);
+const STREAMED = readyRoute(undefined, [
+  { id: "mistral", name: "Mistral", source: "saved" },
+]);
 
 function linkedTexts(index: number): string[] {
   const session = voice().session;
@@ -60,6 +64,56 @@ describe("through the configured transcriber", () => {
     ]);
     const [first, second] = voice().session?.passages ?? [];
     expect(first?.startMs).toBeLessThan(second?.startMs ?? 0);
+  });
+});
+
+describe("through a key that streams the words as they are said", () => {
+  it("shows the words while the sentence is said, then keeps the sentence", async () => {
+    await startListening("transcriber", STREAMED);
+    sayAloud("the logo is blurry");
+    await wait(800);
+    const whileSaid = voice().feed.read().interim;
+    speakAt(0);
+    await wait(2500);
+
+    expect(whileSaid).toBe("the logo is blurry");
+    expect(passages()).toStrictEqual(["the logo is blurry"]);
+    expect(voice().feed.read().interim).toBe("");
+  });
+
+  it("keeps each sentence apart, in the order said", async () => {
+    await startListening("transcriber", STREAMED);
+    await speak("the logo is blurry");
+    await speak("make the footer sticky");
+
+    expect(passages()).toStrictEqual([
+      "the logo is blurry",
+      "make the footer sticky",
+    ]);
+  });
+
+  it("keeps streaming on a page whose labels run too long to prime it", async () => {
+    render(<a href="#long">{`https://example.com/${"a".repeat(120)}`}</a>);
+    await startListening("transcriber", STREAMED);
+    await speak("the logo is blurry");
+
+    expect(passages()).toStrictEqual(["the logo is blurry"]);
+    expect(voice().problem).toBeNull();
+  });
+});
+
+describe("when a key that streams cannot hear", () => {
+  it("shows the problem while the sentence is still being said", async () => {
+    route.server().failTranscriptsWith("Mistral refused the key.");
+    await startListening("transcriber", STREAMED);
+    sayAloud("the logo is blurry");
+    await wait(800);
+    const whileSaid = voice().problem;
+    speakAt(0);
+    await wait(2500);
+
+    expect(whileSaid).toBe("transcript-failed");
+    expect(passages()).toStrictEqual([]);
   });
 });
 

@@ -118,7 +118,7 @@ describe("route endpoints", () => {
       agents: [],
       editor: "cursor",
       marker: "retouche",
-      transcriber: null,
+      transcribers: [],
     });
   });
 
@@ -207,6 +207,7 @@ describe("Next route", () => {
 
   it("accepts posted voice requests under next dev", async () => {
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("XDG_DATA_HOME", join(sandbox, "data"));
     const response = await route.POST(
       routeRequest("/voice/session", {
         body: JSON.stringify({

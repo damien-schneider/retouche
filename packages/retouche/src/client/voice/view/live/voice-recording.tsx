@@ -1,6 +1,7 @@
 import { PauseIcon, ResumeIcon, StopIcon } from "../../../shell/icons";
+import { useHeldSpace } from "../../page/use-held-space";
 import type { Voice } from "../../voice";
-import { LiveCaption, PointedChip } from "./live-caption";
+import { LiveCaption, PointedChip, SpaceHint } from "./live-caption";
 import { LevelMeter, Timer } from "./live-values";
 
 export const PAUSE_NAME = "Pause";
@@ -18,7 +19,7 @@ function PauseButton({ voice }: { voice: Voice }) {
         type="button"
       >
         <ResumeIcon />
-        {RESUME_NAME}
+        <span>{RESUME_NAME}</span>
       </button>
     );
   }
@@ -30,14 +31,43 @@ function PauseButton({ voice }: { voice: Voice }) {
       type="button"
     >
       <PauseIcon />
-      {PAUSE_NAME}
+      <span>{PAUSE_NAME}</span>
     </button>
   );
 }
 
+function RecordingHead({ voice }: { voice: Voice }) {
+  const { actions, feed, phase } = voice;
+  return (
+    <div className="dt-voice-live-head">
+      <span aria-hidden="true" className="dt-voice-rec" />
+      {phase === "recording" && (
+        <span className="dt-voice-state">Recording</span>
+      )}
+      {phase === "paused" && <span className="dt-voice-paused">Paused</span>}
+      <Timer feed={feed} />
+      {phase !== "paused" && <LevelMeter feed={feed} />}
+      <div className="dt-voice-live-actions">
+        <PauseButton voice={voice} />
+        <button
+          aria-label={STOP_NAME}
+          className="dt-btn"
+          disabled={phase === "starting"}
+          onClick={actions.stop}
+          type="button"
+        >
+          <StopIcon />
+          <span>Stop</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function VoiceRecording({ voice }: { voice: Voice }) {
-  const { actions, feed, phase, session } = voice;
+  const { feed, phase, session } = voice;
   const settled = session?.passages.at(-1)?.text ?? null;
+  const isHeld = useHeldSpace(phase === "recording");
   return (
     <section
       aria-busy={phase === "starting"}
@@ -45,28 +75,7 @@ export function VoiceRecording({ voice }: { voice: Voice }) {
       className="dt-voice-live"
       data-phase={phase}
     >
-      <div className="dt-voice-live-head">
-        <span aria-hidden="true" className="dt-voice-rec" />
-        <Timer feed={feed} />
-        {phase === "paused" ? (
-          <span className="dt-voice-paused">Paused</span>
-        ) : (
-          <LevelMeter feed={feed} />
-        )}
-        <div className="dt-voice-live-actions">
-          <PauseButton voice={voice} />
-          <button
-            aria-label={STOP_NAME}
-            className="dt-btn"
-            disabled={phase === "starting"}
-            onClick={actions.stop}
-            type="button"
-          >
-            <StopIcon />
-            Stop
-          </button>
-        </div>
-      </div>
+      <RecordingHead voice={voice} />
       {phase === "starting" ? (
         <p className="dt-voice-caption" data-quiet="true">
           Waiting for the microphone…
@@ -75,6 +84,11 @@ export function VoiceRecording({ voice }: { voice: Voice }) {
         <LiveCaption feed={feed} settled={settled} />
       )}
       <PointedChip feed={feed} />
+      {phase === "recording" && (
+        <p className="dt-voice-hold" data-held={isHeld}>
+          <SpaceHint isHeld={isHeld} />
+        </p>
+      )}
     </section>
   );
 }

@@ -13,6 +13,7 @@ import { RESUME_NAME, STOP_NAME } from "./voice-recording";
 
 afterEach(cleanup);
 
+const SPACE = /space/i;
 const OPEN_PILL = new RegExp(`^${SESSION_NAME}`);
 
 describe("the idle voice toggle", () => {
@@ -122,5 +123,47 @@ describe("the paused voice toggle", () => {
     fireEvent.click(screen.getByRole("button", { name: RESUME_NAME }));
 
     expect(actions.resume).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the bar while recording with nothing said", () => {
+  it("tells how to hide the outline, until words come", () => {
+    const { live, voice } = fakeVoice({ phase: "recording" });
+    render(
+      <VoiceToggle onOpen={vi.fn<() => void>()} place="bar" voice={voice} />
+    );
+    const pill = screen.getByRole("button", { name: OPEN_PILL });
+    const quiet = pill.textContent;
+
+    act(() => {
+      live({ interim: "make the header lighter" });
+    });
+
+    expect(quiet).toMatch(SPACE);
+    expect(pill.textContent).not.toMatch(SPACE);
+  });
+
+  it("says the outline is hidden while Space is held", () => {
+    const { voice } = fakeVoice({ phase: "recording" });
+    render(
+      <VoiceToggle onOpen={vi.fn<() => void>()} place="bar" voice={voice} />
+    );
+    const pill = screen.getByRole("button", { name: OPEN_PILL });
+    const before = pill.textContent;
+
+    fireEvent.keyDown(window, { key: " " });
+
+    expect(pill.textContent).not.toBe(before);
+  });
+
+  it("keeps the hint out of the paused bar", () => {
+    const { voice } = fakeVoice({ phase: "paused" });
+    render(
+      <VoiceToggle onOpen={vi.fn<() => void>()} place="bar" voice={voice} />
+    );
+
+    expect(
+      screen.getByRole("button", { name: OPEN_PILL }).textContent
+    ).not.toMatch(SPACE);
   });
 });

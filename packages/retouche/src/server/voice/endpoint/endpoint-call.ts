@@ -8,11 +8,16 @@ import {
 } from "../agents/agent-backend";
 import type { EndpointConfig } from "../voice-options";
 
+export interface EndpointKey {
+  origin: string;
+  value: string;
+}
+
 export interface EndpointRequest<T> {
   answer: z.ZodType<T>;
   body: FormData | string;
   config: EndpointConfig;
-  env: RouteEnv;
+  key: EndpointKey | null;
   path: string;
   signal: AbortSignal;
 }
@@ -32,13 +37,14 @@ const errorBodySchema = z.object({
 
 interface CalledEndpoint {
   config: EndpointConfig;
+  key: EndpointKey | null;
   url: string;
 }
 
-function refusedKey({ config }: CalledEndpoint): string {
-  return config.apiKeyEnv === undefined
+function refusedKey({ config, key }: CalledEndpoint): string {
+  return key === null
     ? `${config.name} asks for an API key: set apiKeyEnv to the environment variable that holds it.`
-    : `${config.name} refused the API key in ${config.apiKeyEnv}.`;
+    : `${config.name} refused the API key ${key.origin}.`;
 }
 
 const STATUS_ERRORS = {
@@ -51,10 +57,16 @@ const STATUS_ERRORS = {
   429: ({ config }) => `${config.name} is rate limited; try again in a moment.`,
 } satisfies Record<number, (called: CalledEndpoint) => string>;
 
-function endpointKey(config: EndpointConfig, env: RouteEnv): string | null {
-  const key =
-    config.apiKeyEnv === undefined ? "" : (env[config.apiKeyEnv]?.trim() ?? "");
-  return key === "" ? null : key;
+export function endpointKey(
+  config: EndpointConfig,
+  env: RouteEnv
+): EndpointKey | null {
+  const { apiKeyEnv } = config;
+  if (apiKeyEnv === undefined) {
+    return null;
+  }
+  const value = env[apiKeyEnv]?.trim() ?? "";
+  return value === "" ? null : { origin: `in ${apiKeyEnv}`, value };
 }
 
 export function isEndpointReady(
@@ -95,8 +107,7 @@ async function send<T>(
   request: EndpointRequest<T>,
   signal: AbortSignal
 ): Promise<EndpointReply<T>> {
-  const { body, config, env, path } = request;
-  const key = endpointKey(config, env);
+  const { body, config, key, path } = request;
   const url = `${config.baseUrl.replace(TRAILING_SLASHES, "")}${path}`;
   const response = await fetch(url, {
     body,
@@ -104,7 +115,7 @@ async function send<T>(
       ...(!(body instanceof FormData) && {
         "content-type": "application/json",
       }),
-      ...(key !== null && { authorization: `Bearer ${key}` }),
+      ...(key !== null && { authorization: `Bearer ${key.value}` }),
     },
     method: "POST",
     signal,
@@ -112,7 +123,7 @@ async function send<T>(
   const text = await response.text();
   if (!response.ok) {
     return {
-      error: statusError({ config, url }, response.status, text),
+      error: statusError({ config, key, url }, response.status, text),
       ok: false,
     };
   }

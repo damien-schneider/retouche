@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import type { VoiceAgent } from "../../../protocol";
-import { AlertIcon, RetryIcon } from "../../shell/icons";
-import { pendingPassages } from "../feedback/review-items";
+import { pendingPassages } from "../../../voice/session-items";
+import { AlertIcon, ChevronDownIcon, RetryIcon } from "../../shell/icons";
 import type { Voice } from "../voice";
 import { AgentChoice } from "./settings/agent-choice";
 import { RETRY_NAME } from "./voice-problem";
 
 export const RERUN_NAME = "Re-run";
+export const RERUN_WITH_NAME = "Re-run with another agent";
 export const WRITE_NAME = "Write feedback";
 
 const NOW_EVERY_MS = 30_000;
@@ -43,11 +44,14 @@ function useNow(): number {
   return now;
 }
 
-function OtherAgents({ agent, voice }: { agent: VoiceAgent; voice: Voice }) {
-  const others = (voice.agents ?? []).filter(
+function othersThan(agent: VoiceAgent, voice: Voice) {
+  return (voice.agents ?? []).filter(
     ({ id, state }) => id !== agent.id && state !== "signed-out"
   );
-  return others.map((other) => (
+}
+
+function OtherAgents({ agent, voice }: { agent: VoiceAgent; voice: Voice }) {
+  return othersThan(agent, voice).map((other) => (
     <button
       className="dt-voice-link"
       key={other.id}
@@ -57,7 +61,7 @@ function OtherAgents({ agent, voice }: { agent: VoiceAgent; voice: Voice }) {
       }}
       type="button"
     >
-      Use {other.name}
+      <span>Use {other.name}</span>
     </button>
   ));
 }
@@ -77,10 +81,54 @@ function FailedLine({
       </p>
       <button className="dt-btn" onClick={voice.actions.analyze} type="button">
         <RetryIcon />
-        {RETRY_NAME}
+        <span>{RETRY_NAME}</span>
       </button>
       <OtherAgents agent={failure.agent} voice={voice} />
     </div>
+  );
+}
+
+function RerunControl({ agent, voice }: { agent: VoiceAgent; voice: Voice }) {
+  const pickId = useId();
+  const [isPicking, setIsPicking] = useState(false);
+  const canPick = voice.phase === "idle" && othersThan(agent, voice).length > 0;
+  return (
+    <>
+      <span className="dt-voice-rerun">
+        <button
+          className="dt-voice-link"
+          onClick={voice.actions.analyze}
+          type="button"
+        >
+          <span>{RERUN_NAME}</span>
+        </button>
+        {canPick && (
+          <button
+            aria-controls={pickId}
+            aria-expanded={isPicking}
+            aria-label={RERUN_WITH_NAME}
+            className="dt-voice-link dt-voice-rerun-pick"
+            onClick={() => {
+              setIsPicking(!isPicking);
+            }}
+            title={RERUN_WITH_NAME}
+            type="button"
+          >
+            <ChevronDownIcon />
+          </button>
+        )}
+      </span>
+      {canPick && isPicking && (
+        <span
+          aria-label={RERUN_WITH_NAME}
+          className="dt-voice-rerun-with"
+          id={pickId}
+          role="group"
+        >
+          <OtherAgents agent={agent} voice={voice} />
+        </span>
+      )}
+    </>
   );
 }
 
@@ -100,14 +148,7 @@ function DoneLine({
         {agent.name} ·{" "}
         <time dateTime={new Date(at).toISOString()}>{timeAgo(at, now)}</time>
       </p>
-      <button
-        className="dt-voice-link"
-        onClick={voice.actions.analyze}
-        type="button"
-      >
-        {RERUN_NAME}
-      </button>
-      {voice.phase === "idle" && <OtherAgents agent={agent} voice={voice} />}
+      <RerunControl agent={agent} voice={voice} />
     </div>
   );
 }
@@ -176,7 +217,7 @@ export function AnalysisLine({
         onClick={voice.actions.analyze}
         type="button"
       >
-        {WRITE_NAME}
+        <span>{WRITE_NAME}</span>
       </button>
     );
   }

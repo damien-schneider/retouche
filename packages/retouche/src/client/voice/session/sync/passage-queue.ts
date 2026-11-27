@@ -50,6 +50,9 @@ export class PassageQueue {
       startMs: spoken.startMs,
       text: spoken.text,
     };
+    if (spoken.wordMs.length > 0) {
+      passage.wordMs = spoken.wordMs;
+    }
     this.#openings.set(passage.id, spoken.openingId);
     this.#passages.set(passage.id, this.#linked(passage));
     this.#settling.set(

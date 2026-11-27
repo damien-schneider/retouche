@@ -4,6 +4,7 @@ import { clock } from "../../../clock";
 import type { EditorId, VoiceSite } from "../../../protocol";
 import { EDITOR_NAME, EditorLink } from "../../code/code-panel";
 import { editorUrl } from "../../code/editor-url";
+import { elementTag } from "../../panel/element-names";
 import { AlertIcon, CheckIcon, CloseIcon, CopyIcon } from "../../shell/icons";
 import type { Voice } from "../voice";
 import { FeedbackFigure } from "./figure/feedback-figure";
@@ -11,7 +12,7 @@ import type { ReviewItem } from "./review-items";
 import type { CopyRequest, ReviewCopy } from "./use-review-copy";
 import { itemMarkdown, siteText } from "./voice-markdown";
 
-const COPY_NAME = "Copy";
+export const COPY_NAME = "Copy";
 export const DISMISS_NAME = "Dismiss";
 
 export function CopyButton({
@@ -84,7 +85,7 @@ function CardMeta({
       <time>{clock(item.saidAtMs)}</time>
       {element && (
         <code title={site ?? undefined}>
-          {`<${element.component ?? element.tag}>`}
+          {elementTag(element.component, element.tag)}
         </code>
       )}
       {showsPage && <span>{item.page}</span>}
@@ -144,25 +145,25 @@ export function FeedbackCard(props: CardProps) {
       data-kind={item.kind}
       data-understanding={isUnderstanding}
     >
-      <header>
-        <h3>
-          {isFeedback ? (
-            item.title
-          ) : (
-            <q className={isUnderstanding ? "dt-voice-shimmer" : undefined}>
-              {item.quote}
-            </q>
-          )}
-        </h3>
-        <CardTools {...props} />
-      </header>
+      <h3>
+        {isFeedback ? (
+          item.title
+        ) : (
+          <q className={isUnderstanding ? "dt-voice-shimmer" : undefined}>
+            {item.quote}
+          </q>
+        )}
+      </h3>
       {isFeedback && item.detail && <p>{item.detail}</p>}
       {isFeedback && (
         <blockquote className="dt-voice-quote">
           <q>{item.quote}</q>
         </blockquote>
       )}
-      <CardMeta item={item} showsPage={showsPage} />
+      <footer>
+        <CardMeta item={item} showsPage={showsPage} />
+        <CardTools {...props} />
+      </footer>
       {isFeedback && item.moment && (
         <FeedbackFigure moment={item.moment} seed={item.id} voice={voice} />
       )}

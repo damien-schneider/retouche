@@ -6,6 +6,7 @@ export interface HeardPassage {
   openingId: string | null;
   startAt: number;
   text: string;
+  wordsAt: number[];
 }
 
 export interface SpeechEvents {
@@ -36,7 +37,9 @@ export interface SourceContext {
   level: () => number;
   phrases: PhraseBook;
   stream: MediaStream;
+  transcriber: string | null;
 }
 
 export const SPEAKING_TAIL_MS = 1500;
 export const LEAD_MS = 300;
+export const SPEECH_LEVEL = 0.35;

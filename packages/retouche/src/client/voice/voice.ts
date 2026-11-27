@@ -1,10 +1,22 @@
-import type { ListedAgent, VoiceAgent, VoiceSession } from "../../protocol";
+import type {
+  ListedAgent,
+  ListedTranscriber,
+  TranscriberProvider,
+  VoiceAgent,
+  VoiceFigureUpload,
+  VoiceSession,
+} from "../../protocol";
+import type { SessionLoad } from "./session/sync/session-sync";
 
 export type RecorderPhase = "idle" | "starting" | "recording" | "paused";
 
-export const HEARINGS = ["browser", "device", "transcriber"] as const;
+export const SPEECH_HEARINGS = ["browser", "device"] as const;
+
+export const HEARINGS = [...SPEECH_HEARINGS, "transcriber"] as const;
 
 export type Hearing = (typeof HEARINGS)[number];
+
+export type SpeechHearing = (typeof SPEECH_HEARINGS)[number];
 
 export type VoiceProblem =
   | "interrupted"
@@ -18,6 +30,7 @@ export type VoiceProblem =
   | "speech-language"
   | "speech-network"
   | "speech-pack"
+  | "speech-silent"
   | "transcript-failed"
   | "unsupported";
 
@@ -45,33 +58,45 @@ export interface VoicePreferences {
   hearing: Hearing;
   isLive: boolean;
   language: string;
+  transcriber: string | null;
 }
 
 export interface VoiceActions {
   analyze: () => void;
-  discard: () => void;
   dismiss: (feedbackId: string) => void;
-  loadShot: (shotId: string) => void;
+  forgetKey: (provider: TranscriberProvider) => Promise<string | null>;
+  loadShot: (shotId: string) => Promise<string | null>;
+  newSession: () => void;
+  openSession: (id: string) => Promise<SessionLoad>;
   pause: () => void;
   resume: () => void;
   retrySave: () => void;
+  saveKey: (
+    provider: TranscriberProvider,
+    key: string
+  ) => Promise<string | null>;
   setPreferences: (next: Partial<VoicePreferences>) => void;
   start: () => void;
   stop: () => void;
-  uploadFigure: (feedbackId: string, image: string) => Promise<string | null>;
+  uploadFigure: (
+    upload: Omit<VoiceFigureUpload, "session">
+  ) => Promise<string | null>;
 }
 
-export interface Voice {
+export interface VoiceListeningOffer {
+  canAddKey: boolean;
+  hearings: readonly SpeechHearing[];
+  transcribers: readonly ListedTranscriber[];
+}
+
+export interface Voice extends VoiceListeningOffer {
   actions: VoiceActions;
   agents: ListedAgent[] | null;
   analysis: VoiceAnalysis;
   feed: VoiceFeed;
-  hearings: readonly Hearing[];
-  isSupported: boolean;
   phase: RecorderPhase;
   preferences: VoicePreferences;
   problem: VoiceProblem | null;
   session: VoiceSession | null;
   shotUrls: ReadonlyMap<string, string>;
-  transcriber: string | null;
 }

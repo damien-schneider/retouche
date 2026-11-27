@@ -7,44 +7,53 @@ import type {
   SpeechSource,
 } from "../speech-source";
 import { ClipCutter, type CutClip } from "./clip-cutter";
-
-interface PendingClip {
-  endAt: number;
-  openingId: string | null;
-  startAt: number;
-  text: string | null;
-}
+import {
+  type HeardWords,
+  type HearPassage,
+  PassageQueue,
+} from "./passage-queue";
 
 const TRANSCRIBING = "…";
 
-async function transcribe(clip: CutClip, signal: AbortSignal) {
+async function transcribe(
+  clip: CutClip,
+  transcriber: string | null,
+  signal: AbortSignal
+): Promise<HeardWords> {
   const audio = await blobDataUrl(await clip.audio);
   if (audio === null) {
     throw new Error("The clip could not be read.");
   }
-  const { text } = await callDevRoute({
-    body: { audio },
+  const { text, wordOffsetMs = [] } = await callDevRoute({
+    body: { audio, transcriber },
     endpoint: ENDPOINTS.voiceTranscript,
     schema: voiceTranscriptSchema,
     signal,
   });
-  return text.trim();
+  return {
+    text,
+    wordsAt: wordOffsetMs.map((offset) => clip.recordedAt + offset),
+  };
 }
 
 export class TranscriberSource implements SpeechSource {
   readonly #events: SpeechEvents;
   readonly #cutter: ClipCutter;
-  readonly #running = new Set<Promise<void>>();
-  #pending: PendingClip[] = [];
+  readonly #queue: PassageQueue;
+  readonly #transcriber: string | null;
   #aborter = new AbortController();
-  #hasFailed = false;
 
   constructor(context: SourceContext) {
     this.#events = context.events;
+    this.#transcriber = context.transcriber;
+    this.#queue = new PassageQueue(context.events);
     this.#cutter = new ClipCutter(context, {
       onClip: (clip) => {
+        const { endAt, startAt } = clip;
         const openingId = this.#events.endUtterance();
-        void this.#track(this.#transcribe({ clip, openingId }));
+        const hear = this.#queue.hold({ endAt, openingId, startAt });
+        this.#showState();
+        void this.#transcribe(clip, hear);
       },
       onLost: () => {
         this.#events.onProblem("mic-missing");
@@ -57,7 +66,7 @@ export class TranscriberSource implements SpeechSource {
   }
 
   start(): void {
-    this.#hasFailed = false;
+    this.#queue.reset();
     this.#cutter.start();
   }
 
@@ -69,68 +78,30 @@ export class TranscriberSource implements SpeechSource {
     this.#cutter.abort();
     this.#aborter.abort();
     this.#aborter = new AbortController();
-    this.#pending = [];
+    this.#queue.clear();
     this.#showState();
   }
 
   async settled(): Promise<void> {
-    await Promise.allSettled(this.#running);
+    await this.#queue.settled();
   }
 
-  async #track(running: Promise<void>): Promise<void> {
-    this.#running.add(running);
-    await running;
-    this.#running.delete(running);
-  }
-
-  async #transcribe(cut: {
-    clip: CutClip;
-    openingId: string | null;
-  }): Promise<void> {
-    const { clip, openingId } = cut;
-    const pending: PendingClip = {
-      endAt: clip.endAt,
-      openingId,
-      startAt: clip.startAt,
-      text: null,
-    };
-    this.#pending.push(pending);
-    this.#showState();
+  async #transcribe(clip: CutClip, hear: HearPassage): Promise<void> {
     const { signal } = this.#aborter;
+    let heard: HeardWords | null = null;
     try {
-      pending.text = await transcribe(clip, signal);
+      heard = await transcribe(clip, this.#transcriber, signal);
     } catch {
       if (signal.aborted) {
         return;
       }
-      pending.text = "";
-      this.#fail();
     }
-    this.#deliver();
-  }
-
-  #deliver(): void {
-    let head = this.#pending[0];
-    while (head && head.text !== null) {
-      this.#pending.shift();
-      if (head.text !== "") {
-        const { endAt, openingId, startAt, text } = head;
-        this.#events.onFinal({ endAt, openingId, startAt, text });
-      }
-      head = this.#pending[0];
-    }
+    hear(heard);
     this.#showState();
   }
 
   #showState(): void {
-    const isBusy = this.#cutter.isSpeaking || this.#pending.length > 0;
+    const isBusy = this.#cutter.isSpeaking || this.#queue.isWaiting;
     this.#events.onInterim(isBusy ? TRANSCRIBING : "");
-  }
-
-  #fail(): void {
-    if (!this.#hasFailed) {
-      this.#hasFailed = true;
-      this.#events.onProblem("transcript-failed");
-    }
   }
 }

@@ -2,6 +2,7 @@ import { useId } from "react";
 
 import { ChevronDownIcon } from "../../../shell/icons";
 import type { Voice } from "../../voice";
+import { PROBLEM_CHOICES } from "../voice-problem";
 import { AgentChoice } from "./agent-choice";
 import { Choice, type ChoiceOption } from "./choice";
 import { HearingChoice } from "./hearing-choice";
@@ -82,12 +83,14 @@ export function VoiceOptions({
   place: "live" | "start";
   voice: Voice;
 }) {
-  const { actions, agents, preferences } = voice;
+  const { actions, agents, preferences, problem } = voice;
   const isStart = place === "start";
+  const isHearingAsked =
+    problem !== null && PROBLEM_CHOICES[problem] === "hearing";
   return (
     <div className="dt-voice-settings">
       <LanguageSelect voice={voice} />
-      {isStart && <HearingChoice voice={voice} />}
+      {(isStart || isHearingAsked) && <HearingChoice voice={voice} />}
       {agents !== null && agents.length > 0 && (
         <Choice
           hint={null}
