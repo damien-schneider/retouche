@@ -7,11 +7,12 @@ import {
 } from "../../../../protocol";
 import { AlertIcon } from "../../../shell/icons";
 import type { Voice } from "../../voice";
+import { SelectField } from "./choice";
 
 export const AGENT_NAME = "Written by";
 
 const STATE_NAMES: Partial<Record<AgentState, string>> = {
-  "signed-out": "Not signed in",
+  "signed-out": "not signed in",
 };
 
 const KIND_HINTS: Record<ListedAgent["kind"], string> = {
@@ -36,13 +37,6 @@ interface AgentChoiceProps {
   voice: Voice;
 }
 
-interface AgentRowProps {
-  agent: ListedAgent;
-  isChosen: boolean;
-  noteId: string | null;
-  onPick: () => void;
-}
-
 function NoAgent({ isExplained }: { isExplained: boolean }) {
   const id = useId();
   return (
@@ -58,84 +52,41 @@ function NoAgent({ isExplained }: { isExplained: boolean }) {
   );
 }
 
-function AgentRow({ agent, isChosen, noteId, onPick }: AgentRowProps) {
-  const stateId = useId();
+function agentLabel(agent: ListedAgent): string {
   const stateName = STATE_NAMES[agent.state];
-  const describedBy = [stateName === undefined ? null : stateId, noteId]
-    .filter((id) => id !== null)
-    .join(" ");
-  return (
-    <button
-      aria-describedby={describedBy === "" ? undefined : describedBy}
-      aria-pressed={isChosen}
-      onClick={onPick}
-      type="button"
-    >
-      <span className="dt-voice-agent-name">{agent.name}</span>
-      {stateName !== undefined && (
-        <span
-          aria-hidden="true"
-          className="dt-voice-agent-state"
-          data-state={agent.state}
-          id={stateId}
-        >
-          {stateName}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function AgentNote({ agent, id }: { agent: ListedAgent; id: string }) {
-  if (agent.state !== "signed-out") {
-    return (
-      <p className="dt-voice-hint" id={id}>
-        {KIND_HINTS[agent.kind]}
-      </p>
-    );
-  }
-  return (
-    <p className="dt-voice-reason" id={id}>
-      <AlertIcon />
-      <span>
-        Run <code>{agent.id}</code> in a terminal and sign in.
-      </span>
-    </p>
-  );
+  return stateName === undefined ? agent.name : `${agent.name} — ${stateName}`;
 }
 
 export function AgentChoice({ agents, isExplained, voice }: AgentChoiceProps) {
-  const labelId = useId();
-  const noteId = useId();
+  const reasonId = useId();
   if (agents.length === 0) {
     return <NoAgent isExplained={isExplained} />;
   }
   const chosen = agents.find(({ id }) => id === voice.preferences.agent);
-  const note =
-    chosen && (isExplained || chosen.state === "signed-out") ? chosen : null;
+  const isSignedOut = chosen?.state === "signed-out";
   return (
     <div className="dt-voice-choice">
-      <span className="dt-voice-choice-label" id={labelId}>
-        {AGENT_NAME}
-      </span>
-      <div
-        aria-labelledby={labelId}
-        className="dt-voice-segments dt-voice-agents"
-        role="group"
-      >
-        {agents.map((agent) => (
-          <AgentRow
-            agent={agent}
-            isChosen={agent === chosen}
-            key={agent.id}
-            noteId={agent === note ? noteId : null}
-            onPick={() => {
-              voice.actions.setPreferences({ agent: agent.id });
-            }}
-          />
-        ))}
-      </div>
-      {note !== null && <AgentNote agent={note} id={noteId} />}
+      <SelectField
+        about={isExplained && chosen ? KIND_HINTS[chosen.kind] : null}
+        describedBy={isSignedOut ? reasonId : undefined}
+        name={AGENT_NAME}
+        onPick={(agent) => {
+          voice.actions.setPreferences({ agent });
+        }}
+        options={agents.map((agent) => ({
+          label: agentLabel(agent),
+          value: agent.id,
+        }))}
+        value={chosen?.id ?? ""}
+      />
+      {chosen && isSignedOut && (
+        <p className="dt-voice-reason" id={reasonId}>
+          <AlertIcon />
+          <span>
+            Run <code>{chosen.id}</code> in a terminal and sign in.
+          </span>
+        </p>
+      )}
     </div>
   );
 }

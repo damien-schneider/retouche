@@ -1,7 +1,9 @@
 import type { EditorId } from "../../protocol";
+import { reviewItems } from "../../voice/review-items";
 import { FeedbackList } from "./feedback/feedback-list";
-import { reviewItems } from "./feedback/review-items";
 import { useReviewCopy } from "./feedback/use-review-copy";
+import { FollowRow } from "./follow/follow-row";
+import { useFollow } from "./follow/use-follow";
 import { AnalysisLine } from "./view/analysis-line";
 import { SessionHistoryPlace } from "./view/history/session-history";
 import { VoiceRecording } from "./view/live/voice-recording";
@@ -39,6 +41,8 @@ export function VoiceView({
   voice: Voice;
 }) {
   const copier = useReviewCopy(voice);
+  const follow = useFollow(voice);
+  const followRow = <FollowRow copier={copier} follow={follow} voice={voice} />;
   const { phase, problem, session } = voice;
   const items = session ? reviewItems(session) : [];
   const hasPassages = (session?.passages.length ?? 0) > 0;
@@ -57,14 +61,21 @@ export function VoiceView({
       {!isStart && <VoiceProblemHint voice={voice} />}
       {phase !== "idle" && <VoiceRecording voice={voice} />}
       {!isStart && hasOptions && <VoiceOptions place="live" voice={voice} />}
-      {isStart && <VoiceSettings voice={voice} />}
+      {isStart && <VoiceSettings voice={voice}>{followRow}</VoiceSettings>}
       <AnalysisLine isAgentChoiceShown={isStart || hasOptions} voice={voice} />
+      {phase !== "idle" && followRow}
       {!isStart && (
-        <SessionActions copier={copier} items={items} voice={voice} />
+        <SessionActions
+          copier={copier}
+          follow={follow}
+          items={items}
+          voice={voice}
+        />
       )}
       <FeedbackList
         copier={copier}
         editor={editor}
+        follow={follow}
         items={items}
         voice={voice}
       />

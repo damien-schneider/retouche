@@ -1,5 +1,6 @@
 import { FEEDBACK_STYLES } from "./feedback/feedback-styles";
 import { FIGURE_STYLES } from "./feedback/figure/figure-styles";
+import { FOLLOW_STYLES } from "./follow/follow-styles";
 import { PAGE_STYLES } from "./page/page-styles";
 import { HISTORY_STYLES } from "./view/history/history-styles";
 import { LIVE_STYLES } from "./view/live/live-styles";
@@ -10,6 +11,7 @@ ${LIVE_STYLES}
 ${VIEW_STYLES}
 ${FEEDBACK_STYLES}
 ${FIGURE_STYLES}
+${FOLLOW_STYLES}
 ${PAGE_STYLES}
 ${HISTORY_STYLES}
 @media (prefers-reduced-motion: reduce) {

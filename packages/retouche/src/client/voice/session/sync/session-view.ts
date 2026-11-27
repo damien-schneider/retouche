@@ -28,6 +28,7 @@ export function draftSession(draft: SessionDraft): VoiceSession {
     moments: [],
     passages: [],
     shots: [],
+    undoAsked: [],
   };
 }
 

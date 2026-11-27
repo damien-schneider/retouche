@@ -67,6 +67,19 @@ export function dismissFeedback(
   };
 }
 
+export function askUndo(
+  session: VoiceSession,
+  feedbackId: string
+): RouteOutcome<VoiceSession> {
+  if (!session.feedback.some(({ id }) => id === feedbackId)) {
+    return failure(`No feedback ${feedbackId} in this session.`, 404);
+  }
+  const value = session.undoAsked.includes(feedbackId)
+    ? session
+    : { ...session, undoAsked: [...session.undoAsked, feedbackId] };
+  return { ok: true, value };
+}
+
 export function attachFigure(
   session: VoiceSession,
   figure: { feedbackId: string; momentId: string; path: string }

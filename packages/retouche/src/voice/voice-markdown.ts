@@ -1,6 +1,6 @@
-import { clock, recordedMs } from "../../../clock";
-import type { VoiceSession, VoiceSite } from "../../../protocol";
-import { headingOf, locationText } from "../../picker/notes/note-format";
+import { headingOf, locationText } from "../client/picker/notes/note-format";
+import { clock, recordedMs } from "../clock";
+import type { VoiceSession, VoiceSite } from "../protocol";
 import type { ReviewItem } from "./review-items";
 
 const SESSION_DATE = new Intl.DateTimeFormat(undefined, {
@@ -43,6 +43,11 @@ export function itemMarkdown(item: ReviewItem, number: number): string {
   const indent = " ".repeat(marker.length);
   const bullets = factLines(item).map((line) => `${indent}- ${line}`);
   return [`${marker}${itemHeading(item)}`, ...bullets].join("\n");
+}
+
+export function cardMarkdown(item: ReviewItem): string {
+  const bullets = factLines(item).map((line) => `- ${line}`);
+  return [`### ${itemHeading(item)}`, ...bullets].join("\n");
 }
 
 function sessionHeading(session: VoiceSession): string {

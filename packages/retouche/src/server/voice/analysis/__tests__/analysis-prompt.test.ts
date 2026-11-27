@@ -71,6 +71,7 @@ function session(shotCount: number): VoiceSession {
     ],
     shots,
     startedAt: 0,
+    undoAsked: [],
   };
 }
 

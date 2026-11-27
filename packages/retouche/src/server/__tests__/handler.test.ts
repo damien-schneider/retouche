@@ -117,6 +117,7 @@ describe("route endpoints", () => {
     await expect(response.json()).resolves.toStrictEqual({
       agents: [],
       editor: "cursor",
+      follow: null,
       marker: "retouche",
       transcribers: [],
     });

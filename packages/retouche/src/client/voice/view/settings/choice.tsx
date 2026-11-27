@@ -1,66 +1,144 @@
 import { type ReactNode, type RefCallback, useId } from "react";
 
+import { ChevronDownIcon } from "../../../shell/icons";
+import { InfoTip } from "./info-tip";
+
 export interface ChoiceOption<T> {
   label: string;
   value: T;
 }
 
 interface ChoiceProps<T> {
+  about: ReactNode;
   chosenRef?: RefCallback<HTMLElement>;
-  hint: ReactNode;
   name: string;
   onPick: (value: T) => void;
   options: ChoiceOption<T>[];
   value: T | null;
 }
 
+interface SelectFieldProps {
+  about: ReactNode;
+  describedBy?: string | undefined;
+  name: string;
+  onPick: (value: string) => void;
+  options: ChoiceOption<string>[];
+  value: string;
+}
+
+function ChoiceName({
+  about,
+  labelId,
+  name,
+  tipId,
+}: {
+  about: ReactNode;
+  labelId: string;
+  name: string;
+  tipId: string;
+}) {
+  return (
+    <span className="dt-voice-choice-head">
+      <span className="dt-voice-choice-label" id={labelId}>
+        {name}
+      </span>
+      {about !== null && (
+        <InfoTip about={name} id={tipId}>
+          {about}
+        </InfoTip>
+      )}
+    </span>
+  );
+}
+
+export function SelectField({
+  about,
+  describedBy,
+  name,
+  onPick,
+  options,
+  value,
+}: SelectFieldProps) {
+  const id = useId();
+  const tipId = useId();
+  const description = [about === null ? null : tipId, describedBy]
+    .filter((each) => each !== null && each !== undefined)
+    .join(" ");
+  return (
+    <span className="dt-voice-field">
+      <span className="dt-voice-choice-head">
+        <label htmlFor={id}>{name}</label>
+        {about !== null && (
+          <InfoTip about={name} id={tipId}>
+            {about}
+          </InfoTip>
+        )}
+      </span>
+      <span className="dt-voice-select">
+        <select
+          aria-describedby={description === "" ? undefined : description}
+          id={id}
+          onChange={(event) => {
+            onPick(event.target.value);
+          }}
+          value={value}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDownIcon />
+      </span>
+    </span>
+  );
+}
+
 function OnlyChoice({
+  about,
   chosenRef,
-  hint,
   label,
   name,
 }: {
+  about: ReactNode;
   chosenRef: RefCallback<HTMLElement> | undefined;
-  hint: ReactNode;
   label: string;
   name: string;
 }) {
   const id = useId();
+  const tipId = useId();
   return (
     <div
+      aria-describedby={about === null ? undefined : tipId}
       aria-labelledby={id}
-      className="dt-voice-choice"
+      className="dt-voice-field"
       ref={chosenRef}
       role="group"
       tabIndex={chosenRef === undefined ? undefined : -1}
     >
-      <span className="dt-voice-field">
-        <span className="dt-voice-choice-label" id={id}>
-          {name}
-        </span>
-        <span>{label}</span>
-      </span>
-      {hint}
+      <ChoiceName about={about} labelId={id} name={name} tipId={tipId} />
+      <span>{label}</span>
     </div>
   );
 }
 
 export function Choice<T extends boolean | string>({
+  about,
   chosenRef,
-  hint,
   name,
   onPick,
   options,
   value,
 }: ChoiceProps<T>) {
   const id = useId();
+  const tipId = useId();
   const [only, ...others] = options;
-  const shownHint = hint !== null && <p className="dt-voice-hint">{hint}</p>;
   if (only !== undefined && others.length === 0) {
     return (
       <OnlyChoice
+        about={about}
         chosenRef={chosenRef}
-        hint={shownHint}
         label={only.label}
         name={name}
       />
@@ -68,10 +146,13 @@ export function Choice<T extends boolean | string>({
   }
   return (
     <div className="dt-voice-choice">
-      <span className="dt-voice-choice-label" id={id}>
-        {name}
-      </span>
-      <div aria-labelledby={id} className="dt-voice-segments" role="group">
+      <ChoiceName about={about} labelId={id} name={name} tipId={tipId} />
+      <div
+        aria-describedby={about === null ? undefined : tipId}
+        aria-labelledby={id}
+        className="dt-voice-segments"
+        role="group"
+      >
         {options.map((option) => (
           <button
             aria-pressed={option.value === value}
@@ -87,7 +168,6 @@ export function Choice<T extends boolean | string>({
           </button>
         ))}
       </div>
-      {shownHint}
     </div>
   );
 }

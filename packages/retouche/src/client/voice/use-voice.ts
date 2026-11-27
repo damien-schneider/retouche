@@ -183,6 +183,7 @@ export function useVoice(options: {
     agents,
     analysis: state.analysis,
     feed: controller.recorder.feed,
+    follow: route.kind === "ready" ? route.status.follow : null,
     phase: state.phase,
     preferences,
     problem: blocker ?? state.problem,

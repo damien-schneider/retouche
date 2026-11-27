@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
-import { chmod, mkdir, writeFile } from "node:fs/promises";
+import { createHash, randomBytes } from "node:crypto";
+import { chmod, mkdir, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import type { RouteEnv } from "../options";
@@ -31,17 +31,15 @@ function userDataFolder(env: RouteEnv): string | null {
   return ownFolder([env.XDG_DATA_HOME, env.LOCALAPPDATA, home]);
 }
 
-export function projectSessionsFolder(
-  env: RouteEnv,
-  root: string
-): string | null {
-  const folder = userDataFolder(env);
-  if (folder === null) {
-    return null;
-  }
+export function projectId(root: string): string {
   const name = basename(root).replaceAll(NON_WORD, "-").slice(0, 48);
   const hash = createHash("sha256").update(root).digest("hex").slice(0, 8);
-  return join(folder, `${name || "project"}-${hash}`);
+  return `${name || "project"}-${hash}`;
+}
+
+export function projectFolder(env: RouteEnv, project: string): string | null {
+  const folder = userDataFolder(env);
+  return folder === null ? null : join(folder, project);
 }
 
 export async function writePrivateFile(
@@ -51,4 +49,13 @@ export async function writePrivateFile(
   await mkdir(dirname(path), { mode: 0o700, recursive: true });
   await writeFile(path, data, { mode: 0o600 });
   await chmod(path, 0o600);
+}
+
+export async function replacePrivateFile(
+  path: string,
+  data: string
+): Promise<void> {
+  const draft = `${path}.${randomBytes(4).toString("hex")}.tmp`;
+  await writePrivateFile(draft, data);
+  await rename(draft, path);
 }

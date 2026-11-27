@@ -21,6 +21,7 @@ import {
   voiceTranscriptRequestSchema,
 } from "../../../../protocol";
 import { sessionSummary } from "../../../../server/voice/history/session-summary";
+import type { VoiceFollow } from "../../../../voice/follow-cards";
 import { wordOffsetsOf } from "./fake-media-recorder";
 import { forgetWordsSaid, wordsSaid } from "./voice-browser";
 
@@ -37,6 +38,7 @@ export interface VoiceServer {
   dropAnalysis: () => void;
   failAnalysisWith: (error: string) => void;
   failTranscriptsWith: (error: string) => void;
+  follow: VoiceFollow;
   goDown: () => void;
   holdAnalysis: () => () => void;
   holdTranscriptOf: (spoken: string) => () => void;
@@ -92,6 +94,7 @@ function created(
     passages: [],
     shots: [],
     startedAt: request.startedAt,
+    undoAsked: [],
   };
 }
 
@@ -104,6 +107,12 @@ function changed(
       ...session,
       moments: upsert(session.moments, request.moments),
       passages: upsert(session.passages, request.passages),
+    };
+  }
+  if (request.kind === "undo") {
+    return {
+      ...session,
+      undoAsked: [...session.undoAsked, request.feedbackId],
     };
   }
   if (request.kind === "end") {
@@ -282,12 +291,14 @@ const ROUTES = new Map<string, RouteHandler>([
       Response.json({
         agents: [{ ...agentOf("claude"), kind: "command", state: "ready" }],
         editor: "vscode",
+        follow: { command: "node retouche", project: "app" },
         marker: STATUS_MARKER,
         transcribers: server.transcribers,
       }),
   ],
   [ENDPOINTS.voiceAnalysis, analysisRoute],
   [ENDPOINTS.voiceFigure, figureRoute],
+  [ENDPOINTS.voiceFollow, (server) => Response.json(server.follow)],
   [ENDPOINTS.voiceHistory, historyRoute],
   [ENDPOINTS.voiceKey, keyRoute],
   [ENDPOINTS.voiceSession, sessionRoute],
@@ -336,6 +347,7 @@ function serverState(): ServerState {
     failTranscriptsWith: (error) => {
       server.transcriptError = error;
     },
+    follow: { cards: {}, seenAt: null },
     goDown: () => {
       server.isDown = true;
     },

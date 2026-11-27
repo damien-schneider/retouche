@@ -62,7 +62,13 @@ export function readyRoute(
 ): DevRouteState {
   return {
     kind: "ready",
-    status: { agents, editor: "vscode", marker: STATUS_MARKER, transcribers },
+    status: {
+      agents,
+      editor: "vscode",
+      follow: null,
+      marker: STATUS_MARKER,
+      transcribers,
+    },
   };
 }
 

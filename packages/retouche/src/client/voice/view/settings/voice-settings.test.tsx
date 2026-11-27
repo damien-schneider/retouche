@@ -104,16 +104,26 @@ function namesEachBuiltInAgentOnce(): void {
   }
 }
 
-function descriptionOf(name: string): string {
+function agentPicker(): HTMLElement {
+  return screen.getByRole("combobox", { name: AGENT_NAME });
+}
+
+function agentDescription(): string {
   let description = "";
-  within(screen.getByRole("group", { name: AGENT_NAME })).getByRole("button", {
+  screen.getByRole("combobox", {
     description: (text) => {
       description = text;
       return true;
     },
-    name,
+    name: AGENT_NAME,
   });
   return description;
+}
+
+function agentOption(name: string): string | null {
+  return within(agentPicker()).getByRole("option", {
+    name: new RegExp(`^${name}`),
+  }).textContent;
 }
 
 function listeningOptions(): (string | null)[] {
@@ -142,25 +152,17 @@ describe("the agent that writes feedback", () => {
     const { voice } = fakeVoice({ agents: MANY_AGENTS });
     render(<VoiceView editor={null} voice={voice} />);
 
-    const agents = screen.getByRole("group", { name: AGENT_NAME });
-    expect(within(agents).getAllByRole("button")).toHaveLength(
-      MANY_AGENTS.length
+    const agents = within(agentPicker()).getAllByRole("option");
+    expect(agents.map((agent) => agent.textContent)).toStrictEqual(
+      MANY_AGENTS.map(({ name }) => name)
     );
-    for (const { name } of MANY_AGENTS) {
-      expect(within(agents).getByRole("button", { name })).toBeTruthy();
-    }
   });
 
   it("saves the agent picked far down the list", () => {
     const { actions, voice } = fakeVoice({ agents: MANY_AGENTS });
     render(<VoiceView editor={null} voice={voice} />);
 
-    const agents = screen.getByRole("group", { name: AGENT_NAME });
-    fireEvent.click(
-      within(agents).getByRole("button", {
-        name: "Ollama on this machine · qwen3-coder:30b",
-      })
-    );
+    fireEvent.change(agentPicker(), { target: { value: "ollama" } });
 
     expect(actions.setPreferences).toHaveBeenCalledWith({ agent: "ollama" });
   });
@@ -168,7 +170,7 @@ describe("the agent that writes feedback", () => {
   it("says what the chosen agent does with the session, depending on where it runs", () => {
     const { voice } = fakeVoice({ agents: MANY_AGENTS });
     render(<VoiceView editor={null} voice={voice} />);
-    const onThisComputer = descriptionOf("Claude Code");
+    const onThisComputer = agentDescription();
     cleanup();
     const { voice: throughEndpoint } = fakeVoice({
       agents: MANY_AGENTS,
@@ -177,12 +179,8 @@ describe("the agent that writes feedback", () => {
     render(<VoiceView editor={null} voice={throughEndpoint} />);
 
     expect(onThisComputer).not.toBe("");
-    expect(descriptionOf("Ollama on this machine · qwen3-coder:30b")).not.toBe(
-      ""
-    );
-    expect(descriptionOf("Ollama on this machine · qwen3-coder:30b")).not.toBe(
-      onThisComputer
-    );
+    expect(agentDescription()).not.toBe("");
+    expect(agentDescription()).not.toBe(onThisComputer);
   });
 });
 
@@ -191,8 +189,8 @@ describe("whether an agent can write feedback", () => {
     const { voice } = fakeVoice({ agents: EVERY_STATE });
     render(<VoiceView editor={null} voice={voice} />);
 
-    expect(descriptionOf("Codex")).not.toBe("");
-    expect(descriptionOf("Mastra Code")).toBe("");
+    expect(agentOption("Codex")).not.toBe("Codex");
+    expect(agentOption("Mastra Code")).toBe("Mastra Code");
   });
 
   it("names the command that signs the chosen agent in when it is signed out", () => {
@@ -202,7 +200,7 @@ describe("whether an agent can write feedback", () => {
     });
     render(<VoiceView editor={null} voice={voice} />);
 
-    expect(descriptionOf("Codex")).toContain("codex");
+    expect(agentDescription()).toContain("codex");
   });
 });
 

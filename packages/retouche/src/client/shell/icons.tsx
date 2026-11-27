@@ -284,3 +284,13 @@ export function RetryIcon() {
     </Svg>
   );
 }
+
+export function InfoIcon() {
+  return (
+    <Svg>
+      <circle cx={12} cy={12} r={8.25} />
+      <path d="M12 11v5" />
+      <Dot cx={12} cy={8} r={1.25} />
+    </Svg>
+  );
+}

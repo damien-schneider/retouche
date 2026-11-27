@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { clock } from "../../../clock";
 import {
   voiceFeedback,
   voiceMoment,
   voicePassage,
   voiceSession,
   voiceShot,
-} from "../view/voice-fixture";
+} from "../client/voice/view/voice-fixture";
+import { clock } from "../clock";
 import { reviewItems } from "./review-items";
 import { sessionMarkdown } from "./voice-markdown";
 

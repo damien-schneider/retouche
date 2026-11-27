@@ -1,20 +1,25 @@
+import type { ReviewItem } from "../../../voice/review-items";
+import { sessionMarkdown } from "../../../voice/voice-markdown";
 import { MicIcon } from "../../shell/icons";
 import { CopyButton } from "../feedback/feedback-card";
-import type { ReviewItem } from "../feedback/review-items";
 import type { ReviewCopy } from "../feedback/use-review-copy";
-import { sessionMarkdown } from "../feedback/voice-markdown";
+import { isHandled } from "../follow/follow-status";
+import type { FollowView } from "../follow/use-follow";
 import type { Voice } from "../voice";
 
 export const COPY_ALL_NAME = "Copy all";
+export const COPY_LEFT_NAME = "Copy what's left";
 export const RECORD_MORE_NAME = "Record more";
 export const NEW_SESSION_NAME = "New session";
 
 export function SessionActions({
   copier,
+  follow,
   items,
   voice,
 }: {
   copier: ReviewCopy;
+  follow: FollowView;
   items: ReviewItem[];
   voice: Voice;
 }) {
@@ -22,15 +27,20 @@ export function SessionActions({
   if (session === null || phase !== "idle") {
     return null;
   }
+  const undoAsked = new Set(session.undoAsked);
+  const left = items.filter(
+    ({ id, kind }) =>
+      kind !== "feedback" || !isHandled(follow.cards[id], undoAsked.has(id))
+  );
   return (
     <div className="dt-voice-actions">
-      {items.length > 0 && (
+      {left.length > 0 && (
         <CopyButton
           copier={copier}
-          label={COPY_ALL_NAME}
+          label={left.length < items.length ? COPY_LEFT_NAME : COPY_ALL_NAME}
           request={{
             format: (copied) => sessionMarkdown(session, copied),
-            items,
+            items: left,
             key: session.id,
           }}
         />

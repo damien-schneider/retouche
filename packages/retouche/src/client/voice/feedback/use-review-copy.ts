@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
+import type { ReviewItem } from "../../../voice/review-items";
 import { COPY_FEEDBACK_MS } from "../../shell/prompt-button";
 import type { Voice } from "../voice";
 import { composeFigure } from "./figure/figure-compose";
 import { planFigure } from "./figure/figure-geometry";
-import type { ReviewItem } from "./review-items";
 
 export type CopyState = "copied" | "failed" | "working";
 

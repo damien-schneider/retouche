@@ -33,6 +33,7 @@ const READY: DevRouteState = {
   status: {
     agents: [],
     editor: "vscode",
+    follow: null,
     marker: STATUS_MARKER,
     transcribers: [],
   },

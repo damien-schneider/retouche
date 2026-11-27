@@ -76,6 +76,7 @@ function coreRoutes(
         jsonResponse({
           agents: await context.voice.agents(),
           editor: context.settings.editor,
+          follow: context.voice.follow(),
           marker: STATUS_MARKER,
           transcribers: await context.voice.transcribers(),
         } satisfies RouteStatus),

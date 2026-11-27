@@ -1,9 +1,9 @@
 import { type RefObject, useEffect, useRef } from "react";
 
+import { reviewItems } from "../../voice/review-items";
 import { presence } from "../motion/presence";
 import { claimLostFocus } from "../shell/focused-element";
 import { MicIcon, ResumeIcon, StopIcon } from "../shell/icons";
-import { reviewItems } from "./feedback/review-items";
 import { BarCaption } from "./view/live/live-caption";
 import { LevelMeter, Timer } from "./view/live/live-values";
 import { RESUME_NAME, STOP_NAME } from "./view/live/voice-recording";

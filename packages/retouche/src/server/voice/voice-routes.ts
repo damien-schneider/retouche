@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import {
   ENDPOINTS,
+  type FollowSetup,
   type ListedAgent,
   type ListedTranscriber,
   VOICE_ID,
@@ -24,6 +25,7 @@ import type { RouteEnv } from "../options";
 import { readJson } from "../request-body";
 import { createAgentRegistry } from "./agents/agent-registry";
 import { type Analyzer, createAnalyzer } from "./analysis/voice-analysis";
+import { followSetup, getFollow } from "./follow/follow-route";
 import { getHistory, postHistory } from "./history/history-route";
 import {
   findShot,
@@ -32,6 +34,7 @@ import {
   shotPath,
 } from "./image-files";
 import {
+  askUndo,
   attachFigure,
   dismissFeedback,
   recordShot,
@@ -40,14 +43,18 @@ import {
 import { SessionFiles, type SessionStore } from "./session-store";
 import { postKey } from "./transcribers/key-route";
 import { createStreamRoute } from "./transcribers/stream/stream-route";
-import { listedTranscribers } from "./transcribers/transcriber-list";
+import {
+  listedTranscribers,
+  type TranscriberSetting,
+} from "./transcribers/transcriber-list";
 import { postTranscript } from "./transcribers/transcript-route";
-import { projectSessionsFolder, writePrivateFile } from "./user-folders";
+import { projectFolder, projectId, writePrivateFile } from "./user-folders";
 import type { ResolvedVoiceOptions } from "./voice-options";
 
 export type VoiceEndpoint = (typeof ENDPOINTS)[
   | "voiceAnalysis"
   | "voiceFigure"
+  | "voiceFollow"
   | "voiceHistory"
   | "voiceKey"
   | "voiceSession"
@@ -61,6 +68,7 @@ export type EndpointRoutes = Partial<
 
 export interface VoiceRoutes {
   agents: () => Promise<ListedAgent[]>;
+  follow: () => FollowSetup | null;
   routes: Record<VoiceEndpoint, EndpointRoutes>;
   transcribers: () => Promise<ListedTranscriber[]>;
 }
@@ -85,14 +93,15 @@ async function postSession(
     return await store.create({ language, origin, startedAt });
   }
   return await store.update(change.id, (session) => {
-    if (change.kind === "dismiss") {
-      return dismissFeedback(session, change.feedbackId);
+    if (change.kind === "end") {
+      return { ok: true, value: { ...session, endedAt: change.endedAt } };
     }
-    const value =
-      change.kind === "end"
-        ? { ...session, endedAt: change.endedAt }
-        : recordSpeech(session, change);
-    return { ok: true, value };
+    if (change.kind === "record") {
+      return { ok: true, value: recordSpeech(session, change) };
+    }
+    return change.kind === "dismiss"
+      ? dismissFeedback(session, change.feedbackId)
+      : askUndo(session, change.feedbackId);
   });
 }
 
@@ -182,16 +191,38 @@ async function getSession(
     : errorResponse(`No voice session ${id}.`, 404);
 }
 
+function transcriptionRoutes(
+  transcription: TranscriberSetting
+): Record<
+  (typeof ENDPOINTS)["voiceKey" | "voiceStream" | "voiceTranscript"],
+  EndpointRoutes
+> {
+  const postStream = createStreamRoute(transcription);
+  return {
+    [ENDPOINTS.voiceKey]: {
+      POST: async (request) =>
+        outcomeResponse(await postKey(transcription, request)),
+    },
+    [ENDPOINTS.voiceStream]: {
+      POST: async (request) => outcomeResponse(await postStream(request)),
+    },
+    [ENDPOINTS.voiceTranscript]: {
+      POST: async (request) =>
+        outcomeResponse(await postTranscript(transcription, request)),
+    },
+  };
+}
+
 export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
   const { env, voice } = context;
   const store = new SessionFiles(() =>
-    projectSessionsFolder(env, context.root())
+    projectFolder(env, projectId(context.root()))
   );
   const agents = createAgentRegistry({ agents: voice.agents, env });
   const analyze = createAnalyzer({ agents, env, store });
   const transcription = { env, transcriber: voice.transcriber };
-  const postStream = createStreamRoute(transcription);
   const routes: Record<VoiceEndpoint, EndpointRoutes> = {
+    ...transcriptionRoutes(transcription),
     [ENDPOINTS.voiceAnalysis]: {
       POST: async (request) =>
         outcomeResponse(await postAnalysis(analyze, request)),
@@ -200,14 +231,16 @@ export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
       POST: async (request) =>
         outcomeResponse(await postFigure(store, request)),
     },
+    [ENDPOINTS.voiceFollow]: {
+      GET: async (request) =>
+        jsonResponse(
+          await getFollow({ env, root: context.root(), store }, request)
+        ),
+    },
     [ENDPOINTS.voiceHistory]: {
       GET: async () => jsonResponse(await getHistory(store)),
       POST: async (request) =>
         outcomeResponse(await postHistory(store, request)),
-    },
-    [ENDPOINTS.voiceKey]: {
-      POST: async (request) =>
-        outcomeResponse(await postKey(transcription, request)),
     },
     [ENDPOINTS.voiceSession]: {
       GET: async (request) => await getSession(store, request),
@@ -218,16 +251,10 @@ export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
       GET: async (request) => await getShot(store, request),
       POST: async (request) => outcomeResponse(await postShot(store, request)),
     },
-    [ENDPOINTS.voiceStream]: {
-      POST: async (request) => outcomeResponse(await postStream(request)),
-    },
-    [ENDPOINTS.voiceTranscript]: {
-      POST: async (request) =>
-        outcomeResponse(await postTranscript(transcription, request)),
-    },
   };
   return {
     agents: agents.listed,
+    follow: () => followSetup(context.root()),
     routes,
     transcribers: async () => await listedTranscribers(transcription),
   };

@@ -89,8 +89,9 @@ describe("before recording", () => {
     fireEvent.change(screen.getByRole("combobox", { name: LANGUAGE_NAME }), {
       target: { value: "fr-FR" },
     });
-    const agents = screen.getByRole("group", { name: AGENT_NAME });
-    fireEvent.click(within(agents).getByRole("button", { name: CODEX.name }));
+    fireEvent.change(screen.getByRole("combobox", { name: AGENT_NAME }), {
+      target: { value: CODEX.id },
+    });
     const feedback = screen.getByRole("group", { name: FEEDBACK_GROUP_NAME });
     fireEvent.click(within(feedback).getByRole("button", { name: LIVE_NAME }));
 
@@ -298,8 +299,9 @@ describe("changing course while recording", () => {
     const { actions, voice } = fakeVoice({ phase: "recording" });
     render(<VoiceView editor={null} voice={voice} />);
 
-    const agents = screen.getByRole("group", { name: AGENT_NAME });
-    fireEvent.click(within(agents).getByRole("button", { name: CODEX.name }));
+    fireEvent.change(screen.getByRole("combobox", { name: AGENT_NAME }), {
+      target: { value: CODEX.id },
+    });
     const feedback = screen.getByRole("group", { name: FEEDBACK_GROUP_NAME });
     fireEvent.click(within(feedback).getByRole("button", { name: LIVE_NAME }));
     fireEvent.change(screen.getByRole("combobox", { name: LANGUAGE_NAME }), {

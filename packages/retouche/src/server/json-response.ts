@@ -8,6 +8,7 @@ import type {
   VoiceStream,
   VoiceTranscript,
 } from "../protocol";
+import type { VoiceFollow } from "../voice/follow-cards";
 
 export type RouteOutcome<T> =
   | { ok: true; value: T }
@@ -22,6 +23,7 @@ type RouteBody =
   | ErrorBody
   | RouteStatus
   | SourceFile
+  | VoiceFollow
   | VoiceHistory
   | VoiceKeyAnswer
   | VoiceSession

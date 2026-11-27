@@ -193,7 +193,10 @@ export class SessionSync {
     return await this.#call({
       body: { ...request, id },
       endpoint: ENDPOINTS.voiceSession,
-      save: request.kind === "dismiss" ? null : request.kind,
+      save:
+        request.kind === "record" || request.kind === "end"
+          ? request.kind
+          : null,
       signal,
     });
   }

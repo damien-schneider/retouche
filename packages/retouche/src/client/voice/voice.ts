@@ -1,4 +1,5 @@
 import type {
+  FollowSetup,
   ListedAgent,
   ListedTranscriber,
   TranscriberProvider,
@@ -78,6 +79,7 @@ export interface VoiceActions {
   setPreferences: (next: Partial<VoicePreferences>) => void;
   start: () => void;
   stop: () => void;
+  undo: (feedbackId: string) => void;
   uploadFigure: (
     upload: Omit<VoiceFigureUpload, "session">
   ) => Promise<string | null>;
@@ -94,6 +96,7 @@ export interface Voice extends VoiceListeningOffer {
   agents: ListedAgent[] | null;
   analysis: VoiceAnalysis;
   feed: VoiceFeed;
+  follow: FollowSetup | null;
   phase: RecorderPhase;
   preferences: VoicePreferences;
   problem: VoiceProblem | null;

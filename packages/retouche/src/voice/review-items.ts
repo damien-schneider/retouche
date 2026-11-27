@@ -1,5 +1,5 @@
-import type { VoiceMoment, VoiceSession } from "../../../protocol";
-import { pendingPassages } from "../../../voice/session-items";
+import type { VoiceMoment, VoiceSession } from "../protocol";
+import { pendingPassages } from "./session-items";
 
 interface ItemBase {
   id: string;

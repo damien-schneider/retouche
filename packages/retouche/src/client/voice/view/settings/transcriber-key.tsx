@@ -179,7 +179,7 @@ function KeyForm(props: KeyFormProps) {
       }}
     >
       <Choice
-        hint={null}
+        about={null}
         name={PROVIDER_NAME}
         onPick={(provider) => {
           edit({ provider });

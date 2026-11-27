@@ -9,6 +9,7 @@ export const ENDPOINTS = {
   status: "/status",
   voiceAnalysis: "/voice/analysis",
   voiceFigure: "/voice/figure",
+  voiceFollow: "/voice/follow",
   voiceHistory: "/voice/history",
   voiceSession: "/voice/session",
   voiceShot: "/voice/shot",
@@ -100,9 +101,17 @@ export const routeMarkerSchema = z.object({
   marker: z.literal(STATUS_MARKER),
 });
 
+const followSetupSchema = z.object({
+  command: z.string(),
+  project: voiceIdSchema,
+});
+
+export type FollowSetup = z.infer<typeof followSetupSchema>;
+
 export const statusSchema = routeMarkerSchema.extend({
   agents: z.array(listedAgentSchema).default([]),
   editor: z.enum(EDITORS),
+  follow: followSetupSchema.nullable().default(null),
   transcribers: z.array(listedTranscriberSchema).default([]),
 });
 
@@ -211,6 +220,7 @@ export const voiceSessionSchema = z.object({
   passages: z.array(voicePassageSchema),
   shots: z.array(voiceStoredShotSchema),
   startedAt: z.number(),
+  undoAsked: z.array(voiceIdSchema).default([]),
 });
 
 export type VoiceSession = z.infer<typeof voiceSessionSchema>;
@@ -236,7 +246,7 @@ export const voiceSessionRequestSchema = z.discriminatedUnion("kind", [
   z.object({
     feedbackId: voiceIdSchema,
     id: voiceIdSchema,
-    kind: z.literal("dismiss"),
+    kind: z.literal(["dismiss", "undo"]),
   }),
 ]);
 

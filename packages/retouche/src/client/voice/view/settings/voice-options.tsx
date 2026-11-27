@@ -1,10 +1,7 @@
-import { useId } from "react";
-
-import { ChevronDownIcon } from "../../../shell/icons";
 import type { Voice } from "../../voice";
 import { PROBLEM_CHOICES } from "../voice-problem";
 import { AgentChoice } from "./agent-choice";
-import { Choice, type ChoiceOption } from "./choice";
+import { Choice, type ChoiceOption, SelectField } from "./choice";
 import { HearingChoice } from "./hearing-choice";
 
 export const LANGUAGE_NAME = "Language";
@@ -42,37 +39,29 @@ function languageName(names: Intl.DisplayNames, code: string): string {
   }
 }
 
-function languageOptions(current: string): { code: string; name: string }[] {
+function languageOptions(current: string): ChoiceOption<string>[] {
   const names = new Intl.DisplayNames([navigator.language], {
     type: "language",
   });
   const codes = new Set([current, ...navigator.languages, ...LANGUAGES]);
-  return [...codes].map((code) => ({ code, name: languageName(names, code) }));
+  return [...codes].map((code) => ({
+    label: languageName(names, code),
+    value: code,
+  }));
 }
 
-export function LanguageSelect({ voice }: { voice: Voice }) {
-  const id = useId();
+function LanguageSelect({ voice }: { voice: Voice }) {
   const { language } = voice.preferences;
   return (
-    <span className="dt-voice-field">
-      <label htmlFor={id}>{LANGUAGE_NAME}</label>
-      <span className="dt-voice-select">
-        <select
-          id={id}
-          onChange={(event) => {
-            voice.actions.setPreferences({ language: event.target.value });
-          }}
-          value={language}
-        >
-          {languageOptions(language).map(({ code, name }) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <ChevronDownIcon />
-      </span>
-    </span>
+    <SelectField
+      about={null}
+      name={LANGUAGE_NAME}
+      onPick={(code) => {
+        voice.actions.setPreferences({ language: code });
+      }}
+      options={languageOptions(language)}
+      value={language}
+    />
   );
 }
 
@@ -93,7 +82,7 @@ export function VoiceOptions({
       {(isStart || isHearingAsked) && <HearingChoice voice={voice} />}
       {agents !== null && agents.length > 0 && (
         <Choice
-          hint={null}
+          about={null}
           name={FEEDBACK_GROUP_NAME}
           onPick={(isLive) => {
             actions.setPreferences({ isLive });

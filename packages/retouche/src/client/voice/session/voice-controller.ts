@@ -241,6 +241,9 @@ export class VoiceController {
       stop: () => {
         void this.#stop();
       },
+      undo: (feedbackId) => {
+        void this.#sync.post({ feedbackId, kind: "undo" });
+      },
       uploadFigure: async (upload) => await this.#sync.uploadFigure(upload),
     };
   }

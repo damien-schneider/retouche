@@ -20,13 +20,7 @@ const SPEECH: Record<SpeechHearing, { hint: string; label: string }> = {
   device: { hint: "Audio stays on this computer.", label: DEVICE_NAME },
 };
 
-function TranscriberHint({
-  onForget,
-  transcriber,
-}: {
-  onForget: (provider: TranscriberProvider) => void;
-  transcriber: ListedTranscriber;
-}) {
+function TranscriberHint({ transcriber }: { transcriber: ListedTranscriber }) {
   const { name } = transcriber;
   if (transcriber.source === "env") {
     return (
@@ -39,19 +33,7 @@ function TranscriberHint({
   if (transcriber.source === "config") {
     return <>Audio goes to {name}.</>;
   }
-  return (
-    <>
-      Audio goes to {name}, with the key you saved.{" "}
-      <button
-        onClick={() => {
-          onForget(transcriber.id);
-        }}
-        type="button"
-      >
-        {FORGET_KEY_NAME}
-      </button>
-    </>
-  );
+  return <>Audio goes to {name}, with the key you saved.</>;
 }
 
 function useFocusOnSave() {
@@ -72,6 +54,18 @@ function useFocusOnSave() {
   };
 }
 
+function ForgetKey({ onForget }: { onForget: () => void }) {
+  return (
+    <button
+      className="dt-voice-link dt-voice-add-key"
+      onClick={onForget}
+      type="button"
+    >
+      {FORGET_KEY_NAME}
+    </button>
+  );
+}
+
 export function HearingChoice({ voice }: { voice: Voice }) {
   const reasonId = useId();
   const [reason, setReason] = useState<string | null>(null);
@@ -86,22 +80,16 @@ export function HearingChoice({ voice }: { voice: Voice }) {
   const forget = async (provider: TranscriberProvider) => {
     setReason(await actions.forgetKey(provider));
   };
+  const isTranscribed = hearing === "transcriber";
   const transcriberHint = chosen ? (
-    <TranscriberHint
-      onForget={(provider) => {
-        void forget(provider);
-      }}
-      transcriber={chosen}
-    />
+    <TranscriberHint transcriber={chosen} />
   ) : null;
   return (
     <div className="dt-voice-listening">
       {options.length > 0 && (
         <Choice<string>
+          about={isTranscribed ? transcriberHint : SPEECH[hearing].hint}
           chosenRef={chosenRef}
-          hint={
-            hearing === "transcriber" ? transcriberHint : SPEECH[hearing].hint
-          }
           name={LISTENING_GROUP_NAME}
           onPick={(value) => {
             const speech = hearings.find((each) => each === value);
@@ -113,6 +101,13 @@ export function HearingChoice({ voice }: { voice: Voice }) {
           }}
           options={options}
           value={hearing === "transcriber" ? preferences.transcriber : hearing}
+        />
+      )}
+      {isTranscribed && chosen?.source === "saved" && (
+        <ForgetKey
+          onForget={() => {
+            void forget(chosen.id);
+          }}
         />
       )}
       {reason !== null && <KeyReason id={reasonId} reason={reason} />}

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { readdir, readFile, rename, rm } from "node:fs/promises";
+import { readdir, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import {
@@ -9,7 +9,7 @@ import {
 } from "../../protocol";
 import { failure, type RouteOutcome } from "../json-response";
 import { createKeyedQueue } from "./keyed-queue";
-import { writePrivateFile } from "./user-folders";
+import { replacePrivateFile } from "./user-folders";
 
 export interface NewSession {
   language: string;
@@ -58,10 +58,13 @@ function blankSession(
     moments: [],
     passages: [],
     shots: [],
+    undoAsked: [],
   };
 }
 
-async function readSessionFile(folder: string): Promise<VoiceSession | null> {
+export async function readSessionFile(
+  folder: string
+): Promise<VoiceSession | null> {
   try {
     const text = await readFile(join(folder, SESSION_FILE), "utf-8");
     const parsed = voiceSessionSchema.safeParse(JSON.parse(text));
@@ -71,14 +74,7 @@ async function readSessionFile(folder: string): Promise<VoiceSession | null> {
   }
 }
 
-async function writeSessionFile(session: VoiceSession): Promise<void> {
-  const target = join(session.folder, SESSION_FILE);
-  const draft = `${target}.${randomBytes(4).toString("hex")}.tmp`;
-  await writePrivateFile(draft, JSON.stringify(session));
-  await rename(draft, target);
-}
-
-async function sessionsIn(base: string): Promise<VoiceSession[]> {
+export async function sessionsIn(base: string): Promise<VoiceSession[]> {
   const names = await readdir(base).catch((): string[] => []);
   const found = await Promise.all(
     names
@@ -90,7 +86,8 @@ async function sessionsIn(base: string): Promise<VoiceSession[]> {
     .toSorted((first, second) => second.startedAt - first.startedAt);
 }
 
-const NO_FOLDER = "Retouche found no home folder to keep voice sessions in.";
+export const NO_FOLDER =
+  "Retouche found no home folder to keep voice sessions in.";
 
 export class SessionFiles implements SessionStore {
   readonly #sessions = new Map<string, VoiceSession>();
@@ -128,7 +125,10 @@ export class SessionFiles implements SessionStore {
     }
     const session = blankSession(fields, { folder: join(base, id), id });
     this.#sessions.set(id, session);
-    await writeSessionFile(session);
+    await replacePrivateFile(
+      join(session.folder, SESSION_FILE),
+      JSON.stringify(session)
+    );
     return { ok: true, value: session };
   }
 
@@ -167,7 +167,10 @@ export class SessionFiles implements SessionStore {
       }
       const outcome = await change(session);
       if (outcome.ok && outcome.value !== session) {
-        await writeSessionFile(outcome.value);
+        await replacePrivateFile(
+          join(session.folder, SESSION_FILE),
+          JSON.stringify(outcome.value)
+        );
         this.#sessions.set(id, outcome.value);
       }
       return outcome;

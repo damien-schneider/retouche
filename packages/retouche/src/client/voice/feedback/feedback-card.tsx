@@ -2,27 +2,42 @@ import type { MouseEvent } from "react";
 
 import { clock } from "../../../clock";
 import type { EditorId, VoiceSite } from "../../../protocol";
+import type { ReviewItem } from "../../../voice/review-items";
+import { itemMarkdown, siteText } from "../../../voice/voice-markdown";
 import { EDITOR_NAME, EditorLink } from "../../code/code-panel";
 import { editorUrl } from "../../code/editor-url";
 import { elementTag } from "../../panel/element-names";
-import { AlertIcon, CheckIcon, CloseIcon, CopyIcon } from "../../shell/icons";
+import {
+  AlertIcon,
+  CheckIcon,
+  CloseIcon,
+  CopyIcon,
+  RetryIcon,
+} from "../../shell/icons";
+import { type FollowCard, FollowStatus } from "../follow/follow-status";
 import type { Voice } from "../voice";
 import { FeedbackFigure } from "./figure/feedback-figure";
-import type { ReviewItem } from "./review-items";
 import type { CopyRequest, ReviewCopy } from "./use-review-copy";
-import { itemMarkdown, siteText } from "./voice-markdown";
 
 export const COPY_NAME = "Copy";
 export const DISMISS_NAME = "Dismiss";
+export const UNDO_NAME = "Ask the agent to undo";
+
+const ITEM_TOOLS = {
+  dismiss: { icon: <CloseIcon />, label: DISMISS_NAME },
+  undo: { icon: <RetryIcon />, label: UNDO_NAME },
+} as const;
 
 export function CopyButton({
   copier,
   label,
   request,
+  variant,
 }: {
   copier: ReviewCopy;
   label: string;
   request: Omit<CopyRequest, "anchor">;
+  variant?: "link";
 }) {
   const state = copier.stateOf(request.key);
   const shows = (face: "copied" | "failed" | null) =>
@@ -31,6 +46,7 @@ export function CopyButton({
     <button
       aria-busy={state === "working"}
       className="dt-copy dt-voice-copy"
+      data-variant={variant}
       disabled={state === "working"}
       onClick={(event: MouseEvent<HTMLButtonElement>) => {
         void copier.copy({ ...request, anchor: event.currentTarget });
@@ -96,6 +112,8 @@ function CardMeta({
 export interface CardProps {
   copier: ReviewCopy;
   editor: EditorId | null;
+  followCard: FollowCard | undefined;
+  isUndoAsked: boolean;
   isUnderstanding: boolean;
   item: ReviewItem;
   number: number;
@@ -103,8 +121,34 @@ export interface CardProps {
   voice: Voice;
 }
 
+function ItemTool({
+  followCard,
+  isUndoAsked,
+  item,
+  voice,
+}: Pick<CardProps, "followCard" | "isUndoAsked" | "item" | "voice">) {
+  if (item.kind !== "feedback" || isUndoAsked) {
+    return null;
+  }
+  const tool = followCard?.state === "applied" ? "undo" : "dismiss";
+  const { icon, label } = ITEM_TOOLS[tool];
+  return (
+    <button
+      aria-label={label}
+      className="icon-btn"
+      onClick={() => {
+        voice.actions[tool](item.id);
+      }}
+      title={label}
+      type="button"
+    >
+      {icon}
+    </button>
+  );
+}
+
 function CardTools(props: Omit<CardProps, "isUnderstanding" | "showsPage">) {
-  const { copier, editor, item, number, voice } = props;
+  const { copier, editor, item, number } = props;
   const element = item.moment?.element ?? null;
   const site = element?.callSite ?? element?.componentSite ?? null;
   return (
@@ -119,25 +163,14 @@ function CardTools(props: Omit<CardProps, "isUnderstanding" | "showsPage">) {
         }}
       />
       {editor && site && <SiteEditorLink editor={editor} site={site} />}
-      {item.kind === "feedback" && (
-        <button
-          aria-label={DISMISS_NAME}
-          className="icon-btn"
-          onClick={() => {
-            voice.actions.dismiss(item.id);
-          }}
-          title={DISMISS_NAME}
-          type="button"
-        >
-          <CloseIcon />
-        </button>
-      )}
+      <ItemTool {...props} />
     </div>
   );
 }
 
 export function FeedbackCard(props: CardProps) {
-  const { isUnderstanding, item, showsPage, voice } = props;
+  const { followCard, isUndoAsked, isUnderstanding, item, showsPage, voice } =
+    props;
   const isFeedback = item.kind === "feedback";
   return (
     <article
@@ -154,6 +187,9 @@ export function FeedbackCard(props: CardProps) {
           </q>
         )}
       </h3>
+      {isFeedback && (
+        <FollowStatus card={followCard} isUndoAsked={isUndoAsked} />
+      )}
       {isFeedback && item.detail && <p>{item.detail}</p>}
       {isFeedback && (
         <blockquote className="dt-voice-quote">

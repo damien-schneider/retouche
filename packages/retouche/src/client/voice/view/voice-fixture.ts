@@ -65,6 +65,7 @@ function fakeActions(): FakeActions {
     setPreferences: vi.fn<VoiceActions["setPreferences"]>(),
     start: vi.fn<VoiceActions["start"]>(),
     stop: vi.fn<VoiceActions["stop"]>(),
+    undo: vi.fn<VoiceActions["undo"]>(),
     uploadFigure: vi.fn<VoiceActions["uploadFigure"]>().mockResolvedValue(null),
   };
 }
@@ -86,6 +87,7 @@ export function fakeVoice(
       analysis: { kind: "idle" },
       canAddKey: false,
       feed,
+      follow: null,
       hearings: ["browser"],
       phase: "idle",
       preferences: {
@@ -120,6 +122,7 @@ export function voiceSession(
     passages: [],
     shots: [],
     startedAt: Date.UTC(2025, 0, 1, 9),
+    undoAsked: [],
     ...overrides,
   };
 }
