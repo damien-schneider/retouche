@@ -1,4 +1,4 @@
-import { defineConfig } from "retouche/config";
+import { defineConfig } from "retouche-dev/config";
 
 export default defineConfig({
   allow: [{ classes: ["text-muted", "text-ink"] }],

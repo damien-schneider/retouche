@@ -3,7 +3,7 @@
 ## `retouche.config.ts`
 
 ```ts
-import { defineConfig } from "retouche/config";
+import { defineConfig } from "retouche-dev/config";
 
 export default defineConfig({
   components: ["Heading", "Text", "Button"],
@@ -25,7 +25,7 @@ An invalid config pauses scanning and lists every issue in the panel.
 
 ## Dev server
 
-The dev route reads its settings from the options of `retouche()` or `createRoute()` from `retouche/next`, or from `RETOUCHE_` variables in the dev server's environment or the app's env files (`.env.local` keeps them out of git).
+The dev route reads its settings from the options of `retouche()` or `createRoute()` from `retouche-dev/next`, or from `RETOUCHE_` variables in the dev server's environment or the app's env files (`.env.local` keeps them out of git).
 
 | Option | Variable | Purpose |
 | --- | --- | --- |

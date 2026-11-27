@@ -18,7 +18,7 @@ interface FollowContext {
 export function followSetup(root: string): FollowSetup | null {
   try {
     const manifest = createRequire(join(root, "package.json")).resolve(
-      "retouche/package.json"
+      "retouche-dev/package.json"
     );
     const cli = join(dirname(manifest), "dist", "cli.js");
     return existsSync(cli)

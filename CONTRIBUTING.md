@@ -14,7 +14,7 @@ bun run dev
 
 The site runs at `http://localhost:4517`. In both local development and the static site build, the live overlay marks each Properties example as its override appears on scroll. You can hide the demo's arrows with the toolbar's dots switch; they return when you reload.
 
-The site also hosts the setup: every dev or build run copies the packed tarball to `apps/site/public/retouche.tgz` and writes `apps/site/public/setup.md` pointing at it. In dev the origin is `http://localhost:4517`; a build takes it from `SITE_URL` and fails without it.
+The site also hosts the setup prompt: every dev or build run writes `apps/site/public/setup.md`, which installs `retouche-dev` from npm. In dev the origin is `http://localhost:4517`; a build takes it from `SITE_URL` and fails without it.
 
 For agents and crawlers, a build also writes `/robots.txt` (every crawler allowed, with Content Signals `search=yes, ai-input=yes, ai-train=yes`), `/sitemap.xml`, and the page as markdown at `/index.md`, converted from the prerendered `<main>` without its navigation, its buttons and anything `aria-hidden`. On Vercel, `vercel.json` serves that markdown at `/` to requests whose `Accept` includes `text/markdown`, and points to it from the page with a `Link` header.
 
@@ -22,15 +22,24 @@ For agents and crawlers, a build also writes `/robots.txt` (every crawler allowe
 
 | Command | Purpose |
 | --- | --- |
-| `bun run dev` | Pack the package and run the site with the overlay |
+| `bun run dev` | Build the package and run the site with the overlay |
 | `bun run build` | Build `packages/retouche/dist` |
-| `SITE_URL=<origin> bun run build:site` | Pack the package, then prerender the site to `apps/site/dist/client` with `/retouche.tgz`, `/setup.md`, `/robots.txt`, `/sitemap.xml` and `/index.md` |
+| `SITE_URL=<origin> bun run build:site` | Build the package, then prerender the site to `apps/site/dist/client` with `/setup.md`, `/robots.txt`, `/sitemap.xml` and `/index.md` |
 | `bun run pack` | Build and pack `packages/retouche/retouche.tgz` |
-| `bun run prompt` | Pack, then print the setup prompt with the tarball path |
+| `bun run prompt` | Pack, then print the setup prompt installing that tarball |
 | `bun run test` | Run the package's Vitest suite (jsdom, real React rendering) |
 | `bun run typecheck` | Type-check every workspace |
 | `bun run check` | Lint with oxlint, check formatting with oxfmt |
 | `bun run fix` | Apply oxlint fixes, then format with oxfmt |
+
+## Releasing
+
+The package is published to npm as `retouche-dev` by `.github/workflows/publish.yml`:
+
+1. Bump `version` in `packages/retouche/package.json` and push it to `main`.
+2. Tag that commit `v<version>` and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
+
+The workflow fails when the tag and the version differ, then builds, checks, tests and runs `npm publish` with provenance. It authenticates through npm trusted publishing, so no npm token is stored in the repository.
 
 ## Repository layout
 

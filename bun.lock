@@ -33,7 +33,7 @@
         "@types/turndown": "^5.0.6",
         "@vitejs/plugin-react": "^6.0.0",
         "jsdom": "^30.1.0",
-        "retouche": "workspace:*",
+        "retouche-dev": "workspace:*",
         "tailwindcss": "^4.3.3",
         "turndown": "^7.2.5",
         "vite": "^8.3.0",
@@ -41,7 +41,7 @@
       },
     },
     "packages/retouche": {
-      "name": "retouche",
+      "name": "retouche-dev",
       "version": "0.1.0",
       "bin": {
         "retouche": "./dist/cli.js",
@@ -762,7 +762,7 @@
 
     "restore-cursor": ["restore-cursor@5.1.0", "", { "dependencies": { "onetime": "^7.0.0", "signal-exit": "^4.1.0" } }, "sha512-oMA2dcrw6u0YfxJQXm342bFKX/E4sG9rbTzO9ptUcR/e8A33cHuvStiYOwH7fszkZlZ1z/ta9AAoPk2F4qIOHA=="],
 
-    "retouche": ["retouche@workspace:packages/retouche"],
+    "retouche-dev": ["retouche-dev@workspace:packages/retouche"],
 
     "reusify": ["reusify@1.1.0", "", {}, "sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw=="],
 

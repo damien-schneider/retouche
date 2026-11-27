@@ -9,7 +9,7 @@ export const ROUTE_FIXES: Record<
   missing: (
     <>
       Add <code>retouche()</code> to your Vite plugins, or the{" "}
-      <code>retouche/next</code> route, then restart the dev server.
+      <code>retouche-dev/next</code> route, then restart the dev server.
     </>
   ),
   outdated: "Restart the dev server: it runs another version of Retouche.",

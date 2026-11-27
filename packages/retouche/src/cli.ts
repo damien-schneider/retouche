@@ -11,13 +11,24 @@ import {
   runNext,
 } from "./server/voice/follow/follow-cli";
 
-const USAGE = `Usage: retouche prompt [tarball-url]
+const USAGE = `Usage: retouche prompt [tarball-url | --local]
 
   Print the setup prompt to hand to your coding agent.
-  Without a URL, the prompt installs the local tarball:
-  run \`bun run pack\` in the retouche repo first.\n`;
+  The prompt installs the package from npm. A tarball URL installs
+  that tarball instead, and --local the one \`bun run pack\` builds
+  in the retouche repo.\n`;
 
 const tarballUrl = z.url({ protocol: /^https?$/ });
+
+const packageManifest = z.object({ name: z.string() });
+
+function packageName(): string {
+  const manifest = readFileSync(
+    new URL("../package.json", import.meta.url),
+    "utf-8"
+  );
+  return packageManifest.parse(JSON.parse(manifest)).name;
+}
 
 function localTarball(): string | null {
   const tarball = fileURLToPath(new URL("../retouche.tgz", import.meta.url));
@@ -28,8 +39,11 @@ function localTarball(): string | null {
   return null;
 }
 
-function tarballLocation(argument: string | undefined): string | null {
+function installSource(argument: string | undefined): string | null {
   if (argument === undefined) {
+    return packageName();
+  }
+  if (argument === "--local") {
     return localTarball();
   }
   const url = tarballUrl.safeParse(argument);
@@ -40,14 +54,14 @@ function tarballLocation(argument: string | undefined): string | null {
   return null;
 }
 
-function printPrompt(tarball: string): void {
+function printPrompt(source: string): void {
   const prompt = readFileSync(
     new URL("../PROMPT.md", import.meta.url),
     "utf-8"
   );
   process.stdout.write(
     prompt
-      .replaceAll("{{RETOUCHE_TARBALL}}", tarball)
+      .replaceAll("{{RETOUCHE_PACKAGE}}", source)
       .replaceAll(
         "{{PROPERTIES}}",
         WATCHED_GROUPS.map((group) => `\`${group}\``).join(", ")
@@ -58,11 +72,11 @@ function printPrompt(tarball: string): void {
 const [command = "", ...args] = process.argv.slice(2);
 
 if (command === "prompt") {
-  const tarball = tarballLocation(args[0]);
-  if (tarball === null) {
+  const source = installSource(args[0]);
+  if (source === null) {
     process.exitCode = 1;
   } else {
-    printPrompt(tarball);
+    printPrompt(source);
   }
 } else if (command === "next") {
   process.exitCode = await runNext(args, process.argv[1] ?? "retouche");

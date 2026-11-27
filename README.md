@@ -8,17 +8,16 @@ A dev overlay for React apps. It puts a dot on every element whose call site ove
 
 `<Heading className="text-6xl">` compiles, passes review, and quietly forks the type scale. Retouche reads the rendered React tree, finds every `className` and `style` that changes the typography of a component you listed, and marks it on the page. Click a dot to see the call site, the component it overrides, and a before/after diff measured in the browser. Then fix the call site, or keep the override.
 
-> [!NOTE]
-> Retouche is unpublished and "retouche" is a working name. The setup prompt installs it from a tarball: the one the site hosts, or one built in this repository.
+Retouche is on npm as [`retouche-dev`](https://www.npmjs.com/package/retouche-dev), since the `retouche` name belongs to another project.
 
 ## Quick start
 
-Requires React 19, with Vite or with Next.js 16 (App Router on Turbopack, its default dev bundler).
+Requires React 19, with Vite (TanStack Start and React Router included) or with Next.js 16 (App Router on Turbopack, its default dev bundler).
 
 1. Copy the setup prompt from the site:
 
    ```text
-   Set up Retouche in this React app by following https://<site>/setup.md
+   Set up Retouche in this React app by following https://retouche.dev/setup.md
    ```
 
 2. Paste it into Claude Code, Codex, Cursor or any coding agent working in your app.
@@ -27,7 +26,7 @@ Requires React 19, with Vite or with Next.js 16 (App Router on Turbopack, its de
 <details>
 <summary>What the agent does</summary>
 
-1. Checks the stack and installs the tarball as a dev dependency.
+1. Checks the stack and installs `retouche-dev` as a dev dependency.
 2. Finds the design system, local or installed, and the components that style their own text or render ones that do, whatever styles them: Tailwind, CSS Modules, plain CSS, CSS-in-JS.
 3. Copies the [starter config](packages/retouche/templates/retouche.config.ts) to `retouche.config.ts` and lists those components.
 4. Wires the dev route, the instrument import and `<Retouche>`.
@@ -37,7 +36,7 @@ Requires React 19, with Vite or with Next.js 16 (App Router on Turbopack, its de
 </details>
 
 <details>
-<summary>Build the prompt from a clone instead</summary>
+<summary>Test an unreleased build from a clone</summary>
 
 ```bash
 git clone https://github.com/damien-schneider/retouche.git
@@ -46,7 +45,7 @@ bun install
 bun run --silent prompt | pbcopy
 ```
 
-`bun run prompt` builds the package, packs it into `packages/retouche/retouche.tgz`, and prints [PROMPT.md](packages/retouche/PROMPT.md) with that tarball's path filled in. `node packages/retouche/dist/cli.js prompt <tarball-url>` fills in a URL instead; the site build uses it to write `/setup.md`.
+`bun run prompt` builds the package, packs it into `packages/retouche/retouche.tgz`, and prints [PROMPT.md](packages/retouche/PROMPT.md) installing that tarball instead of the npm release. `node packages/retouche/dist/cli.js prompt <tarball-url>` installs a tarball from a URL; without an argument the prompt installs from npm, which is what the site serves at `/setup.md`.
 
 </details>
 
@@ -65,11 +64,15 @@ Retouche reports and doesn't judge. Every override on a listed component is show
 
 ## Manual setup
 
+```bash
+npm install -D retouche-dev
+```
+
 ### Vite
 
 ```ts
 // vite.config.ts
-import { retouche } from "retouche/vite";
+import { retouche } from "retouche-dev/vite";
 
 export default defineConfig({
   plugins: [react(), retouche()],
@@ -78,8 +81,8 @@ export default defineConfig({
 
 ```tsx
 // src/main.tsx
-import "retouche/instrument";
-import { Retouche } from "retouche";
+import "retouche-dev/instrument";
+import { Retouche } from "retouche-dev";
 
 import config from "../retouche.config";
 
@@ -95,23 +98,23 @@ createRoot(root).render(
 
 ```ts
 // app/api/retouche/[...path]/route.ts
-export { GET, POST } from "retouche/next";
+export { GET, POST } from "retouche-dev/next";
 ```
 
 ```ts
 // instrumentation-client.ts
-import "retouche/instrument";
+import "retouche-dev/instrument";
 ```
 
 Render `<Retouche config={config} />` inside the root layout's `<body>`.
 
-`retouche/instrument` installs React's DevTools hook before React loads, in development only. Without it, dots and code still work; the measured diff, hold to compare and render highlights do not.
+`retouche-dev/instrument` installs React's DevTools hook before React loads, in development only. Without it, dots and code still work; the measured diff, hold to compare and render highlights do not.
 
 ## Configuration
 
 ```ts
 // retouche.config.ts
-import { defineConfig } from "retouche/config";
+import { defineConfig } from "retouche-dev/config";
 
 export default defineConfig({
   components: ["Heading", "Text", "Button"],

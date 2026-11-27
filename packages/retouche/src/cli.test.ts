@@ -5,11 +5,20 @@ import { describe, expect, it } from "vitest";
 
 const CLI = join(import.meta.dirname, "cli.ts");
 
-function runPrompt(tarball: string) {
-  return spawnSync("bun", [CLI, "prompt", tarball], { encoding: "utf-8" });
+function runPrompt(...args: string[]) {
+  return spawnSync("bun", [CLI, "prompt", ...args], { encoding: "utf-8" });
 }
 
 describe("retouche prompt", () => {
+  it("has the agent install Retouche from npm by default", () => {
+    const run = runPrompt();
+
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain("retouche-dev");
+    expect(run.stdout).not.toContain(".tgz");
+    expect(run.stdout).not.toContain("{{RETOUCHE_PACKAGE}}");
+  });
+
   it("has the agent install Retouche from the tarball URL it is given", () => {
     const tarball = "https://retouche.example/retouche.tgz";
     const run = runPrompt(tarball);

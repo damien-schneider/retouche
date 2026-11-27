@@ -1,6 +1,6 @@
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Retouche } from "retouche";
+import { Retouche } from "retouche-dev";
 
 import config from "../../retouche.config";
 import { FAVICON } from "../logo";

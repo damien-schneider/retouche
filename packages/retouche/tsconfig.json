@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "paths": { "retouche/config": ["./src/rules/define-config.ts"] },
+    "paths": { "retouche-dev/config": ["./src/rules/define-config.ts"] },
     "types": ["node"]
   },
   "include": [

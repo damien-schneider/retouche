@@ -12,13 +12,13 @@ Work through these steps in order. Stop and tell me if a precondition fails inst
 
 ## 2. Install
 
-Add Retouche as a dev dependency from this tarball, with the project's own package manager:
+Add Retouche as a dev dependency with the project's own package manager:
 
 ```
-{{RETOUCHE_TARBALL}}
+{{RETOUCHE_PACKAGE}}
 ```
 
-For example `bun add -d <tarball>`, `pnpm add -D <tarball>` or `npm install -D <tarball>`.
+For example `bun add -d {{RETOUCHE_PACKAGE}}`, `pnpm add -D {{RETOUCHE_PACKAGE}}` or `npm install -D {{RETOUCHE_PACKAGE}}`.
 
 ## 3. Find the design system
 
@@ -44,7 +44,7 @@ Nothing else needs describing. At a call site, Retouche reads Tailwind utilities
 
 ## 4. Write `retouche.config.ts`
 
-Copy `node_modules/retouche/templates/retouche.config.ts` to the project root, next to `package.json`, and tailor it:
+Copy `node_modules/retouche-dev/templates/retouche.config.ts` to the project root, next to `package.json`, and tailor it:
 
 - `components`: the list from step 3.
 - `allow`: leave it out. The developer reviews each override in the overlay, and when one is intended the overlay copies the exact entry to add. Only add an entry now when the design system's own code or docs say a component is meant to take that override, and name the source in your report.
@@ -55,24 +55,24 @@ An `allow` entry is `{ component?: "Text", classes?: ["text-muted-*"], propertie
 
 **Vite**
 
-- `vite.config.ts`: add `retouche()` from `retouche/vite` to `plugins`.
-- The client entry (`src/main.tsx`): make `import "retouche/instrument";` the very first import, before React. A framework that generates its client entry takes a custom one written as its docs show: TanStack Start's `src/client.tsx`, React Router's `app/entry.client.tsx` (`npx react-router reveal entry.client`).
-- Render `<Retouche config={config} />` from `retouche` next to the app root, with `config` imported from `retouche.config.ts`. A framework that renders the whole document takes it inside the root route's `<body>`: TanStack Start's `__root.tsx`, the `Layout` in React Router's `app/root.tsx`.
+- `vite.config.ts`: add `retouche()` from `retouche-dev/vite` to `plugins`.
+- The client entry (`src/main.tsx`): make `import "retouche-dev/instrument";` the very first import, before React. A framework that generates its client entry takes a custom one written as its docs show: TanStack Start's `src/client.tsx`, React Router's `app/entry.client.tsx` (`npx react-router reveal entry.client`).
+- Render `<Retouche config={config} />` from `retouche-dev` next to the app root, with `config` imported from `retouche.config.ts`. A framework that renders the whole document takes it inside the root route's `<body>`: TanStack Start's `__root.tsx`, the `Layout` in React Router's `app/root.tsx`.
 - An app with several entries, one per HTML page or window, needs both in every entry whose screens should be checked.
 
 **Next.js (App Router)**
 
-- Create `app/api/retouche/[...path]/route.ts`, under `src/app/` when the app uses `src/`, containing `export { GET, POST } from "retouche/next";`.
-- Create or extend `instrumentation-client.ts` at the project root, or in `src/` when the app uses one, with `import "retouche/instrument";` as its first line.
-- Render `<Retouche config={config} />` from `retouche` inside the root layout's `<body>`, with `config` imported from `retouche.config.ts`.
+- Create `app/api/retouche/[...path]/route.ts`, under `src/app/` when the app uses `src/`, containing `export { GET, POST } from "retouche-dev/next";`.
+- Create or extend `instrumentation-client.ts` at the project root, or in `src/` when the app uses one, with `import "retouche-dev/instrument";` as its first line.
+- Render `<Retouche config={config} />` from `retouche-dev` inside the root layout's `<body>`, with `config` imported from `retouche.config.ts`.
 
-`<Retouche>` renders nothing in production builds, `retouche/instrument` installs nothing there, and the route answers nothing outside development, so no environment guards are needed.
+`<Retouche>` renders nothing in production builds, `retouche-dev/instrument` installs nothing there, and the route answers nothing outside development, so no environment guards are needed.
 
 ## 6. Check the dev setup
 
 The overlay talks to its dev route at `/api/retouche` on the app's own origin: the code behind each override, the config entries it writes and voice sessions all go through it. Read the app's config for anything that stands between the two, and change it for development only:
 
-- **Hostname.** The route answers on `localhost`, `*.localhost`, `127.0.0.1` and `[::1]`. If the developer opens the dev server under another name (a domain mapped in `/etc/hosts`, a LAN address, a container or tunnel host: look at `server.host` and `server.allowedHosts` in the Vite config, `allowedDevOrigins` in the Next config, the dev script and the README), add each name, comma-separated, to `RETOUCHE_HOSTS` in the app's `.env.local`, or to the `allowedHosts` option when the whole team uses it: `retouche({ allowedHosts: [...] })`, or for Next.js a route file reading `export const { GET, POST } = createRoute({ allowedHosts: [...] });` with `createRoute` from `retouche/next`.
+- **Hostname.** The route answers on `localhost`, `*.localhost`, `127.0.0.1` and `[::1]`. If the developer opens the dev server under another name (a domain mapped in `/etc/hosts`, a LAN address, a container or tunnel host: look at `server.host` and `server.allowedHosts` in the Vite config, `allowedDevOrigins` in the Next config, the dev script and the README), add each name, comma-separated, to `RETOUCHE_HOSTS` in the app's `.env.local`, or to the `allowedHosts` option when the whole team uses it: `retouche({ allowedHosts: [...] })`, or for Next.js a route file reading `export const { GET, POST } = createRoute({ allowedHosts: [...] });` with `createRoute` from `retouche-dev/next`.
 - **Next.js `basePath`.** The overlay calls `/api/retouche` from the site's root, so with a `basePath` set: stop and tell me.
 - **Requests in front of the route.** A Next.js `proxy.ts` or `middleware.ts` whose matcher covers `/api/retouche` and that can redirect, rewrite or reject it (auth, locale prefixes, rate limits): exclude `/api/retouche` from its matcher. Vite runs Retouche's middleware before its own `server.proxy`, so a proxied `/api` is fine; when the app's own server sits in front of Vite (Vite in middleware mode under Express, Hono, Fastify…), it must hand `/api/retouche` to `vite.middlewares` before its own routes.
 - **Security headers in development.** A `Content-Security-Policy` or `Permissions-Policy` sent in development (headers in the Next config, `proxy.ts` or `middleware.ts`, a `<meta http-equiv>` tag, Vite's `server.headers`, the app's own server) must let the overlay run. Its styles are `<style>` elements: `style-src 'unsafe-inline'`, and since browsers ignore `'unsafe-inline'` next to a nonce or hash, leave those out of `style-src` in development. Screenshots are `blob:` and `data:` images (`img-src`). Listening through a speech-to-text key loads an audio worklet from a `blob:` URL (`script-src`). Voice sessions need the microphone (`microphone=(self)`). Leave production headers as they are.

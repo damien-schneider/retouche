@@ -1,12 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
-import { retouche } from "retouche/vite";
+import { retouche } from "retouche-dev/vite";
 import { defineConfig, type Plugin } from "vite";
 import { z } from "zod";
 
@@ -17,7 +17,6 @@ const DEV_PORT = 4517;
 const PACKAGE = new URL("../../packages/retouche/", import.meta.url);
 const PUBLIC = new URL("public/", import.meta.url);
 const CLIENT_OUTPUT = fileURLToPath(new URL("dist/client/", import.meta.url));
-const TARBALL = "retouche.tgz";
 const ROBOTS_RULES = [
   "User-agent: *",
   "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
@@ -28,25 +27,16 @@ function siteOrigin(): string {
   const siteUrl = process.env.SITE_URL;
   if (siteUrl === undefined || siteUrl === "") {
     throw new Error(
-      "SITE_URL is unset. The site serves the setup prompt and the tarball from its own origin: SITE_URL=https://… bun run build:site"
+      "SITE_URL is unset. The site's links, sitemap and setup prompt use its public origin: SITE_URL=https://… bun run build:site"
     );
   }
   return new URL(siteUrl).origin;
 }
 
-function writeSetupFiles(origin: string): void {
-  const tarball = new URL(TARBALL, PACKAGE);
-  if (!existsSync(tarball)) {
-    throw new Error(`No ${fileURLToPath(tarball)}: run bun run pack first`);
-  }
-  copyFileSync(tarball, new URL(TARBALL, PUBLIC));
+function writeSetupFile(): void {
   const prompt = execFileSync(
     "node",
-    [
-      fileURLToPath(new URL("dist/cli.js", PACKAGE)),
-      "prompt",
-      `${origin}/${TARBALL}`,
-    ],
+    [fileURLToPath(new URL("dist/cli.js", PACKAGE)), "prompt"],
     { encoding: "utf-8" }
   );
   writeFileSync(new URL("setup.md", PUBLIC), prompt);
@@ -59,7 +49,7 @@ function hostedFiles(origin: string): Plugin {
         return;
       }
       mkdirSync(PUBLIC, { recursive: true });
-      writeSetupFiles(origin);
+      writeSetupFile();
       writeFileSync(
         new URL("robots.txt", PUBLIC),
         [...ROBOTS_RULES, "", `Sitemap: ${origin}/sitemap.xml`, ""].join("\n")

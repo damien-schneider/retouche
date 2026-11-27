@@ -44,8 +44,8 @@ export function Intro() {
       </Text>
       <Text>
         Obs: React 19 with Vite, or Next.js 16 with the App Router and
-        Turbopack. Retouche runs only in development and is not on npm; the
-        agent installs it from a tarball hosted here.
+        Turbopack. Retouche runs only in development; the agent installs it from
+        npm, where it is named retouche-dev.
       </Text>
     </section>
   );

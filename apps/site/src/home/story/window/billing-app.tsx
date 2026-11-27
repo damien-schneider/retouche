@@ -1,5 +1,5 @@
 import { type ReactNode, use } from "react";
-import { handArrow } from "retouche/hand-arrow";
+import { handArrow } from "retouche-dev/hand-arrow";
 
 import { cn } from "../../../ui/class-names";
 import {

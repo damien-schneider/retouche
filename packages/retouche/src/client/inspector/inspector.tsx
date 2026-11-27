@@ -23,7 +23,7 @@ function MeasureHint({ instance }: { instance: OverrideInstance }) {
   }
   return (
     <p className="dt-hint">
-      Import <code>retouche/instrument</code> before React to measure the
+      Import <code>retouche-dev/instrument</code> before React to measure the
       component’s own values.
     </p>
   );

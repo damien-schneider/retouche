@@ -32,7 +32,7 @@ The dev route reads source files for the code view. The Vite plugin and the Next
 
 ## Dev only
 
-In production builds `<Retouche>` renders nothing and `retouche/instrument` installs nothing; a Vite build ships neither the overlay nor the hook code. The source route answers only in development, on localhost, to requests from the app's own origin.
+In production builds `<Retouche>` renders nothing and `retouche-dev/instrument` installs nothing; a Vite build ships neither the overlay nor the hook code. The source route answers only in development, on localhost, to requests from the app's own origin.
 
 ## Rescanning
 

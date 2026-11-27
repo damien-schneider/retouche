@@ -7,15 +7,15 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "bun run --filter retouche build",
+    "build": "bun run --filter retouche-dev build",
     "check": "oxlint && oxfmt --check",
-    "dev": "bun run pack && bun run --filter site dev",
+    "dev": "bun run build && bun run --filter site dev",
     "fix": "oxlint --fix && oxfmt",
     "pack": "bun run --cwd packages/retouche pack",
-    "prompt": "bun run --cwd packages/retouche pack > /dev/null && node packages/retouche/dist/cli.js prompt",
-    "test": "bun run --filter retouche test",
+    "prompt": "bun run --cwd packages/retouche pack > /dev/null && node packages/retouche/dist/cli.js prompt --local",
+    "test": "bun run --filter retouche-dev test",
     "typecheck": "bun run --filter '*' typecheck",
-    "build:site": "bun run pack && bun run --filter site build"
+    "build:site": "bun run build && bun run --filter site build"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

@@ -1,4 +1,4 @@
-import { themeTokens } from "retouche/theme";
+import { themeTokens } from "retouche-dev/theme";
 
 import { cn } from "../../../ui/class-names";
 import { Icon } from "../../../ui/icon";

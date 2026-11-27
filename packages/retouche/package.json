@@ -1,16 +1,33 @@
 {
-  "name": "retouche",
+  "name": "retouche-dev",
   "version": "0.1.0",
-  "private": true,
   "description": "Dots on every element whose call site overrides your design system's typography.",
+  "keywords": [
+    "design-system",
+    "devtools",
+    "nextjs",
+    "overlay",
+    "react",
+    "typography",
+    "vite"
+  ],
+  "homepage": "https://retouche.dev",
+  "bugs": "https://github.com/damien-schneider/retouche/issues",
   "license": "MIT",
+  "author": "Damien Schneider",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/damien-schneider/retouche.git",
+    "directory": "packages/retouche"
+  },
   "bin": {
     "retouche": "./dist/cli.js"
   },
   "files": [
     "dist",
     "templates",
-    "PROMPT.md"
+    "PROMPT.md",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "type": "module",
   "exports": {
@@ -48,6 +65,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "pack": "tsdown && bun pm pack --filename retouche.tgz --quiet",
+    "prepublishOnly": "tsdown",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

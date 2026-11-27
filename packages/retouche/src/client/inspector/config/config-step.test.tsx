@@ -18,7 +18,7 @@ import {
 } from "../../testing/layer-page";
 
 const WITH_ALLOW = [
-  'import { defineConfig } from "retouche/config";',
+  'import { defineConfig } from "retouche-dev/config";',
   "",
   "export default defineConfig({",
   '  components: ["Text"],',
@@ -29,7 +29,7 @@ const WITH_ALLOW = [
 ].join("\n");
 
 const WITHOUT_ALLOW = [
-  'import { defineConfig } from "retouche/config";',
+  'import { defineConfig } from "retouche-dev/config";',
   "",
   "export default defineConfig({",
   '  components: ["Text"],',

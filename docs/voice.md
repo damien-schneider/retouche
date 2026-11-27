@@ -116,7 +116,7 @@ retouche({
 });
 ```
 
-On Next.js, pass the same options to the route: `export const { GET, POST } = createRoute({ voice: { … } })`, with `createRoute` from `retouche/next`.
+On Next.js, pass the same options to the route: `export const { GET, POST } = createRoute({ voice: { … } })`, with `createRoute` from `retouche-dev/next`.
 
 | Field | Purpose |
 | --- | --- |

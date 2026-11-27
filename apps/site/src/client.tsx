@@ -1,4 +1,4 @@
-import "retouche/instrument";
+import "retouche-dev/instrument";
 import { StartClient } from "@tanstack/react-start/client";
 import { StrictMode, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
