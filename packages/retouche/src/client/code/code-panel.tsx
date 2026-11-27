@@ -69,13 +69,15 @@ export function CodeHead({
   editor,
   file,
 }: {
-  editor: EditorId;
+  editor: EditorId | null;
   file: SourceFile;
 }) {
   return (
     <div className="dt-code-head">
       <SourcePath line={file.line} path={file.path} />
-      <EditorLink href={editorUrl(editor, file)} title={EDITOR_NAME} />
+      {editor && (
+        <EditorLink href={editorUrl(editor, file)} title={EDITOR_NAME} />
+      )}
     </div>
   );
 }
@@ -85,7 +87,7 @@ export function CodePanel({
   marks,
   request,
 }: {
-  editor: EditorId;
+  editor: EditorId | null;
   marks: CodeMarks;
   request: SourceRequest;
 }) {

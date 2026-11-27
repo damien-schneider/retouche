@@ -53,23 +53,29 @@ export async function locateSites(
   return { callSite, component, componentName: ownerName(creation) };
 }
 
+interface LocatedSites {
+  sites: InstanceSites;
+  subject: Element | number;
+}
+
 export function useInstanceSites(
   source: OverrideInstance | Element,
   components: readonly string[]
 ): InstanceSites {
-  const [sites, setSites] = useState(LOADING);
+  const subject = source instanceof Element ? source : source.id;
+  const [located, setLocated] = useState<LocatedSites | null>(null);
   useEffect(() => {
     let isCurrent = true;
     const show = async () => {
-      const found = await locateSites(source, components);
+      const sites = await locateSites(source, components);
       if (isCurrent) {
-        setSites(found);
+        setLocated({ sites, subject });
       }
     };
     void show();
     return () => {
       isCurrent = false;
     };
-  }, [source, components]);
-  return sites;
+  }, [components, source, subject]);
+  return located?.subject === subject ? located.sites : LOADING;
 }

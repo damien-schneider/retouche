@@ -1,13 +1,17 @@
-import { type Fiber, isFiber } from "bippy";
+import { type Fiber, getDisplayName, getType, isFiber } from "bippy";
 import {
   formatOwnerStack,
   getRawSource,
   getSource,
+  getSourceContentFromSourceMap,
+  getSourceFromSourceMap,
+  getSourceMap,
   isSourceFile,
   parseStack,
   type StackFrame,
   symbolicateStack,
 } from "bippy/source";
+import type { ReactNode } from "react";
 
 import { SERVER_FRAME_ORIGIN } from "../../protocol";
 import {
@@ -20,6 +24,7 @@ import {
   writtenPlace,
 } from "../fiber/react-fiber";
 import type { SourceRequest } from "../route/dev-route";
+import { nearestWrittenTag } from "./written/written-tag";
 
 const MAX_OWNER_DEPTH = 32;
 const DEPENDENCY_FILE = /[\\/]node_modules[\\/]|^node_modules[\\/]/;
@@ -40,6 +45,7 @@ export type CodeSite =
 export const MISSING_SITE: CodeSite = { kind: "missing" };
 
 const creationFrames = new WeakMap<Error, string | null>();
+const thrownFrames = new WeakMap<object, StackFrame | null>();
 
 // Vite source maps list sources relative to the served module.
 function resolveAgainstModule(fileName: string, moduleUrl: string | undefined) {
@@ -158,10 +164,89 @@ function siteOf(source: StackFrame, moduleUrl: string | undefined): CodeSite {
   return { kind: "found", request };
 }
 
+function isCallable(value: unknown): value is () => ReactNode {
+  return typeof value === "function";
+}
+
+function isError(value: unknown): value is Error {
+  return value instanceof Error;
+}
+
+function namedFrame(stack: string | null | undefined, name: string) {
+  if (stack === null || stack === undefined) {
+    return null;
+  }
+  return parseStack(stack).find((frame) => frame.functionName === name) ?? null;
+}
+
+function ownedFrame(writer: Fiber, name: string): StackFrame | null {
+  const owned = findDescendant(
+    writer,
+    (candidate) =>
+      isSameFiber(candidate._debugOwner, writer) &&
+      namedFrame(creationFrame(candidate), name) !== null
+  );
+  return owned && namedFrame(creationFrame(owned), name);
+}
+
+// Outside a render a component throws at its first hook or prop read; logs muted, as in React's own frame probe.
+function thrownFrame(component: () => ReactNode): StackFrame | null {
+  const known = thrownFrames.get(component);
+  if (known !== undefined) {
+    return known;
+  }
+  const appLogs = { error: console.error, warn: console.warn };
+  console.error = () => {};
+  console.warn = () => {};
+  let frame: StackFrame | null = null;
+  try {
+    void component();
+  } catch (error) {
+    frame = isError(error) ? namedFrame(error.stack, component.name) : null;
+  } finally {
+    console.error = appLogs.error;
+    console.warn = appLogs.warn;
+  }
+  thrownFrames.set(component, frame);
+  return frame;
+}
+
+function writerFrame(fiber: Fiber): StackFrame | null {
+  const writer = fiber._debugOwner;
+  const component = isFiber(writer) ? getType(writer.type) : null;
+  if (!isFiber(writer) || !isCallable(component) || component.name === "") {
+    return null;
+  }
+  return ownedFrame(writer, component.name) ?? thrownFrame(component);
+}
+
+async function writerSite(fiber: Fiber): Promise<CodeSite> {
+  const { columnNumber = 1, fileName, lineNumber } = writerFrame(fiber) ?? {};
+  const sourceMap =
+    fileName === undefined
+      ? null
+      : await getSourceMap(fileName).catch(() => null);
+  const original =
+    sourceMap && lineNumber !== undefined
+      ? getSourceFromSourceMap(sourceMap, lineNumber, columnNumber)
+      : null;
+  if (!sourceMap || original?.fileName === undefined) {
+    return MISSING_SITE;
+  }
+  const code = getSourceContentFromSourceMap(sourceMap, original.fileName);
+  const name = getDisplayName(fiber.type);
+  const tag =
+    code === null || name === null || original.lineNumber === undefined
+      ? null
+      : nearestWrittenTag(code, { line: original.lineNumber, name });
+  const written = tag && { columnNumber: tag.column, lineNumber: tag.line };
+  return siteOf({ ...original, ...written }, fileName);
+}
+
 async function clientCreationSite(creation: Fiber): Promise<CodeSite> {
   const fiber = recordedCreation(creation);
   if (!fiber) {
-    return MISSING_SITE;
+    return await writerSite(creation);
   }
   const source = await getSource(fiber).catch(() => null);
   return source === null

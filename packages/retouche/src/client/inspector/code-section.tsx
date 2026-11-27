@@ -46,7 +46,7 @@ export function SiteCode({
   route: DevRouteState;
   site: SiteState;
 }) {
-  if (route.kind !== "ready") {
+  if (route.kind === "missing" || route.kind === "outdated") {
     return null;
   }
   if (site.kind === "loading") {
@@ -68,7 +68,7 @@ export function SiteCode({
   }
   return (
     <CodePanel
-      editor={route.status.editor}
+      editor={route.kind === "ready" ? route.status.editor : null}
       marks={marks}
       request={site.request}
     />
@@ -138,12 +138,11 @@ export function CodeSection(options: TraceOptions) {
     steps.push(configStep(options.facts, options.route));
   }
   const { kind } = options.route;
+  const hasRouteFix = kind === "missing" || kind === "outdated";
   return (
     <section aria-label="Code" className="dt-section">
-      {(kind === "missing" || kind === "outdated") && (
-        <p className="dt-hint">{ROUTE_FIXES[kind]}</p>
-      )}
-      {(options.facts !== null || options.route.kind === "ready") && (
+      {hasRouteFix && <p className="dt-hint">{ROUTE_FIXES[kind]}</p>}
+      {(options.facts !== null || !hasRouteFix) && (
         <ol className="dt-trace">
           {steps.map((step) => (
             <li
