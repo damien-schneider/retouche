@@ -72,12 +72,12 @@ export const VIEW_STYLES = `
   .dt-voice-select select:focus-visible { outline: none; }
   .dt-voice-select:has(select:focus-visible) { outline: 2px solid var(--rt-accent); outline-offset: 2px; }
   .dt-voice-select ::picker(select) {
-    position-area: block-end span-inline-start; max-width: min(300px, 90vw); max-height: min(320px, 60vh); margin-block: 4px; padding: 4px; border: 0;
+    position-area: block-end span-inline-start; min-inline-size: max(anchor-size(self-inline), 200px); max-width: min(300px, 90vw); max-height: min(320px, 60vh); margin-block: 4px; padding: 4px; border: 0;
     border-radius: var(--rt-radius-card); background: var(--rt-card); box-shadow: var(--rt-shadow-popover); color: var(--rt-text);
   }
-  .dt-voice-select option { gap: 8px; min-height: 32px; padding: 6px 10px; border-radius: var(--rt-radius-row); font-weight: 400; text-wrap: pretty; }
+  .dt-voice-select option { gap: 12px; min-height: 32px; padding: 6px 10px 6px 12px; border-radius: calc(var(--rt-radius-card) - 4px); font-weight: 400; text-wrap: pretty; }
   .dt-voice-select option:checked { font-weight: 500; }
-  .dt-voice-select option::checkmark { color: var(--rt-accent-ink); }
+  .dt-voice-select option::checkmark { order: 1; margin-inline-start: auto; color: var(--rt-accent-ink); }
   .dt-voice-select option:focus-visible { background: var(--rt-bg-hover); outline: none; }
 }
 .dt-voice-listening { display: flex; flex-direction: column; gap: 6px; }
@@ -118,7 +118,7 @@ export const VIEW_STYLES = `
 .dt-voice-actions svg { width: 14px; height: 14px; }
 .dt-voice-transcript summary {
   display: flex; align-items: center; gap: 8px; height: var(--hit); padding: 0 4px; width: fit-content;
-  border-radius: var(--rt-radius-tiny); color: var(--rt-text-muted); font-weight: 500; list-style: none; cursor: pointer;
+  border-radius: var(--rt-radius-tiny); color: var(--rt-text-muted); font-weight: 500; list-style: none;
 }
 .dt-voice-transcript summary::-webkit-details-marker { display: none; }
 .dt-voice-transcript ol { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 0; padding: 0 4px; list-style: none; }

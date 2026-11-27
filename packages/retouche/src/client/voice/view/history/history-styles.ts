@@ -3,7 +3,7 @@ import { HOVER_CAPABLE } from "../../../styles/tokens";
 export const HISTORY_STYLES = `
 .dt-voice-history summary {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--hit); padding: 0 4px;
-  border-radius: var(--rt-radius-tiny); list-style: none; cursor: pointer;
+  border-radius: var(--rt-radius-tiny); list-style: none;
 }
 .dt-voice-history summary::-webkit-details-marker { display: none; }
 .dt-voice-when { display: flex; align-items: baseline; gap: 6px; min-width: 0; font-weight: 600; font-variant-numeric: tabular-nums; }

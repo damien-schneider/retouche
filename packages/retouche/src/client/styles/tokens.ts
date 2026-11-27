@@ -23,8 +23,10 @@ ${themeTokens(".dt")}
 }
 *, *::before, *::after { box-sizing: border-box; }
 .dt { font-family: var(--rt-font); font-size: 13px; line-height: 20px; letter-spacing: -.003em; color: var(--rt-text); }
-button { margin: 0; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
-button:disabled { cursor: not-allowed; opacity: .35; }
+button { margin: 0; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; touch-action: manipulation; }
+:is(button, select, option, summary) { cursor: pointer; }
+:is(button, select, option):disabled { cursor: not-allowed; }
+button:disabled { opacity: .35; }
 :where(button) > * { transition: scale 120ms var(--rt-ease); }
 :where(button:active:not(:disabled)) > * { scale: .96; }
 svg { flex-shrink: 0; }
