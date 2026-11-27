@@ -57,7 +57,7 @@ bun run --silent prompt | pbcopy
 - **Code trace.** From the call site to the component's source, with a prompt for your agent at each step: use an existing variant, add one, or allow the override.
 - **Picker and notes.** Aim at any element, write a note, and copy every note to your agent as markdown.
 - **Render highlights.** Outlines each component as it renders, counts its renders and says what changed.
-- **Voice sessions.** Talk while pointing at the page, and an agent turns it into feedback cards with annotated screenshots. Your coding agent can apply each card while you keep talking.
+- **Voice sessions (experimental, off by default).** Talk while pointing at the page, and an agent turns it into feedback cards with annotated screenshots. Your coding agent can apply each card while you keep talking. Turn it on with `<Retouche config={config} voice />`.
 - **Dev only.** Production builds render nothing and install nothing.
 
 Retouche reports and doesn't judge. Every override on a listed component is shown the same way; you decide whether it's wanted.

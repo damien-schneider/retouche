@@ -6,6 +6,8 @@ Each card says what to change, quotes you, names the component and its call site
 
 The writer is your own Claude Code, Codex or Mastra Code, or any ACP agent or OpenAI-compatible model you add. Retouche runs it in the background, so there is nothing to launch or keep open.
 
+Voice sessions are experimental and off by default. Turn them on with the `voice` prop: `<Retouche config={config} voice />`.
+
 ## Start screen
 
 Session, on the bar or in the panel's head, opens the voice place without recording. The microphone stays off until Start recording. Before the first recording the place shows the start screen:
@@ -74,8 +76,9 @@ A key added from the start screen goes once to the dev route, which checks it wi
 
 While you type it, the key is in the page, where any script running there, the app's or an extension's, could read it. A key in the environment or `.env.local` never enters the browser:
 
-- Next.js loads `.env.local` into the environment.
-- The Vite plugin reads the app's env files, `.env`, `.env.local` and their mode variants, and takes from them only `RETOUCHE_` variables and the keys Retouche reads, so the app's other secrets stay out of its route and its agents.
+- Next.js loads `.env.local` into the environment; the route drops every variable Next loaded from the app's env files except `RETOUCHE_` variables and the keys Retouche reads.
+- The Vite plugin reads the app's env files, `.env`, `.env.local` and their mode variants, and takes from them only `RETOUCHE_` variables and the keys Retouche reads.
+- Either way, the app's other secrets stay out of the route and its agents.
 - Keep `.env.local` out of git, and never prefix a key with `VITE_` or `NEXT_PUBLIC_`, which bundles it into the page.
 
 | Provider | Model | How |

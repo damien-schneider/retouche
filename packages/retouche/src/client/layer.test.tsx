@@ -22,6 +22,7 @@ import {
   serveDevRoute,
   Text,
 } from "./testing/layer-page";
+import { SESSION_NAME } from "./voice/voice-toggle";
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = () => {};
@@ -438,4 +439,30 @@ describe("comparing while the code is shown", () => {
     fireEvent.keyUp(compare, { key: " " });
     expect(setAside()).not.toContain("text-lg");
   });
+});
+
+describe("voice sessions", () => {
+  it.each([
+    [false, {}],
+    [true, { voice: true }],
+  ])(
+    "offers a session only when the app turns voice on (%s)",
+    async (isOffered, voiceProp) => {
+      render(
+        <>
+          <Text className="text-lg">Pricing</Text>
+          <Layer config={config} {...voiceProp} />
+        </>
+      );
+      const panel = await waitFor(overlay);
+
+      fireEvent.click(openButton(panel));
+      await within(panel).findByRole("button", { name: /Pricing/ });
+
+      expect(
+        within(panel).queryAllByRole("button", { name: SESSION_NAME }).length >
+          0
+      ).toBe(isOffered);
+    }
+  );
 });

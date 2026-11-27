@@ -26,12 +26,6 @@ export function Intro() {
         context, or nothing at all.
       </Text>
       <Text>
-        Or open a voice session and talk through the page while you point at it.
-        Your own Claude Code, Codex or Mastra Code turns what you say into
-        feedback for your agent, each with a screenshot marked where you
-        pointed.
-      </Text>
-      <Text>
         To set it up, give this prompt to Claude Code, Codex or Cursor in your
         React app:
       </Text>

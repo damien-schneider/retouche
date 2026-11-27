@@ -78,10 +78,6 @@ function ModePill() {
         <Icon className="text-rt-muted size-4" name="pick" />
         Pick
       </span>
-      <span className={ISLAND_BUTTON}>
-        <Icon className="text-rt-muted size-4" name="mic" />
-        <span className="pr-0.5">Session</span>
-      </span>
     </span>
   );
 }

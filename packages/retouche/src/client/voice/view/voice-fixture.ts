@@ -89,6 +89,7 @@ export function fakeVoice(
       feed,
       follow: null,
       hearings: ["browser"],
+      isOffered: true,
       phase: "idle",
       preferences: {
         agent: "claude",

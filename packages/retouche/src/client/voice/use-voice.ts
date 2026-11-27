@@ -151,11 +151,12 @@ function useVoiceController(settings: VoiceSettings) {
 
 export function useVoice(options: {
   components: readonly string[];
+  isOffered: boolean;
   isShown: boolean;
   refreshRoute: RefreshRoute;
   route: DevRouteState;
 }): Voice {
-  const { components, isShown, refreshRoute, route } = options;
+  const { components, isOffered, isShown, refreshRoute, route } = options;
   const { agents, isSupported, offer, preferences, setStored } =
     useVoicePreferences(route, isShown);
   const settings = { agents: agents ?? NO_AGENTS, components, preferences };
@@ -181,6 +182,7 @@ export function useVoice(options: {
       setPreferences,
       start: unlessBlocked(controller.actions.start),
     },
+    isOffered,
     agents,
     analysis: state.analysis,
     feed: controller.recorder.feed,

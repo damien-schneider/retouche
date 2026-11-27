@@ -146,6 +146,9 @@ export function VoiceToggle({ onOpen, place, voice }: ToggleProps) {
     wasLive.current = isLive;
   }, [isLive]);
 
+  if (!voice.isOffered) {
+    return null;
+  }
   return (
     <div
       className="dt-voice-toggle"

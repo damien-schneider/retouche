@@ -96,6 +96,7 @@ export interface Voice extends VoiceListeningOffer {
   agents: ListedAgent[] | null;
   analysis: VoiceAnalysis;
   feed: VoiceFeed;
+  isOffered: boolean;
   follow: FollowSetup | null;
   phase: RecorderPhase;
   preferences: VoicePreferences;

@@ -45,7 +45,7 @@ async function wait(ms: number): Promise<void> {
 }
 
 async function recordFromTheBar(): Promise<HTMLElement> {
-  render(<Page />);
+  render(<Page hasVoice />);
   await wait(50);
   const root = overlay();
   fireEvent.click(within(root).getByRole("button", { name: SESSION_NAME }));
@@ -108,7 +108,7 @@ describe("a voice review started from the toolbar", () => {
 describe("Chrome's on-device recognition", () => {
   it("is not asked about until the developer opens Session", async () => {
     offerOnDevice({ "en-US": "available" });
-    render(<Page />);
+    render(<Page hasVoice />);
     await wait(50);
     const beforeSession = askedOnDevice().length;
 

@@ -312,6 +312,7 @@ function LayerSurface({
 export interface LayerProps {
   config: unknown;
   rememberDotVisibility?: boolean;
+  voice?: boolean;
 }
 
 export default function Layer(props: LayerProps) {
@@ -320,6 +321,7 @@ export default function Layer(props: LayerProps) {
   const [route, refreshRoute] = useDevRoute();
   const voice = useVoice({
     components: state.picker.components,
+    isOffered: props.voice === true,
     isShown: state.navigation.isVoice,
     refreshRoute,
     route,

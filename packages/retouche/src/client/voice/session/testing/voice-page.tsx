@@ -26,6 +26,7 @@ function VoiceProbe({ first }: { first: DevRouteState }) {
   const [route, setRoute] = useState(first);
   const voice = useVoice({
     components: ["PlanCard"],
+    isOffered: true,
     isShown: true,
     refreshRoute: async () => {
       setRoute(await probeDevRoute());
