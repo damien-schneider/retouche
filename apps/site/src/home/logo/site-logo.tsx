@@ -2,7 +2,7 @@ import { useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
 import { useRef, useState } from "react";
 
-import { LOGO_PATHS } from "../../logo";
+import { ARROW_AT_REST } from "./arrow-strokes";
 import { AT_REST, PEN_HOME, retouchPlan } from "./retouch-timeline";
 import type { LogoLayout, RetouchPlan } from "./retouch-timeline";
 
@@ -29,20 +29,23 @@ function layoutOf(logo: HTMLElement): LogoLayout | null {
 }
 
 function LogoArrow({ plan }: { plan: RetouchPlan | null }) {
+  const pen = plan?.pen ?? PEN_HOME;
   return (
     <m.span
-      animate={plan?.arrow ?? PEN_HOME}
+      animate={pen.body}
       className="relative inline-block size-[0.75em] flex-none"
       initial={false}
     >
       <svg
         aria-hidden="true"
-        className="text-brand absolute inset-0 size-full fill-current"
+        className="stroke-brand absolute inset-0 size-full overflow-visible fill-none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={7.5}
         viewBox="0 0 64 64"
       >
-        {LOGO_PATHS.map((d) => (
-          <path d={d} key={d} />
-        ))}
+        <m.path animate={pen.shaft} d={ARROW_AT_REST.shaft} initial={false} />
+        <m.path animate={pen.head} d={ARROW_AT_REST.head} initial={false} />
       </svg>
     </m.span>
   );
