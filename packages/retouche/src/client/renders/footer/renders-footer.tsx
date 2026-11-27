@@ -30,25 +30,67 @@ interface RendersFooterProps {
 function RenderedListToggle({
   controls,
   isOpen,
+  isShown,
   onToggle,
 }: {
-  controls: string | undefined;
+  controls: string;
   isOpen: boolean;
+  isShown: boolean;
   onToggle: () => void;
 }) {
   const { length } = useSyncExternalStore(onRenderReports, renderedComponents);
   return (
+    <span className="dt-renders-slot" data-shown={isShown} inert={!isShown}>
+      <span>
+        <button
+          aria-controls={controls}
+          aria-expanded={isOpen}
+          className="dt-renders-more"
+          onClick={onToggle}
+          type="button"
+        >
+          <span>
+            {length} {length === 1 ? "component" : "components"}
+          </span>
+          <ChevronUpIcon />
+        </button>
+      </span>
+    </span>
+  );
+}
+
+function RendersSwitch({
+  areShown,
+  onToggle,
+}: {
+  areShown: boolean;
+  onToggle: () => void;
+}) {
+  const seen = useSyncExternalStore(onRenderReports, rendersSeen);
+  return (
     <button
-      aria-controls={controls}
-      aria-expanded={isOpen}
-      className="dt-renders-more"
+      aria-label="Highlight renders"
+      aria-pressed={areShown}
+      className="dt-renders-toggle"
       onClick={onToggle}
+      title={areShown ? "Stop highlighting renders" : undefined}
       type="button"
     >
-      <span>
-        {length} {length === 1 ? "component" : "components"}
+      <RendersIcon />
+      <span
+        aria-hidden={areShown}
+        className="dt-renders-slot"
+        data-shown={!areShown}
+      >
+        <span>Highlight renders</span>
       </span>
-      <ChevronUpIcon />
+      <span
+        aria-hidden={!areShown}
+        className="dt-renders-slot"
+        data-shown={areShown}
+      >
+        <span className="dt-renders-seen">{RENDER_COUNT.format(seen)}</span>
+      </span>
     </button>
   );
 }
@@ -60,38 +102,25 @@ export function RendersFooter({
   onToggle,
 }: RendersFooterProps) {
   const [isListOpen, setIsListOpen] = useStoredPreference(STORED_LIST);
-  const seen = useSyncExternalStore(onRenderReports, rendersSeen);
   const listId = useId();
-  const isListShown = areShown && isListOpen;
   return (
     <footer className="dt-renders">
-      {isListShown && <RenderedList id={listId} onInspect={onInspect} />}
+      <RenderedList
+        id={listId}
+        isShown={areShown && isListOpen}
+        onInspect={onInspect}
+      />
       <div className="dt-renders-bar">
-        <button
-          aria-label="Highlight renders"
-          aria-pressed={areShown}
-          className="dt-renders-toggle"
-          onClick={onToggle}
-          title={areShown ? "Stop highlighting renders" : undefined}
-          type="button"
-        >
-          <RendersIcon />
-          {areShown ? (
-            <span className="dt-renders-seen">{RENDER_COUNT.format(seen)}</span>
-          ) : (
-            <span>Highlight renders</span>
-          )}
-        </button>
+        <RendersSwitch areShown={areShown} onToggle={onToggle} />
         <div className="dt-renders-end">
-          {areShown && (
-            <RenderedListToggle
-              controls={isListShown ? listId : undefined}
-              isOpen={isListOpen}
-              onToggle={() => {
-                setIsListOpen(!isListOpen);
-              }}
-            />
-          )}
+          <RenderedListToggle
+            controls={listId}
+            isOpen={isListOpen}
+            isShown={areShown}
+            onToggle={() => {
+              setIsListOpen(!isListOpen);
+            }}
+          />
           {end}
         </div>
       </div>

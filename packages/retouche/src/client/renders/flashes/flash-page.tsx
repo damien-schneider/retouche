@@ -68,6 +68,20 @@ export function rendersSwitch(): HTMLElement {
   return within(overlay()).getByRole("button", { name: RENDERS_NAME });
 }
 
+function shownText(node: Node): string {
+  if (node instanceof Element && node.getAttribute("aria-hidden") === "true") {
+    return "";
+  }
+  if (node.childNodes.length === 0) {
+    return node.textContent ?? "";
+  }
+  return [...node.childNodes].map(shownText).join("");
+}
+
+export function rendersSwitchLabel(): string {
+  return shownText(rendersSwitch());
+}
+
 export function showPage(app: ReactNode): void {
   render(
     <>

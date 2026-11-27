@@ -72,35 +72,26 @@ function RenderedRow({
   );
 }
 
-export function RenderedList({
-  id,
+function RenderedRows({
+  components,
   onInspect,
+  rowHeight,
 }: {
-  id: string;
+  components: readonly ComponentRenders[];
   onInspect: (element: Element) => void;
+  rowHeight: number;
 }) {
-  const components = useSyncExternalStore(onRenderReports, renderedComponents);
   const [scrollTop, setScrollTop] = useState(0);
-  if (components.length === 0) {
-    return (
-      <p className="dt-rendered-empty" id={id}>
-        Nothing has rendered since the switch went on.
-      </p>
-    );
-  }
-  const rowHeight = matchMedia(COARSE_POINTER).matches ? 44 : 28;
   const { first, last } = windowAt(scrollTop, components.length, rowHeight);
   return (
     <ul
       aria-label="Components that rendered"
       className="dt-rendered"
-      id={id}
       onScroll={(event) => {
         setScrollTop(event.currentTarget.scrollTop);
       }}
       style={{
         gridTemplateRows: `repeat(${components.length}, ${rowHeight}px)`,
-        height: Math.min(components.length, ROWS_IN_VIEW) * rowHeight,
       }}
     >
       {components.slice(first, last).map((component, index) => (
@@ -114,5 +105,40 @@ export function RenderedList({
         </li>
       ))}
     </ul>
+  );
+}
+
+export function RenderedList({
+  id,
+  isShown,
+  onInspect,
+}: {
+  id: string;
+  isShown: boolean;
+  onInspect: (element: Element) => void;
+}) {
+  const components = useSyncExternalStore(onRenderReports, renderedComponents);
+  const rowHeight = matchMedia(COARSE_POINTER).matches ? 44 : 28;
+  const rowsInView = Math.min(Math.max(components.length, 1), ROWS_IN_VIEW);
+  return (
+    <div
+      className="dt-rendered-reveal"
+      data-shown={isShown}
+      id={id}
+      inert={!isShown}
+      style={{ maxHeight: isShown ? rowsInView * rowHeight : 0 }}
+    >
+      {components.length === 0 ? (
+        <p className="dt-rendered-empty" style={{ height: rowHeight }}>
+          Nothing has rendered since the switch went on.
+        </p>
+      ) : (
+        <RenderedRows
+          components={components}
+          onInspect={onInspect}
+          rowHeight={rowHeight}
+        />
+      )}
+    </div>
   );
 }

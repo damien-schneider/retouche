@@ -83,7 +83,7 @@ export const REDUCED_MOTION_STYLES = `
   *, *::before, *::after { animation: none !important; transition: none !important; }
   button, .dt-row, .dt-lens { transition: background-color 120ms linear, color 120ms linear !important; }
   .dt-flash { --pulse: 0 !important; opacity: 1 !important; }
-  .dt-body { animation: dt-edge-top linear both, dt-edge-bottom linear both !important; animation-timeline: scroll(self), scroll(self) !important; animation-range: 0 var(--edge), calc(100% - var(--edge)) 100% !important; }
+  :is(.dt-body, .dt-rendered) { animation: dt-edge-top linear both, dt-edge-bottom linear both !important; animation-timeline: scroll(self), scroll(self) !important; animation-range: 0 var(--edge), calc(100% - var(--edge)) 100% !important; }
   .dt-body::before { animation: dt-edge-in linear both !important; animation-timeline: scroll(nearest) !important; animation-range: 0 var(--edge) !important; }
   .dt-body::after { animation: dt-edge-out linear both !important; animation-timeline: scroll(nearest) !important; animation-range: calc(100% - var(--edge)) 100% !important; }
   .dt-lens-strip { animation: dt-lens-edges linear both !important; animation-timeline: scroll(self inline) !important; }

@@ -14,6 +14,7 @@ import {
   flashOf,
   nextFrame,
   rendersSwitch,
+  rendersSwitchLabel,
   setUpFlashPage,
   showPage,
   wait,
@@ -254,11 +255,11 @@ describe("turning render highlights off", () => {
 describe("the render switch, while on", () => {
   it("shows how many renders it has seen, none until the app renders", async () => {
     showApp();
-    expect(rendersSwitch().textContent).toBe("0");
+    expect(rendersSwitchLabel()).toBe("0");
 
     await click("Add");
 
-    expect(rendersSwitch().textContent).toBe("2");
+    expect(rendersSwitchLabel()).toBe("2");
   });
 
   it("leaves the overlay's own renders out of its count", async () => {
@@ -267,7 +268,7 @@ describe("the render switch, while on", () => {
     fireEvent.click(within(overlay()).getByRole("button", { name: DOTS_NAME }));
     await nextFrame();
 
-    expect(rendersSwitch().textContent).toBe("0");
+    expect(rendersSwitchLabel()).toBe("0");
   });
 
   it("counts afresh once switched off and on", async () => {
@@ -275,10 +276,10 @@ describe("the render switch, while on", () => {
     await click("Add");
 
     toggleRenders();
-    expect(rendersSwitch().textContent).not.toMatch(/\d/);
+    expect(rendersSwitchLabel()).not.toMatch(/\d/);
     toggleRenders();
 
-    expect(rendersSwitch().textContent).toBe("0");
+    expect(rendersSwitchLabel()).toBe("0");
   });
 });
 
