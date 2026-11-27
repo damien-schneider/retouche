@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { CallSite } from "../../fiber/call-sites";
 import type { OverrideInstance } from "../../fiber/scan-overrides";
-import { measureBeforeClasses } from "../../fiber/strip-override";
+import { measureBeforeClasses } from "../../fiber/strip/strip-override";
 
 const PANEL_MORPH_MS = 300;
 

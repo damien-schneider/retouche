@@ -6,12 +6,12 @@ import {
 } from "bippy";
 import { flushSync } from "react-dom";
 
-import { WATCHED_GROUPS, type WatchedGroup } from "../../rules/class-groups";
-import { classTokens } from "../../rules/class-token";
-import { classNameSchema, styleSchema } from "../../rules/find-overrides";
-import { renderUnrecorded } from "../renders/record/render-recorder";
-import { firstHostNode, isProps } from "./react-fiber";
-import type { OverrideInstance, TypographyProps } from "./scan-overrides";
+import { WATCHED_GROUPS, type WatchedGroup } from "../../../rules/class-groups";
+import { classTokens } from "../../../rules/class-token";
+import { classNameSchema, styleSchema } from "../../../rules/find-overrides";
+import { renderUnrecorded } from "../../renders/record/render-recorder";
+import { firstHostNode, isProps } from "../react-fiber";
+import type { OverrideInstance, TypographyProps } from "../scan-overrides";
 
 export const COMPUTED_PROPERTY: Record<WatchedGroup, string> = {
   "font-family": "font-family",

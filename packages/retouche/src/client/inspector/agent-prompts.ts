@@ -2,7 +2,7 @@ import { isServerFrame } from "../../protocol";
 import type { PropertyChange } from "../../rules/class-diff";
 import { parseClassToken } from "../../rules/class-token";
 import type { OverrideInstance } from "../fiber/scan-overrides";
-import type { ComputedReading } from "../fiber/strip-override";
+import type { ComputedReading } from "../fiber/strip/strip-override";
 import type { SourceRequest } from "../route/dev-route";
 
 export interface OverrideFacts {

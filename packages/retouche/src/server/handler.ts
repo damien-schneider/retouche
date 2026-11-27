@@ -124,7 +124,8 @@ async function rejectUnpaired(
 
 export function createRouteHandler(
   options: ServerOptions = {},
-  env: RouteEnv = process.env
+  env: RouteEnv = process.env,
+  spawnEnv: RouteEnv = env
 ): RouteHandler {
   const settings = resolveServerOptions(options, env);
   let roots: ProjectRoots | null = null;
@@ -135,6 +136,7 @@ export function createRouteHandler(
   const voice = createVoiceRoutes({
     env,
     root: () => projectRoots().root,
+    spawnEnv,
     voice: settings.voice,
   });
   const routes: Record<Endpoint, EndpointRoutes> = {

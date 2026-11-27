@@ -1,6 +1,6 @@
 import { WATCHED_GROUPS, type WatchedGroup } from "../../../rules/class-groups";
 import { watchedGroupsOf } from "../../../rules/find-overrides";
-import { COMPUTED_PROPERTY } from "../../fiber/strip-override";
+import { COMPUTED_PROPERTY } from "../../fiber/strip/strip-override";
 import { Value } from "../../inspector/property-diff";
 import { PROPERTY_NAMES, PropertyIcon } from "../../shell/property-icons";
 import { readSheetGroups } from "../../stylesheets/sheet-groups";

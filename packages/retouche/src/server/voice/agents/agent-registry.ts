@@ -35,6 +35,7 @@ export interface AgentRegistry {
 export interface RegistrySetting {
   agents: ResolvedVoiceOptions["agents"];
   env: RouteEnv;
+  spawnEnv: RouteEnv;
 }
 
 type AgentConfig = ResolvedVoiceOptions["agents"][number];
@@ -67,20 +68,20 @@ async function builtInAgent(
 
 async function configuredAgent(
   config: AgentConfig,
-  env: RouteEnv
+  { env, spawnEnv }: Omit<RegistrySetting, "agents">
 ): Promise<RegisteredAgent | null> {
   const agent = { id: agentIdOf(config.name), name: config.name };
   if (config.kind === "endpoint") {
     return isEndpointReady(config, env)
       ? {
           agent,
-          backend: createEndpointBackend(config),
+          backend: createEndpointBackend(config, env),
           checkSignIn: null,
           kind: "endpoint",
         }
       : null;
   }
-  const command = await findCommand(config.command, env);
+  const command = await findCommand(config.command, spawnEnv);
   return command === null
     ? null
     : {
@@ -94,10 +95,15 @@ async function configuredAgent(
 async function findAvailable({
   agents,
   env,
+  spawnEnv,
 }: RegistrySetting): Promise<RegisteredAgent[]> {
   const found = await Promise.all([
-    ...BUILT_IN_AGENTS.map(async (agent) => await builtInAgent(agent, env)),
-    ...agents.map(async (config) => await configuredAgent(config, env)),
+    ...BUILT_IN_AGENTS.map(
+      async (agent) => await builtInAgent(agent, spawnEnv)
+    ),
+    ...agents.map(
+      async (config) => await configuredAgent(config, { env, spawnEnv })
+    ),
   ]);
   return found.filter((entry) => entry !== null);
 }

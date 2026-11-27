@@ -7,7 +7,7 @@ import { isLoopbackAddress } from "./guard/request-guard";
 import { createRouteHandler, type RouteHandler } from "./handler";
 import { errorResponse } from "./json-response";
 import { sendWebResponse, toWebRequest } from "./node-http";
-import { type ServerOptions, withEnvFiles } from "./options";
+import { appEnvs, type ServerOptions } from "./options";
 
 export type { ServerOptions } from "./options";
 
@@ -46,9 +46,18 @@ export function retouche(options: ServerOptions = {}): Plugin {
   return {
     apply: "serve",
     configResolved(config) {
+      const { env, spawnEnv } = appEnvs(
+        { ...process.env, ...loadEnv(config.mode, config.envDir, "") },
+        {
+          folders: config.envDir === false ? [] : [config.envDir],
+          mode: config.mode,
+        },
+        options
+      );
       handler = createRouteHandler(
         { ...options, root: options.root ?? config.root },
-        withEnvFiles(loadEnv(config.mode, config.envDir, ""), options)
+        env,
+        spawnEnv
       );
     },
     configureServer(server) {

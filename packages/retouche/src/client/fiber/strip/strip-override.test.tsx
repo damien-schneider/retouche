@@ -1,4 +1,4 @@
-import "../../instrument";
+import "../../../instrument";
 import {
   cleanup,
   fireEvent,
@@ -10,10 +10,10 @@ import {
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { compileConfig } from "../../rules/find-overrides";
-import Layer from "../layer";
-import { openButton, overlay } from "../testing/layer-page";
-import { type OverrideInstance, scanOverrides } from "./scan-overrides";
+import { compileConfig } from "../../../rules/find-overrides";
+import Layer from "../../layer";
+import { openButton, overlay } from "../../testing/layer-page";
+import { type OverrideInstance, scanOverrides } from "../scan-overrides";
 import { measureOverride, stripOverride } from "./strip-override";
 
 const components = ["Text"];

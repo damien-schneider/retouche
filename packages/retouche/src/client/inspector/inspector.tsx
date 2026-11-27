@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { OverrideInstance } from "../fiber/scan-overrides";
-import { canStripOverride } from "../fiber/strip-override";
+import { canStripOverride } from "../fiber/strip/strip-override";
 import { presence } from "../motion/presence";
 import { componentTag } from "../panel/element-names";
 import { ElementRenders } from "../picker/element/element-renders";

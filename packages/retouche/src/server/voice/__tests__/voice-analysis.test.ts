@@ -368,3 +368,40 @@ describe("the app's own secrets under Next.js", () => {
     expect(call?.env).not.toContain("STRIPE_SECRET_KEY");
   });
 });
+
+describe("the app's own keys under Next.js", () => {
+  it("never hands the agent a key Retouche reads from the app's env files, in either line form", async () => {
+    const app = mkdtempSync(join(sandbox, "next-app-"));
+    writeFileSync(
+      join(app, ".env.local"),
+      "OPENAI_API_KEY=sk-app\nDATABASE_URL: postgres://secret\n"
+    );
+    const fake = writeFakeAgent(
+      sandbox,
+      "claude-next-keys",
+      claudeReply({ items: [item({})] })
+    );
+    const env = {
+      ...sandboxEnv(sandbox),
+      DATABASE_URL: "postgres://secret",
+      NODE_ENV: "development",
+      OPENAI_API_KEY: "sk-app",
+      RETOUCHE_CLAUDE_PATH: fake.path,
+    };
+    for (const [name, value] of Object.entries(env)) {
+      vi.stubEnv(name, value);
+    }
+    const { GET, POST } = createRoute({ root: app });
+    const handler: RouteHandler = async (request) =>
+      request.method === "GET" ? await GET(request) : await POST(request);
+
+    const { id } = await recordedSession(handler);
+    await analyze(handler, id, "claude");
+    vi.unstubAllEnvs();
+
+    const [call] = fake.calls();
+    expect(call?.env).toContain("PATH");
+    expect(call?.env).not.toContain("OPENAI_API_KEY");
+    expect(call?.env).not.toContain("DATABASE_URL");
+  });
+});

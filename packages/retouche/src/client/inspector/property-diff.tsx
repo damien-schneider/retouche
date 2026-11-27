@@ -3,7 +3,7 @@ import type { WatchedGroup } from "../../rules/class-groups";
 import type {
   ComputedReading,
   OverrideMeasurement,
-} from "../fiber/strip-override";
+} from "../fiber/strip/strip-override";
 import { PROPERTY_NAMES, PropertyIcon } from "../shell/property-icons";
 
 const QUOTES = /^["']|["']$/g;

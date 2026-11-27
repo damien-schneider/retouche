@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { z } from "zod";
 
+import type { RouteEnv } from "../../options";
 import type { AgentBackend, AgentPrompt } from "../agents/agent-backend";
 import { jsonAnswer, jsonAnswerInstruction } from "../agents/text-answer";
 import type { EndpointAgentConfig } from "../voice-options";
@@ -71,10 +72,11 @@ async function chatRequest(
 }
 
 export function createEndpointBackend(
-  config: EndpointAgentConfig
+  config: EndpointAgentConfig,
+  env: RouteEnv
 ): AgentBackend {
   return {
-    run: async ({ env, prompt, signal }) => {
+    run: async ({ prompt, signal }) => {
       const reply = await callEndpoint({
         answer: chatCompletionSchema,
         body: await chatRequest(config, prompt),

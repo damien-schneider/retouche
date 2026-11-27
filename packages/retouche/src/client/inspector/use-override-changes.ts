@@ -5,7 +5,7 @@ import type { OverrideInstance } from "../fiber/scan-overrides";
 import {
   measureOverride,
   type OverrideMeasurement,
-} from "../fiber/strip-override";
+} from "../fiber/strip/strip-override";
 import { readSheetGroups } from "../stylesheets/sheet-groups";
 
 export interface OverrideChanges {

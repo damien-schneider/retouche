@@ -1,5 +1,5 @@
 import { createRouteHandler, type RouteHandler } from "./handler";
-import { type ServerOptions, withoutEnvFiles } from "./options";
+import { appEnvFolders, appEnvs, type ServerOptions } from "./options";
 
 export type { ServerOptions } from "./options";
 
@@ -14,10 +14,11 @@ export function createRoute(options: ServerOptions = {}): NextRoute {
     if (process.env.NODE_ENV !== "development") {
       return new Response(null, { status: 404 });
     }
-    handler ??= createRouteHandler(
-      options,
-      withoutEnvFiles(process.env, options)
-    );
+    if (handler === null) {
+      const files = { folders: appEnvFolders(options), mode: "development" };
+      const { env, spawnEnv } = appEnvs(process.env, files, options);
+      handler = createRouteHandler(options, env, spawnEnv);
+    }
     return await handler(request);
   };
   return { GET: serve, POST: serve };

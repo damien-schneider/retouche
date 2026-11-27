@@ -76,6 +76,7 @@ export interface VoiceRoutes {
 export interface VoiceContext {
   env: RouteEnv;
   root: () => string;
+  spawnEnv: RouteEnv;
   voice: ResolvedVoiceOptions;
 }
 
@@ -214,12 +215,12 @@ function transcriptionRoutes(
 }
 
 export function createVoiceRoutes(context: VoiceContext): VoiceRoutes {
-  const { env, voice } = context;
+  const { env, spawnEnv, voice } = context;
   const store = new SessionFiles(() =>
     projectFolder(env, projectId(context.root()))
   );
-  const agents = createAgentRegistry({ agents: voice.agents, env });
-  const analyze = createAnalyzer({ agents, env, store });
+  const agents = createAgentRegistry({ agents: voice.agents, env, spawnEnv });
+  const analyze = createAnalyzer({ agents, env: spawnEnv, store });
   const transcription = { env, transcriber: voice.transcriber };
   const routes: Record<VoiceEndpoint, EndpointRoutes> = {
     ...transcriptionRoutes(transcription),

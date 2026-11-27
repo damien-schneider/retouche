@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import type { OverrideInstance } from "../fiber/scan-overrides";
-import { stripOverride } from "../fiber/strip-override";
+import { stripOverride } from "../fiber/strip/strip-override";
 
 const HOLD_KEYS = new Set([" ", "Enter"]);
 

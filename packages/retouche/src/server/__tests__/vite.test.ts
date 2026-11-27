@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { REQUEST_HEADER, ROUTE_BASE, statusSchema } from "../../protocol";
 import { retouche } from "../vite";
+import { writeFakeAgent } from "../voice/__tests__/voice-fixture";
 import { PAIR_TOKEN } from "./route-pairing";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-vite-"));
@@ -168,5 +169,37 @@ describe("keys kept in the project's env files", () => {
     expect(statusSchema.parse(JSON.parse(body)).transcribers).toContainEqual(
       expect.objectContaining({ name: "Speech", source: "config" })
     );
+  });
+});
+
+describe("the app's own secrets under Vite", () => {
+  it("never hands a spawned agent the app's env file variables a framework copied into process.env", async () => {
+    const project = mkdtempSync(join(tmpdir(), "retouche-vite-env-"));
+    writeFileSync(
+      join(project, ".env.local"),
+      "DATABASE_URL=postgres://secret\nOPENAI_API_KEY=sk-app\n"
+    );
+    const fake = writeFakeAgent(project, "claude", { stdout: [] });
+    vi.stubEnv("XDG_CONFIG_HOME", project);
+    vi.stubEnv("RETOUCHE_CLAUDE_PATH", fake.path);
+    vi.stubEnv("DATABASE_URL", "postgres://secret");
+    vi.stubEnv("OPENAI_API_KEY", "sk-app");
+    const target = await createServer({
+      appType: "custom",
+      configFile: false,
+      logLevel: "silent",
+      plugins: [retouche({ root: project })],
+      root: project,
+      server: { middlewareMode: true },
+    });
+    await answerFrom({ target });
+    await target.close();
+    vi.unstubAllEnvs();
+    const [call] = fake.calls();
+    rmSync(project, { force: true, recursive: true });
+
+    expect(call?.env).toContain("PATH");
+    expect(call?.env).not.toContain("DATABASE_URL");
+    expect(call?.env).not.toContain("OPENAI_API_KEY");
   });
 });

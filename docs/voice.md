@@ -78,6 +78,7 @@ While you type it, the key is in the page, where any script running there, the a
 
 - Next.js loads `.env.local` into the environment; the route drops every variable Next loaded from the app's env files except `RETOUCHE_` variables and the keys Retouche reads.
 - The Vite plugin reads the app's env files, `.env`, `.env.local` and their mode variants, and takes from them only `RETOUCHE_` variables and the keys Retouche reads.
+- The keys Retouche reads stay in the dev server: no agent it runs gets any variable from the app's env files but `RETOUCHE_` ones, so Codex never bills an `OPENAI_API_KEY` the app keeps there.
 - Either way, the app's other secrets stay out of the route and its agents.
 - Keep `.env.local` out of git, and never prefix a key with `VITE_` or `NEXT_PUBLIC_`, which bundles it into the page.
 

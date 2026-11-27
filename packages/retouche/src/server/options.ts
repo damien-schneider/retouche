@@ -78,41 +78,61 @@ function readsEnv(options: ServerOptions): (name: string) => boolean {
   return (name) => name.startsWith(OWN_PREFIX) || read.has(name);
 }
 
-export function withEnvFiles(files: RouteEnv, options: ServerOptions) {
-  const isRead = readsEnv(options);
-  const picked = Object.entries(files).filter(([name]) => isRead(name));
-  return { ...process.env, ...Object.fromEntries(picked) } satisfies RouteEnv;
+export interface AppEnvFiles {
+  folders: string[];
+  mode: string;
 }
 
-const APP_ENV_FILES = [
-  ".env",
-  ".env.local",
-  ".env.development",
-  ".env.development.local",
-];
-const ENV_FILE_NAME = /^\s*(?:export\s+)?(?<name>[\w.-]+)\s*=/gmu;
+export interface RouteEnvs {
+  env: RouteEnv;
+  spawnEnv: RouteEnv;
+}
 
-function envFileNames(root: string): Set<string> {
+const ENV_FILE_NAME = /^\s*(?:export\s+)?(?<name>[\w.-]+)(?:\s*=|:\s)/gmu;
+
+function envFileNames({ folders, mode }: AppEnvFiles): Set<string> {
+  const files = [".env", ".env.local", `.env.${mode}`, `.env.${mode}.local`];
+  const paths = folders.flatMap((folder) =>
+    files.map((file) => join(folder, file))
+  );
   return new Set(
-    APP_ENV_FILES.flatMap((file) => {
-      const path = join(root, file);
-      return existsSync(path)
+    paths.flatMap((path) =>
+      existsSync(path)
         ? [...readFileSync(path, "utf-8").matchAll(ENV_FILE_NAME)].flatMap(
             (match) => match.groups?.name ?? []
           )
-        : [];
-    })
+        : []
+    )
   );
 }
 
-export function withoutEnvFiles(env: RouteEnv, options: ServerOptions) {
-  const isRead = readsEnv(options);
-  const fromFiles = envFileNames(
-    resolve(presentValue(options.root) ?? process.cwd())
-  );
+function withoutNames(env: RouteEnv, drop: (name: string) => boolean) {
   return Object.fromEntries(
-    Object.entries(env).filter(([name]) => !fromFiles.has(name) || isRead(name))
+    Object.entries(env).filter(([name]) => !drop(name))
   ) satisfies RouteEnv;
+}
+
+export function appEnvs(
+  loaded: RouteEnv,
+  files: AppEnvFiles,
+  options: ServerOptions
+): RouteEnvs {
+  const isRead = readsEnv(options);
+  const fromFiles = envFileNames(files);
+  const env = withoutNames(
+    loaded,
+    (name) => fromFiles.has(name) && !isRead(name)
+  );
+  const spawnEnv = withoutNames(
+    env,
+    (name) => fromFiles.has(name) && !name.startsWith(OWN_PREFIX)
+  );
+  return { env, spawnEnv };
+}
+
+export function appEnvFolders(options: ServerOptions): string[] {
+  const root = resolve(presentValue(options.root) ?? process.cwd());
+  return [...new Set([process.cwd(), root])];
 }
 
 export function resolveServerOptions(
