@@ -33,7 +33,8 @@ let nextId = 100;
 const waiting = new Map();
 const finish = (stopReason) => send({ id: promptId, result: { stopReason } });
 const ask = (method, params) => {
-  const { promise, resolve } = Promise.withResolvers();
+  let resolve;
+  const promise = new Promise((settle) => { resolve = settle; });
   const id = nextId++;
   waiting.set(id, resolve);
   send({ id, method, params });

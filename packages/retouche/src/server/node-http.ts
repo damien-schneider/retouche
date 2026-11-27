@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { deferred } from "./deferred";
 import { errorResponse } from "./json-response";
 import { BODY_LIMIT_ERROR, MAX_BODY_BYTES } from "./request-body";
 
@@ -8,8 +9,7 @@ type NodeRequest = IncomingMessage & { originalUrl?: string | undefined };
 async function readBody(
   request: IncomingMessage
 ): Promise<Buffer<ArrayBuffer> | null> {
-  const { promise, reject, resolve } =
-    Promise.withResolvers<Buffer<ArrayBuffer> | null>();
+  const { promise, reject, resolve } = deferred<Buffer<ArrayBuffer> | null>();
   const chunks: Buffer[] = [];
   let size = 0;
   const onData = (chunk: Buffer): void => {

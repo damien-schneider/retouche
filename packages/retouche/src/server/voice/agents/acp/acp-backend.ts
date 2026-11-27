@@ -4,6 +4,7 @@ import {
   RequestError,
 } from "@agentclientprotocol/sdk";
 
+import { deferred } from "../../../deferred";
 import type { AcpAgentConfig } from "../../voice-options";
 import {
   AGENT_TIMEOUT_MS,
@@ -50,7 +51,7 @@ function failure(error: string): BackendReply {
 }
 
 function deadline(signal: AbortSignal): Deadline {
-  const { promise, resolve } = Promise.withResolvers<Stop>();
+  const { promise, resolve } = deferred<Stop>();
   const onAbort = (): void => {
     resolve("aborted");
   };
@@ -122,7 +123,7 @@ async function cancelTurn(running: Running): Promise<void> {
   await connection.agent
     .notify(methods.agent.session.cancel, { sessionId })
     .catch(() => null);
-  const { promise, resolve } = Promise.withResolvers<null>();
+  const { promise, resolve } = deferred<null>();
   const timer = setTimeout(resolve, CANCEL_GRACE_MS, null);
   await Promise.race([running.turn.catch(() => null), promise]);
   clearTimeout(timer);

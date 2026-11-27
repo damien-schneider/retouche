@@ -3,6 +3,7 @@ import { type Readable, Writable } from "node:stream";
 
 import { ndJsonStream, type Stream } from "@agentclientprotocol/sdk";
 
+import { deferred } from "../../../deferred";
 import type { AcpAgentConfig } from "../../voice-options";
 import type { BackendCall } from "../agent-backend";
 import {
@@ -59,8 +60,8 @@ function watchExit(child: ChildProcessWithoutNullStreams): ExitWatch {
   child.stderr.setEncoding("utf-8").on("data", (chunk: string) => {
     stderr = (stderr + chunk).slice(-STDERR_TAIL_BYTES);
   });
-  const exit = Promise.withResolvers<AgentExit>();
-  const ended = Promise.withResolvers<null>();
+  const exit = deferred<AgentExit>();
+  const ended = deferred<null>();
   child.once("error", (error) => {
     ended.resolve(null);
     exit.resolve({ kind: "unstarted", reason: error.message });

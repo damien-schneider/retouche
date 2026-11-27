@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage } from "node:http";
 
 import { z } from "zod";
 
+import { deferred } from "../../deferred";
 import type { AgentFeedback } from "../analysis/analysis-output";
 
 export interface ReceivedRequest {
@@ -37,7 +38,7 @@ export async function startEndpoint(
   answer: EndpointAnswer | null
 ): Promise<FakeEndpoint> {
   const received: ReceivedRequest[] = [];
-  const dropped = Promise.withResolvers<boolean>();
+  const dropped = deferred<boolean>();
   const server = createServer((request, response) => {
     request.socket.once("close", () => {
       dropped.resolve(true);

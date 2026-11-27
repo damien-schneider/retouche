@@ -1,5 +1,6 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 
+import { deferred } from "../../deferred";
 import type { RouteEnv } from "../../options";
 import { AGENT_TIMEOUT_MS } from "./agent-backend";
 
@@ -85,7 +86,7 @@ function createStopper(child: ChildProcessWithoutNullStreams): ProcessStopper {
 }
 
 export async function runProcess(call: ProcessCall): Promise<ProcessResult> {
-  const { promise, resolve } = Promise.withResolvers<ProcessResult>();
+  const { promise, resolve } = deferred<ProcessResult>();
   const child = spawn(call.command, call.args, {
     cwd: call.cwd,
     env: agentEnv(call.env),

@@ -26,6 +26,10 @@ export default defineConfig({
         "vitest/require-top-level-describe": "off",
       },
     },
+    {
+      files: ["packages/retouche/src/server/deferred.ts"],
+      rules: { "promise/avoid-new": "off" },
+    },
   ],
   rules: {
     "func-style": "off",

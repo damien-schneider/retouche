@@ -1,6 +1,8 @@
 import { vi } from "vitest";
 import { z } from "zod";
 
+import { deferred } from "../../../../deferred";
+
 const sentSchema = z.object({
   audio: z.string().optional(),
   type: z.string(),
@@ -32,7 +34,7 @@ export class FakeMistralSocket extends EventTarget {
     this.url = url;
     this.headers = init.headers;
     mistral.sockets.push(this);
-    const { promise, resolve } = Promise.withResolvers<null>();
+    const { promise, resolve } = deferred<null>();
     this.ready = promise;
     setTimeout(() => {
       if (mistral.refuses) {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { deferred } from "../../../deferred";
 import type { EndpointKey } from "../../endpoint/endpoint-call";
 import type { EndpointConfig } from "../../voice-options";
 
@@ -101,7 +102,7 @@ export class MistralStream {
   readonly #keyOrigin: string;
   readonly #chunkBytes: number;
   readonly #session: StreamSession;
-  readonly #done = Promise.withResolvers<StreamHearing>();
+  readonly #done = deferred<StreamHearing>();
   #queued: string[] | null = [];
   #text = "";
   #failure: string | null = null;

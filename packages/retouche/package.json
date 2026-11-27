@@ -67,7 +67,7 @@
     "pack": "tsdown && bun pm pack --filename retouche.tgz --quiet",
     "prepublishOnly": "tsdown",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "^2.12.0",
@@ -101,5 +101,8 @@
     "vite": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }

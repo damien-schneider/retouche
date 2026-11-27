@@ -1,10 +1,12 @@
+import { deferred } from "../deferred";
+
 export type KeyedQueue = <T>(key: string, task: () => Promise<T>) => Promise<T>;
 
 export function createKeyedQueue(): KeyedQueue {
   const tails = new Map<string, Promise<null>>();
   return async <T>(key: string, task: () => Promise<T>): Promise<T> => {
     const previous = tails.get(key);
-    const { promise: done, resolve } = Promise.withResolvers<null>();
+    const { promise: done, resolve } = deferred<null>();
     tails.set(key, done);
     try {
       await previous;
