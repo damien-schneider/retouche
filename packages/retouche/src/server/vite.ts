@@ -3,11 +3,11 @@ import type { ServerResponse } from "node:http";
 import { type Connect, loadEnv, type Plugin } from "vite";
 
 import { ROUTE_BASE } from "../protocol";
+import { isLoopbackAddress } from "./guard/request-guard";
 import { createRouteHandler, type RouteHandler } from "./handler";
 import { errorResponse } from "./json-response";
 import { sendWebResponse, toWebRequest } from "./node-http";
 import { type ServerOptions, withEnvFiles } from "./options";
-import { isLoopbackAddress } from "./request-guard";
 
 export type { ServerOptions } from "./options";
 

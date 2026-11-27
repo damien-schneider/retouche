@@ -1,5 +1,5 @@
 import { createRouteHandler, type RouteHandler } from "./handler";
-import type { ServerOptions } from "./options";
+import { type ServerOptions, withoutEnvFiles } from "./options";
 
 export type { ServerOptions } from "./options";
 
@@ -14,7 +14,10 @@ export function createRoute(options: ServerOptions = {}): NextRoute {
     if (process.env.NODE_ENV !== "development") {
       return new Response(null, { status: 404 });
     }
-    handler ??= createRouteHandler(options);
+    handler ??= createRouteHandler(
+      options,
+      withoutEnvFiles(process.env, options)
+    );
     return await handler(request);
   };
   return { GET: serve, POST: serve };

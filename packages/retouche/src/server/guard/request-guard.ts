@@ -1,5 +1,5 @@
-import { REQUEST_HEADER } from "../protocol";
-import { errorResponse } from "./json-response";
+import { REQUEST_HEADER } from "../../protocol";
+import { errorResponse } from "../json-response";
 
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "[::1]"]);
 const LOOPBACK_IPV4 = /^127(?:\.\d{1,3}){3}$/;
@@ -55,7 +55,8 @@ export function rejectUntrustedCaller(
   request: Request,
   allowedHosts: string[]
 ): Response | null {
-  if (request.headers.get(REQUEST_HEADER) !== "1") {
+  const sent = request.headers.get(REQUEST_HEADER);
+  if (sent === null || sent === "") {
     return errorResponse(
       `Retouche requests must send the ${REQUEST_HEADER} header.`,
       403

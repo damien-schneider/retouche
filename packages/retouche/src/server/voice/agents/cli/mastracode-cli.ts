@@ -53,7 +53,12 @@ export const mastracodeCli: AgentCli = {
         "--title",
         "Retouche voice session",
       ],
-      env: { MASTRACODE_DISABLE_MCP: "1" },
+      env: {
+        MASTRACODE_DISABLE_MCP: "1",
+        TEMP: workdir,
+        TMP: workdir,
+        TMPDIR: workdir,
+      },
       stdin: `${prompt.system}\n\n${prompt.material}\n\n${instructions(prompt)}`,
     };
   },

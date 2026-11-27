@@ -4,6 +4,11 @@ import {
   type RouteStatus,
   STATUS_MARKER,
 } from "../protocol";
+import { unpairedBody } from "./guard/pair-listener";
+import {
+  rejectUntrustedCaller,
+  rejectUntrustedHost,
+} from "./guard/request-guard";
 import { errorResponse, jsonResponse, outcomeResponse } from "./json-response";
 import {
   type ResolvedServerOptions,
@@ -11,7 +16,6 @@ import {
   resolveServerOptions,
   type ServerOptions,
 } from "./options";
-import { rejectUntrustedCaller, rejectUntrustedHost } from "./request-guard";
 import { type ProjectRoots, resolveProjectRoots } from "./source/project-roots";
 import { readSourceFile } from "./source/source-file";
 import {
@@ -105,6 +109,19 @@ async function routeRequest(
       );
 }
 
+async function rejectUnpaired(
+  request: Request,
+  allowedHosts: readonly string[]
+): Promise<Response | null> {
+  const unpaired = await unpairedBody(request, allowedHosts);
+  if (unpaired === null) {
+    return null;
+  }
+  const isStatus =
+    endpointOf(new URL(request.url).pathname) === ENDPOINTS.status;
+  return jsonResponse(unpaired, isStatus ? 200 : 401);
+}
+
 export function createRouteHandler(
   options: ServerOptions = {},
   env: RouteEnv = process.env
@@ -128,7 +145,8 @@ export function createRouteHandler(
   return async (request) => {
     const rejection =
       rejectUntrustedHost(request, settings.allowedHosts) ??
-      rejectUntrustedCaller(request, settings.allowedHosts);
+      rejectUntrustedCaller(request, settings.allowedHosts) ??
+      (await rejectUnpaired(request, settings.allowedHosts));
     if (rejection) {
       return rejection;
     }

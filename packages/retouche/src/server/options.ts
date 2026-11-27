@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 import { z } from "zod";
 
@@ -72,12 +73,46 @@ function optionKeyEnvs(voice: VoiceOptions | undefined): string[] {
   );
 }
 
-export function withEnvFiles(files: RouteEnv, options: ServerOptions) {
+function readsEnv(options: ServerOptions): (name: string) => boolean {
   const read = new Set([...PRESET_KEY_ENVS, ...optionKeyEnvs(options.voice)]);
-  const picked = Object.entries(files).filter(
-    ([name]) => name.startsWith(OWN_PREFIX) || read.has(name)
-  );
+  return (name) => name.startsWith(OWN_PREFIX) || read.has(name);
+}
+
+export function withEnvFiles(files: RouteEnv, options: ServerOptions) {
+  const isRead = readsEnv(options);
+  const picked = Object.entries(files).filter(([name]) => isRead(name));
   return { ...process.env, ...Object.fromEntries(picked) } satisfies RouteEnv;
+}
+
+const APP_ENV_FILES = [
+  ".env",
+  ".env.local",
+  ".env.development",
+  ".env.development.local",
+];
+const ENV_FILE_NAME = /^\s*(?:export\s+)?(?<name>[\w.-]+)\s*=/gmu;
+
+function envFileNames(root: string): Set<string> {
+  return new Set(
+    APP_ENV_FILES.flatMap((file) => {
+      const path = join(root, file);
+      return existsSync(path)
+        ? [...readFileSync(path, "utf-8").matchAll(ENV_FILE_NAME)].flatMap(
+            (match) => match.groups?.name ?? []
+          )
+        : [];
+    })
+  );
+}
+
+export function withoutEnvFiles(env: RouteEnv, options: ServerOptions) {
+  const isRead = readsEnv(options);
+  const fromFiles = envFileNames(
+    resolve(presentValue(options.root) ?? process.cwd())
+  );
+  return Object.fromEntries(
+    Object.entries(env).filter(([name]) => !fromFiles.has(name) || isRead(name))
+  ) satisfies RouteEnv;
 }
 
 export function resolveServerOptions(

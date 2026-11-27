@@ -61,14 +61,23 @@ async function prompt() {
   }
   if (has("--permission")) {
     const permit = (toolCall) => ask("session/request_permission", { sessionId: "s1", toolCall, options: permissionOptions });
-    update({ sessionUpdate: "tool_call", toolCallId: "view", title: "view", kind: "read" });
+    const here = [{ path: process.cwd() }];
+    update({ sessionUpdate: "tool_call", toolCallId: "view", title: "view", kind: "read", locations: here });
     await permit({ toolCallId: "view", title: "view" });
-    await permit({ toolCallId: "grep", title: "grep", kind: "search" });
-    update({ sessionUpdate: "tool_call", toolCallId: "write", title: "write", kind: "read" });
+    await permit({ toolCallId: "grep", title: "grep", kind: "search", locations: [{ path: "." }], rawInput: { path: "." } });
+    update({ sessionUpdate: "tool_call", toolCallId: "write", title: "write", kind: "read", locations: here });
     update({ sessionUpdate: "tool_call_update", toolCallId: "write", kind: "edit" });
     await permit({ toolCallId: "write", title: "write" });
-    await permit({ toolCallId: "shell", title: "shell", kind: "execute" });
-    await permit({ toolCallId: "mystery", title: "mystery" });
+    await permit({ toolCallId: "shell", title: "shell", kind: "execute", locations: here });
+    await permit({ toolCallId: "mystery", title: "mystery", locations: here });
+    await permit({ toolCallId: "hosts", title: "hosts", kind: "read", locations: [{ path: "/etc/hosts" }] });
+    await permit({ toolCallId: "parent", title: "parent", kind: "search", locations: [{ path: ".." }] });
+    await permit({ toolCallId: "unnamed", title: "unnamed", kind: "read" });
+    await permit({ toolCallId: "smuggled", title: "smuggled", kind: "read", locations: here, rawInput: { file_path: "/etc/hosts" } });
+    update({ sessionUpdate: "tool_call", toolCallId: "late", title: "late", kind: "read", locations: [{ path: "/etc" }] });
+    await permit({ toolCallId: "late", title: "late", locations: here });
+    fs.symlinkSync("/etc", "linked");
+    await permit({ toolCallId: "linked", title: "linked", kind: "read", locations: [{ path: "linked/hosts" }] });
     await ask("fs/read_text_file", { sessionId: "s1", path: "/etc/hosts" });
     await ask("terminal/create", { sessionId: "s1", command: "ls" });
   }

@@ -11,6 +11,15 @@ import {
   parseJson,
 } from "./agent-cli";
 
+const CONFIG = [
+  'model_reasoning_effort="low"',
+  "features.shell_tool=false",
+  "features.view_image=false",
+  "features.multi_agent=false",
+  "features.apps=false",
+  'web_search="disabled"',
+];
+
 const eventSchema = z.union([
   z.object({
     item: z.object({ text: z.string(), type: z.literal("agent_message") }),
@@ -55,13 +64,13 @@ export const codexCli: AgentCli = {
         "exec",
         "--skip-git-repo-check",
         "--ephemeral",
+        "--ignore-user-config",
         "--sandbox",
         "read-only",
         "--output-schema",
         schemaFile,
         "--json",
-        "-c",
-        'model_reasoning_effort="low"',
+        ...CONFIG.flatMap((setting) => ["-c", setting]),
         ...imageFiles.map((file) => `--image=${file}`),
         "-C",
         workdir,

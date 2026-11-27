@@ -139,7 +139,7 @@ async function runAcp(
   call: BackendCall
 ): Promise<BackendReply> {
   const agentProcess = startAgentProcess(config, call);
-  const connection = connectAgent(agentProcess.stream);
+  const connection = connectAgent(agentProcess.stream, call.workdir);
   const limit = deadline(call.signal);
   const running: Running = {
     config,

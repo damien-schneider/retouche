@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   type ProjectRoots,
@@ -73,6 +73,42 @@ afterAll(() => {
 describe(resolveProjectRoots, () => {
   it("uses the nearest ancestor holding .git as the workspace", () => {
     expect(roots.workspaceRoot).toBe(dirname(dirname(roots.root)));
+  });
+});
+
+function rootsUnderHome(gitFolders: string[]): ProjectRoots {
+  const home = join(sandbox, `home-${crypto.randomUUID()}`, "me");
+  const app = join(home, "projects", "app");
+  mkdirSync(app, { recursive: true });
+  for (const folder of gitFolders) {
+    mkdirSync(join(home, folder, ".git"), { recursive: true });
+  }
+  vi.stubEnv("HOME", home);
+  vi.stubEnv("USERPROFILE", home);
+  try {
+    return resolveProjectRoots(app);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+}
+
+describe("resolveProjectRoots under a home folder that is a repository", () => {
+  it("keeps the app as the workspace when the home folder holds .git", () => {
+    const found = rootsUnderHome(["."]);
+
+    expect(found.workspaceRoot).toBe(found.root);
+  });
+
+  it("keeps the app as the workspace when a folder above home holds .git", () => {
+    const found = rootsUnderHome([".."]);
+
+    expect(found.workspaceRoot).toBe(found.root);
+  });
+
+  it("still finds a repository between the app and the home folder", () => {
+    const found = rootsUnderHome([".", "projects"]);
+
+    expect(found.workspaceRoot).toBe(dirname(found.root));
   });
 });
 

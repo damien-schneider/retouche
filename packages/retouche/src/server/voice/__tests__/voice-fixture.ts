@@ -22,6 +22,7 @@ import type {
   VoiceStreamRequest,
   VoiceTranscriptRequest,
 } from "../../../protocol";
+import { PAIR_TOKEN } from "../../__tests__/route-pairing";
 import type { RouteHandler } from "../../handler";
 import type { AgentFeedback } from "../analysis/analysis-output";
 
@@ -61,7 +62,7 @@ export function sandboxEnv(folder: string) {
 
 export function routeRequest(path: string, body?: VoiceBody): Request {
   const request = new Request(`${ORIGIN}${ROUTE_BASE}${path}`, {
-    headers: { [REQUEST_HEADER]: "1", "sec-fetch-site": "same-origin" },
+    headers: { [REQUEST_HEADER]: PAIR_TOKEN, "sec-fetch-site": "same-origin" },
   });
   if (body === undefined) {
     return request;
@@ -71,6 +72,7 @@ export function routeRequest(path: string, body?: VoiceBody): Request {
 
 const agentCallSchema = z.object({
   args: z.array(z.string()),
+  env: z.array(z.string()),
   stdin: z.string(),
 });
 
@@ -183,7 +185,7 @@ export interface FakeReply {
 }
 
 export interface FakeAgent {
-  calls: () => { args: string[]; stdin: string }[];
+  calls: () => z.infer<typeof agentCallSchema>[];
   path: string;
 }
 
@@ -201,7 +203,7 @@ const fs = require("node:fs");
 let stdin = "";
 process.stdin.on("data", (chunk) => { stdin += chunk; });
 process.stdin.on("end", () => {
-  fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ args: process.argv.slice(2), stdin }) + "\\n");
+  fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ args: process.argv.slice(2), env: Object.keys(process.env), stdin }) + "\\n");
   process.stdout.write(${JSON.stringify(reply.stdout.map((line) => `${line}\n`).join(""))});
   process.stderr.write(${JSON.stringify(reply.stderr ?? "")});
   process.exitCode = ${reply.exitCode ?? 0};

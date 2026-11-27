@@ -177,44 +177,49 @@ describe("an ACP agent shown the screenshots", () => {
   });
 });
 
-function selected(optionId: string) {
+interface PermitAnswer {
+  outcome: { optionId?: string; outcome: string };
+}
+
+function selected(optionId: string): PermitAnswer {
   return { outcome: { optionId, outcome: "selected" } };
 }
 
-describe("an ACP agent asking to use its tools", () => {
-  const cancelled = { outcome: { outcome: "cancelled" } };
+const ALLOWED_PERMITS = 2;
+const REFUSED_PERMITS = 9;
 
+function outcomes(
+  allowed: PermitAnswer,
+  refused: PermitAnswer
+): PermitAnswer[] {
+  return [
+    ...Array.from({ length: ALLOWED_PERMITS }, () => allowed),
+    ...Array.from({ length: REFUSED_PERMITS }, () => refused),
+  ];
+}
+
+describe("an ACP agent asking to use its tools", () => {
   it.each([
     {
       flags: ["--permission"],
-      outcomes: [
-        selected("yes"),
-        selected("yes"),
-        selected("no"),
-        selected("no"),
-        selected("no"),
-      ],
+      outcomes: outcomes(selected("yes"), selected("no")),
     },
     {
       flags: ["--permission", "--only-allow"],
-      outcomes: [
-        selected("yes"),
-        selected("yes"),
-        cancelled,
-        cancelled,
-        cancelled,
-      ],
+      outcomes: outcomes(selected("yes"), {
+        outcome: { outcome: "cancelled" },
+      }),
     },
   ] satisfies { flags: FakeFlag[]; outcomes: object[] }[])(
-    "may read and search, never edit, run or anything unnamed ($flags)",
-    async ({ flags, outcomes }) => {
+    "may read and search its own folder, never elsewhere, unnamed, editing or running ($flags)",
+    async ({ flags, outcomes: expected }) => {
       const { agent, reply } = await run(flags);
 
       expect(reply).toStrictEqual(ANSWERED);
       const results = answersTo(agent)
-        .slice(0, outcomes.length)
+        .slice(0, expected.length)
         .map((answer) => answer.result);
-      expect(results).toStrictEqual(outcomes);
+      expect(results).toStrictEqual(expected);
     }
   );
 
@@ -222,7 +227,7 @@ describe("an ACP agent asking to use its tools", () => {
     const { agent } = await run(["--permission"]);
 
     const codes = answersTo(agent)
-      .slice(5)
+      .slice(ALLOWED_PERMITS + REFUSED_PERMITS)
       .map((answer) => answer.error?.code);
     expect(codes).toStrictEqual([-32_601, -32_601]);
   });

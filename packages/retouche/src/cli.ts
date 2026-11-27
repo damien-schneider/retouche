@@ -41,7 +41,7 @@ function localTarball(): string | null {
 
 function installSource(argument: string | undefined): string | null {
   if (argument === undefined) {
-    return packageName();
+    return `${packageName()}@latest`;
   }
   if (argument === "--local") {
     return localTarball();

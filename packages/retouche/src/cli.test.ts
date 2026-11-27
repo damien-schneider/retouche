@@ -10,11 +10,11 @@ function runPrompt(...args: string[]) {
 }
 
 describe("retouche prompt", () => {
-  it("has the agent install Retouche from npm by default", () => {
+  it("has the agent install the latest Retouche from npm by default, so running it again upgrades", () => {
     const run = runPrompt();
 
     expect(run.status).toBe(0);
-    expect(run.stdout).toContain("retouche-dev");
+    expect(run.stdout).toContain("npm install -D retouche-dev@latest");
     expect(run.stdout).not.toContain(".tgz");
     expect(run.stdout).not.toContain("{{RETOUCHE_PACKAGE}}");
   });

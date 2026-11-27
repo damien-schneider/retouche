@@ -382,6 +382,16 @@ export const errorBodySchema = z.object({ error: z.string() });
 
 export type ErrorBody = z.infer<typeof errorBodySchema>;
 
+export const unpairedBodySchema = errorBodySchema.extend({
+  pair: z.number().int().min(1).max(65_535),
+});
+
+export type UnpairedBody = z.infer<typeof unpairedBodySchema>;
+
+export const pairTokenSchema = z.object({ token: z.string().min(1) });
+
+export type PairToken = z.infer<typeof pairTokenSchema>;
+
 export const SERVER_FRAME_ORIGIN = "(?:about|rsc)://React/[^/\\s)]+/";
 export const SERVER_FRAME_PREFIX = new RegExp(`^${SERVER_FRAME_ORIGIN}`);
 

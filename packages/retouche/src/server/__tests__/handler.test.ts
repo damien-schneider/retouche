@@ -17,6 +17,7 @@ import {
 import { REQUEST_HEADER, ROUTE_BASE } from "../../protocol";
 import { createRouteHandler } from "../handler";
 import { createRoute } from "../next";
+import { PAIR_TOKEN } from "./route-pairing";
 
 const ORIGIN = "http://localhost:3000";
 
@@ -25,7 +26,7 @@ const sandbox = mkdtempSync(join(tmpdir(), "retouche-handler-"));
 function routeRequest(path: string, init: RequestInit = {}): Request {
   const headers = new Headers(init.headers);
   if (!headers.has(REQUEST_HEADER)) {
-    headers.set(REQUEST_HEADER, "1");
+    headers.set(REQUEST_HEADER, PAIR_TOKEN);
   }
   if (!headers.has("sec-fetch-site")) {
     headers.set("sec-fetch-site", "same-origin");
@@ -93,7 +94,7 @@ describe("request guard", () => {
     );
     const response = await custom(
       new Request(`http://app.test:3000${ROUTE_BASE}/status`, {
-        headers: { [REQUEST_HEADER]: "1" },
+        headers: { [REQUEST_HEADER]: PAIR_TOKEN },
       })
     );
     expect(response.status).toBe(200);

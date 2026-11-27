@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { REQUEST_HEADER, ROUTE_BASE, statusSchema } from "../../protocol";
 import { retouche } from "../vite";
+import { PAIR_TOKEN } from "./route-pairing";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-vite-"));
 let server: ViteDevServer;
@@ -58,7 +59,7 @@ async function answerFrom(call: PluginCall): Promise<PluginAnswer> {
   }
   request.headers = {
     host: "localhost:5173",
-    [REQUEST_HEADER]: "1",
+    [REQUEST_HEADER]: PAIR_TOKEN,
     "sec-fetch-site": "same-origin",
   };
   const response = new ServerResponse(request);

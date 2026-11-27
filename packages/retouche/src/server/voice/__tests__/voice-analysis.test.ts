@@ -1,9 +1,9 @@
 // @vitest-environment node
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
 import type {
   BuiltInAgentId,
@@ -11,6 +11,7 @@ import type {
   VoiceSession,
 } from "../../../protocol";
 import { createRouteHandler, type RouteHandler } from "../../handler";
+import { createRoute } from "../../next";
 import {
   claudeReply,
   codexReply,
@@ -333,5 +334,37 @@ describe("voice analysis refusals", () => {
     );
     expect(response.status).toBe(400);
     await expect(errorFrom(response)).resolves.toContain("gemini");
+  });
+});
+
+describe("the app's own secrets under Next.js", () => {
+  it("never hands the agent a secret Next loaded from the app's env files", async () => {
+    const app = mkdtempSync(join(sandbox, "next-app-"));
+    writeFileSync(join(app, ".env.local"), "STRIPE_SECRET_KEY=sk_live_1\n");
+    const fake = writeFakeAgent(
+      sandbox,
+      "claude-next",
+      claudeReply({ items: [item({})] })
+    );
+    const env = {
+      ...sandboxEnv(sandbox),
+      NODE_ENV: "development",
+      RETOUCHE_CLAUDE_PATH: fake.path,
+      STRIPE_SECRET_KEY: "sk_live_1",
+    };
+    for (const [name, value] of Object.entries(env)) {
+      vi.stubEnv(name, value);
+    }
+    const { GET, POST } = createRoute({ root: app });
+    const handler: RouteHandler = async (request) =>
+      request.method === "GET" ? await GET(request) : await POST(request);
+
+    const { id } = await recordedSession(handler);
+    await analyze(handler, id, "claude");
+    vi.unstubAllEnvs();
+
+    const [call] = fake.calls();
+    expect(call?.env).toContain("PATH");
+    expect(call?.env).not.toContain("STRIPE_SECRET_KEY");
   });
 });

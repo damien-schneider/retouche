@@ -1,7 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type ListedTranscriber, STATUS_MARKER } from "../../protocol";
+import {
+  type ListedTranscriber,
+  REQUEST_HEADER,
+  STATUS_MARKER,
+} from "../../protocol";
 import { type DevRouteState, useDevRoute } from "./use-dev-route";
 
 afterEach(() => {
@@ -70,6 +74,79 @@ describe("finding the dev route", () => {
     );
 
     await expect(routeFound()).resolves.toBe("missing");
+  });
+});
+
+const PAIR_URL = "http://127.0.0.1:41234/";
+
+interface PairingServer {
+  token: string;
+  transcribers: string[];
+}
+
+function pairingServer(server: PairingServer) {
+  vi.stubGlobal("fetch", async (input: string, init?: RequestInit) => {
+    if (input === PAIR_URL) {
+      return await Promise.resolve(Response.json({ token: server.token }));
+    }
+    const sent = new Headers(init?.headers).get(REQUEST_HEADER);
+    return await Promise.resolve(
+      sent === server.token
+        ? Response.json({
+            agents: [],
+            editor: "vscode",
+            marker: STATUS_MARKER,
+            transcribers: server.transcribers.map((id) => ({
+              id,
+              name: id,
+              source: "saved",
+            })),
+          })
+        : Response.json({ error: "Unpaired.", pair: 41_234 })
+    );
+  });
+}
+
+describe("pairing with the machine running the dev server", () => {
+  it("gets the token from the dev server's own machine, then uses the route", async () => {
+    pairingServer({ token: "first-token", transcribers: [] });
+
+    await expect(routeFound()).resolves.toBe("ready");
+  });
+
+  it("finds no route on another machine, which cannot reach the dev server's loopback", async () => {
+    vi.stubGlobal("fetch", async (input: string) => {
+      if (input === PAIR_URL) {
+        throw new TypeError("Failed to fetch");
+      }
+      return await Promise.resolve(
+        Response.json({ error: "Unpaired.", pair: 41_234 }, { status: 401 })
+      );
+    });
+
+    await expect(routeFound()).resolves.toBe("missing");
+  });
+
+  it("pairs again when the dev server restarts with a new token", async () => {
+    const server: PairingServer = {
+      token: "before-restart",
+      transcribers: [],
+    };
+    pairingServer(server);
+    const { result } = renderHook(() => useDevRoute());
+    await waitFor(() => {
+      expect(result.current[0].kind).toBe("ready");
+    });
+
+    server.token = "after-restart";
+    server.transcribers = ["groq"];
+    await act(async () => {
+      await result.current[1]();
+    });
+
+    expect(result.current[0]).toMatchObject({
+      status: { transcribers: [{ id: "groq" }] },
+    });
   });
 });
 
