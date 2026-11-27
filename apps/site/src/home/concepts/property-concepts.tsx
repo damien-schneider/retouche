@@ -106,13 +106,7 @@ export const PROPERTY_CONCEPTS: ConceptGroup = {
     },
     {
       art: (
-        <Specimens
-          samples={[
-            "text-faint font-sans",
-            "text-faint font-mono",
-            "text-ink font-serif",
-          ]}
-        />
+        <Specimens samples={["text-faint font-sans", "text-ink font-serif"]} />
       ),
       description: "A font family set at the call site.",
       id: "family",

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "InterVariable", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Petrona", ui-serif, Georgia, serif;
   --color-page: #ffffff;
   --color-card: #ffffff;
   --color-ink: #171717;
@@ -103,6 +103,14 @@
 
   p {
     text-wrap: pretty;
+  }
+
+  :is(button, select, option, summary) {
+    cursor: pointer;
+  }
+
+  :is(button, select, option):disabled {
+    cursor: not-allowed;
   }
 
   ::selection {

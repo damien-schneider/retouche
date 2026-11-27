@@ -8,9 +8,8 @@ import ogImage from "../og-image.png?url";
 
 import styles from "../styles.css?url";
 
-const INTER = "https://rsms.me/inter/inter.css";
-const INTER_VARIABLE =
-  "https://rsms.me/inter/font-files/InterVariable.woff2?v=4.1";
+const FONTS =
+  "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Petrona:wght@400..700&display=swap";
 const TITLE = "Retouche — typography overrides, marked in place";
 const DESCRIPTION =
   "A React dev overlay that marks every call site overriding your design system's typography, and every nested corner that doesn't fit, right where it renders.";
@@ -19,15 +18,13 @@ const SITE = import.meta.env.SITE_URL;
 export const Route = createRootRoute({
   head: () => ({
     links: [
-      { crossOrigin: "anonymous", href: "https://rsms.me/", rel: "preconnect" },
       {
-        as: "font",
         crossOrigin: "anonymous",
-        href: INTER_VARIABLE,
-        rel: "preload",
-        type: "font/woff2",
+        href: "https://fonts.gstatic.com",
+        rel: "preconnect",
       },
-      { href: INTER, rel: "stylesheet" },
+      { href: "https://fonts.googleapis.com", rel: "preconnect" },
+      { href: FONTS, rel: "stylesheet" },
       { href: styles, rel: "stylesheet" },
       { href: FAVICON, rel: "icon", type: "image/svg+xml" },
       { href: "/index.md", rel: "alternate", type: "text/markdown" },
