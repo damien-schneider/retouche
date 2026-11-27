@@ -5,10 +5,10 @@ import {
   type CompiledConfig,
   findOverrides,
   type Override,
-  type SheetClassGroups,
+  type SheetGroups,
 } from "../../rules/find-overrides";
 import { creationFrame } from "../code/element-source";
-import { readSheetClassGroups } from "../stylesheets/sheet-class-groups";
+import { readSheetGroups } from "../stylesheets/sheet-groups";
 import { overrideLabels } from "./call-sites";
 import { entryOfInstance } from "./instance-identity";
 import {
@@ -52,7 +52,7 @@ export interface ScanOptions {
 }
 
 interface ScanContext extends ScanOptions {
-  sheetGroups: SheetClassGroups;
+  sheetGroups: SheetGroups;
 }
 
 const HOST_TAGS = new Set([5, 26, 27]);
@@ -207,7 +207,7 @@ export function scanFiberTree(
   root: Fiber,
   options: ScanOptions
 ): OverrideInstance[] {
-  const context = { ...options, sheetGroups: readSheetClassGroups() };
+  const context = { ...options, sheetGroups: readSheetGroups() };
   const found: Scanned[] = [];
   const seenServerInfo = new Set<ReactOwner>();
   const pending: Fiber[] = [root];

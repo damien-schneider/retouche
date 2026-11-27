@@ -6,6 +6,7 @@ export interface ClassToken {
 }
 
 const WHITESPACE = /\s+/;
+const ARBITRARY_PROPERTY = /^\[(?<property>-{0,2}[a-z][\w-]*):/i;
 const OPENERS = "[(";
 const CLOSERS = "])";
 
@@ -53,6 +54,10 @@ export interface ValueModifier {
 export function splitValueModifier(value: string): ValueModifier {
   const [base = "", modifier] = splitTopLevel(value, "/");
   return { base, modifier: modifier ?? null };
+}
+
+export function arbitraryProperty(utility: string): string | null {
+  return ARBITRARY_PROPERTY.exec(utility)?.groups?.property ?? null;
 }
 
 export function classTokens(className: string): string[] {

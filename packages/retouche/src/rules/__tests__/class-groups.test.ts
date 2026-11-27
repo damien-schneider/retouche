@@ -60,6 +60,61 @@ describe("classifying a utility", () => {
     expect(groupsOf("font-mono")).toStrictEqual(["font-family"]);
     expect(groupsOf("font-display")).toStrictEqual(["font-family"]);
   });
+});
+
+describe("classifying an arbitrary value or property", () => {
+  it("reads an arbitrary font value as Tailwind does: a weight unless it names a family", () => {
+    expect(groupsOf("font-(--heading-weight)")).toStrictEqual(["font-weight"]);
+    expect(groupsOf("font-[var(--heading-weight)]")).toStrictEqual([
+      "font-weight",
+    ]);
+    expect(groupsOf("font-[calc(var(--w)+100)]")).toStrictEqual([
+      "font-weight",
+    ]);
+    expect(groupsOf("font-[Inter,sans-serif]")).toStrictEqual(["font-family"]);
+    expect(groupsOf("font-['Geist_Mono']")).toStrictEqual(["font-family"]);
+    expect(groupsOf("font-(family-name:--brand)")).toStrictEqual([
+      "font-family",
+    ]);
+  });
+
+  it("reads a size keyword or a typed value inside text-[…] as a size", () => {
+    expect(groupsOf("text-[larger]")).toStrictEqual(["font-size"]);
+    expect(groupsOf("text-[x-small]")).toStrictEqual(["font-size"]);
+    expect(groupsOf("text-[50%]")).toStrictEqual(["font-size"]);
+    expect(groupsOf("text-[size:var(--step)]")).toStrictEqual(["font-size"]);
+    expect(groupsOf("text-[inherit]")).toStrictEqual(["text-color"]);
+  });
+
+  it("reads a typography property written as an arbitrary property", () => {
+    expect(groupsOf("[font-size:13px]")).toStrictEqual(["font-size"]);
+    expect(groupsOf("hover:[color:var(--brand)]")).toStrictEqual([
+      "text-color",
+    ]);
+    expect(groupsOf("[letter-spacing:-0.01em]")).toStrictEqual([
+      "letter-spacing",
+    ]);
+    expect(groupsOf("[font:600_14px/20px_Inter]")).toStrictEqual([
+      "font-style",
+      "font-weight",
+      "font-size",
+      "line-height",
+      "font-family",
+    ]);
+    expect(groupsOf("[mask-type:luminance]")).toStrictEqual([]);
+  });
+});
+
+describe("classifying the rest of the type utilities", () => {
+  it("counts a placeholder color as a text color", () => {
+    expect(groupsOf("placeholder-zinc-400")).toStrictEqual(["text-color"]);
+  });
+
+  it("leaves box decoration breaking out of text decoration", () => {
+    expect(groupsOf("decoration-clone")).toStrictEqual([]);
+    expect(groupsOf("decoration-slice")).toStrictEqual([]);
+    expect(groupsOf("decoration-wavy")).toStrictEqual(["text-decoration"]);
+  });
 
   it("knows the rest of the type properties", () => {
     expect(groupsOf("leading-tight")).toStrictEqual(["line-height"]);

@@ -4,12 +4,12 @@ import { diffClassList, propertyChanges } from "../class-diff";
 import {
   compileConfig,
   findOverrides,
-  type SheetClassGroups,
+  NO_SHEET_GROUPS,
 } from "../find-overrides";
 
 const compiled = compileConfig({ components: ["Button"] });
 
-const sheetGroups: SheetClassGroups = new Map();
+const sheetGroups = NO_SHEET_GROUPS;
 
 const BUTTON_CLASSES = [
   "inline-flex",
@@ -67,10 +67,13 @@ describe("what a class override replaces", () => {
 
 describe("what a stylesheet class override replaces", () => {
   it("pairs it with the component's stylesheet class", () => {
-    const styled = new Map([
-      ["button_label", ["font-size" as const]],
-      ["promo_title", ["font-size" as const]],
-    ]);
+    const styled = {
+      classes: new Map([
+        ["button_label", ["font-size" as const]],
+        ["promo_title", ["font-size" as const]],
+      ]),
+      customProperties: new Map(),
+    };
     const overrides = findOverrides(
       compiled,
       { className: "promo_title", component: "Button" },
@@ -86,10 +89,13 @@ describe("what a stylesheet class override replaces", () => {
   });
 
   it("pairs a custom size with the custom size it beats", () => {
-    const scale = new Map([
-      ["text-body", ["font-size" as const]],
-      ["text-caption", ["font-size" as const]],
-    ]);
+    const scale = {
+      classes: new Map([
+        ["text-body", ["font-size" as const]],
+        ["text-caption", ["font-size" as const]],
+      ]),
+      customProperties: new Map(),
+    };
     const overrides = findOverrides(
       compiled,
       { className: "text-caption", component: "Button" },

@@ -1,5 +1,5 @@
 import { subjectClasses } from "../../rules/selector-classes";
-import { readableRules } from "./sheet-class-groups";
+import { readableRules } from "./sheet-groups";
 
 interface StateRule {
   selector: string;

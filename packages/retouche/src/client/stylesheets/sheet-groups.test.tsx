@@ -71,3 +71,81 @@ describe("classes styled by the page's own stylesheets", () => {
     style.remove();
   });
 });
+
+describe("design system knobs set by the page's own stylesheets", () => {
+  it("finds classes that set a knob the design system's type reads", () => {
+    const style = document.createElement("style");
+    style.textContent = [
+      ".text-root { font-size: var(--text-size, 14px); padding: var(--text-gap) }",
+      ".loud { --text-size: 20px }",
+      ".roomy { --text-gap: 12px }",
+    ].join("\n");
+    document.head.append(style);
+    render(
+      <main>
+        <Text className="loud roomy [--text-gap:4px] [--text-size:18px]">
+          Plans
+        </Text>
+      </main>
+    );
+    expect(
+      scanOverrides(options).map(({ overrides }) =>
+        overrides.map(({ groups, label }) => [label, groups])
+      )
+    ).toStrictEqual([
+      [
+        ["loud", ["font-size"]],
+        ["[--text-size:18px]", ["font-size"]],
+      ],
+    ]);
+    style.remove();
+  });
+});
+
+function scannedLabels() {
+  return scanOverrides(options).flatMap(({ overrides }) =>
+    overrides.map(({ groups, label }) => [label, groups])
+  );
+}
+describe("knobs read inside a shorthand", () => {
+  it("counts a knob behind `font` as every property the shorthand sets", () => {
+    const style = document.createElement("style");
+    style.textContent =
+      ".text-root { font: var(--text-type) } .serif { --text-type: italic 400 16px/1.5 Georgia }";
+    document.head.append(style);
+    render(
+      <main>
+        <Text className="serif">Plans</Text>
+      </main>
+    );
+    expect(scannedLabels()).toStrictEqual([
+      [
+        "serif",
+        [
+          "font-style",
+          "font-weight",
+          "font-size",
+          "line-height",
+          "font-family",
+        ],
+      ],
+    ]);
+    style.remove();
+  });
+});
+
+describe("styling libraries that insert their rules at runtime", () => {
+  it("finds a generated class once its rule is inserted, after an earlier scan missed it", () => {
+    const style = document.createElement("style");
+    document.head.append(style);
+    render(
+      <main>
+        <Text className="css-1x7f2a">Plans</Text>
+      </main>
+    );
+    expect(scannedLabels()).toStrictEqual([]);
+    style.sheet?.insertRule(".css-1x7f2a { font-weight: 700; margin: 4px }");
+    expect(scannedLabels()).toStrictEqual([["css-1x7f2a", ["font-weight"]]]);
+    style.remove();
+  });
+});

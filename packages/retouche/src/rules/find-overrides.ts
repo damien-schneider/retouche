@@ -5,9 +5,9 @@ import {
   isWatchedGroup,
   type WatchedGroup,
 } from "./class-groups";
-import { classTokens, parseClassToken } from "./class-token";
+import { arbitraryProperty, classTokens, parseClassToken } from "./class-token";
 import type { RetoucheConfig } from "./define-config";
-import { styleGroupOf } from "./style-groups";
+import { isCustomProperty, propertyGroupsOf } from "./style-groups";
 
 export type OverrideTarget =
   | { kind: "class"; token: string }
@@ -19,7 +19,12 @@ export interface Override {
   target: OverrideTarget;
 }
 
-export type SheetClassGroups = ReadonlyMap<string, readonly WatchedGroup[]>;
+type GroupsByName = ReadonlyMap<string, readonly WatchedGroup[]>;
+
+export interface SheetGroups {
+  classes: GroupsByName;
+  customProperties: GroupsByName;
+}
 
 interface CompiledAllow {
   classes: RegExp[];
@@ -54,12 +59,17 @@ interface Candidate extends Override {
 
 interface KnownClasses {
   found: Map<string, Override[]>;
-  sheetGroups: SheetClassGroups;
+  sheetGroups: SheetGroups;
 }
 
 const REGEX_SPECIALS = /[.+?^${}()|[\]\\]/g;
 const KNOWN_CLASS_NAMES_LIMIT = 4000;
-const NO_SHEET_GROUPS: SheetClassGroups = new Map();
+const SVG_SUBJECT = /[_>+~]svg(?![\w-])/;
+
+export const NO_SHEET_GROUPS: SheetGroups = {
+  classes: new Map(),
+  customProperties: new Map(),
+};
 
 const knownClasses = new WeakMap<CompiledConfig, KnownClasses>();
 
@@ -80,12 +90,28 @@ export function compileConfig(config: RetoucheConfig): CompiledConfig {
   return { allow };
 }
 
+function declaredGroups(
+  token: string,
+  utility: string,
+  { classes, customProperties }: SheetGroups
+): readonly WatchedGroup[] | undefined {
+  const property = arbitraryProperty(utility);
+  return (
+    classes.get(token) ??
+    classes.get(utility) ??
+    (property === null ? undefined : customProperties.get(property))
+  );
+}
+
 export function watchedGroupsOf(
   token: string,
-  sheetGroups: SheetClassGroups
+  sheetGroups: SheetGroups
 ): WatchedGroup[] {
-  const { utility } = parseClassToken(token);
-  const declared = sheetGroups.get(token) ?? sheetGroups.get(utility);
+  const { utility, variants } = parseClassToken(token);
+  if (variants.some((variant) => SVG_SUBJECT.test(variant))) {
+    return [];
+  }
+  const declared = declaredGroups(token, utility, sheetGroups);
   const groups = classGroupsOf(utility, declared);
   if (groups.length > 0) {
     return groups.filter(isWatchedGroup);
@@ -135,7 +161,7 @@ function overridesOf(
 
 function classCandidates(
   className: string,
-  sheetGroups: SheetClassGroups
+  sheetGroups: SheetGroups
 ): Candidate[] {
   return classTokens(className).map((token) => ({
     groups: watchedGroupsOf(token, sheetGroups),
@@ -147,7 +173,7 @@ function classCandidates(
 
 function knownFor(
   config: CompiledConfig,
-  sheetGroups: SheetClassGroups
+  sheetGroups: SheetGroups
 ): Map<string, Override[]> {
   const known = knownClasses.get(config);
   if (known?.sheetGroups === sheetGroups) {
@@ -161,7 +187,7 @@ function knownFor(
 function classOverrides(
   config: CompiledConfig,
   { className, component }: ClassedCallSite,
-  sheetGroups: SheetClassGroups
+  sheetGroups: SheetGroups
 ): Override[] {
   const known = knownFor(config, sheetGroups);
   const key = `${component} ${className}`;
@@ -181,22 +207,36 @@ function classOverrides(
   return found;
 }
 
-function styleCandidates(style: StyleDeclarations): Candidate[] {
-  return Object.entries(style).map(([property, value]) => {
-    const group = styleGroupOf(property);
-    return {
-      groups: group !== null && isWatchedGroup(group) ? [group] : [],
+const appliedValueSchema = z.union([z.string().trim().min(1), z.number()]);
+
+function styleGroups(
+  property: string,
+  { customProperties }: SheetGroups
+): WatchedGroup[] {
+  const groups = isCustomProperty(property)
+    ? (customProperties.get(property) ?? [])
+    : propertyGroupsOf(property);
+  return groups.filter(isWatchedGroup);
+}
+
+function styleCandidates(
+  style: StyleDeclarations,
+  sheetGroups: SheetGroups
+): Candidate[] {
+  return Object.entries(style)
+    .filter(([, value]) => appliedValueSchema.safeParse(value).success)
+    .map(([property, value]) => ({
+      groups: styleGroups(property, sheetGroups),
       label: `${property}: ${String(value)}`,
       target: { kind: "style", property },
       utility: null,
-    };
-  });
+    }));
 }
 
 export function findOverrides(
   config: CompiledConfig,
   props: CallSiteProps,
-  sheetGroups: SheetClassGroups = NO_SHEET_GROUPS
+  sheetGroups: SheetGroups = NO_SHEET_GROUPS
 ): Override[] {
   const { component } = props;
   const className = classNameSchema.safeParse(props.className);
@@ -209,7 +249,7 @@ export function findOverrides(
       )
     : [];
   const fromStyle = style.success
-    ? overridesOf(config, component, styleCandidates(style.data))
+    ? overridesOf(config, component, styleCandidates(style.data, sheetGroups))
     : [];
   return fromStyle.length > 0 ? [...fromClasses, ...fromStyle] : fromClasses;
 }

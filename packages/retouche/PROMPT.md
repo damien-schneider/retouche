@@ -8,7 +8,7 @@ Work through these steps in order. Stop and tell me if a precondition fails inst
 - Supported dev servers: Vite, frameworks built on it included, or Next.js 16 with the App Router on Turbopack, its default. Anything else, a Next app on the Pages Router alone and a Next dev script with `--webpack` included: stop and tell me.
 - In a monorepo, work in the app that runs the dev server. If several apps could be meant, ask which.
 - Any styling approach works: Tailwind, CSS Modules, plain CSS or Sass classes, CSS-in-JS that emits class names, inline `style`. Note which ones this app uses.
-- Retouche reads the `className` and `style` a call site passes. If call sites change typography mostly through other props (`sx`, the `css` prop, style props such as `fontSize="lg"`), stop and tell me: those are not read.
+- Retouche reads the `className` and `style` a call site passes, including the CSS custom properties the design system's stylesheets read into typography (`style={{ "--button-font-size": "14px" }}`, `[--button-font-size:14px]`). If call sites change typography mostly through other props (`sx`, the `css` prop, style props such as `fontSize="lg"`), stop and tell me: those are not read.
 
 ## 2. Install
 

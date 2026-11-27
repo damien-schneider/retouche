@@ -6,7 +6,7 @@ import {
   measureOverride,
   type OverrideMeasurement,
 } from "../fiber/strip-override";
-import { readSheetClassGroups } from "../stylesheets/sheet-class-groups";
+import { readSheetGroups } from "../stylesheets/sheet-groups";
 
 export interface OverrideChanges {
   changes: PropertyChange[];
@@ -38,7 +38,7 @@ export function useOverrideChanges(
   const changes = propertyChanges({
     componentClasses: measurement?.beforeClasses ?? [],
     overrides: instance.overrides,
-    sheetGroups: readSheetClassGroups(),
+    sheetGroups: readSheetGroups(),
   });
   return { changes, measurement };
 }

@@ -3,7 +3,7 @@ import { watchedGroupsOf } from "../../../rules/find-overrides";
 import { COMPUTED_PROPERTY } from "../../fiber/strip-override";
 import { Value } from "../../inspector/property-diff";
 import { PROPERTY_NAMES, PropertyIcon } from "../../shell/property-icons";
-import { readSheetClassGroups } from "../../stylesheets/sheet-class-groups";
+import { readSheetGroups } from "../../stylesheets/sheet-groups";
 
 export interface TypeReading {
   classes: string[];
@@ -21,7 +21,7 @@ export function rendersText(element: Element): boolean {
 
 export function readTypography(element: Element): TypeReading[] {
   const computed = getComputedStyle(element);
-  const sheetGroups = readSheetClassGroups();
+  const sheetGroups = readSheetGroups();
   const tokens = [...element.classList];
   return WATCHED_GROUPS.map((group) => ({
     classes: tokens.filter((token) =>

@@ -10,7 +10,7 @@ import { RenderCount } from "../../inspector/inspector";
 import { presence } from "../../motion/presence";
 import { hoverTarget } from "../../shell/hover-target";
 import { PROPERTY_NAMES } from "../../shell/property-icons";
-import { readSheetClassGroups } from "../../stylesheets/sheet-class-groups";
+import { readSheetGroups } from "../../stylesheets/sheet-groups";
 import { componentTag } from "../element-names";
 import { CORNER_LENS, type Lens, propertiesOf } from "../property-lenses";
 import { focusNeighbourRow } from "./row-keys";
@@ -61,7 +61,7 @@ function RowChange({
     propertyChanges({
       componentClasses: beforeClasses ?? [],
       overrides: instance.overrides,
-      sheetGroups: readSheetClassGroups(),
+      sheetGroups: readSheetGroups(),
     })
   );
   return (

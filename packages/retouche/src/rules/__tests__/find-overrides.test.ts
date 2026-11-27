@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import type { WatchedGroup } from "../class-groups";
 import type { RetoucheConfig } from "../define-config";
-import { compileConfig, findOverrides } from "../find-overrides";
+import {
+  compileConfig,
+  findOverrides,
+  type SheetGroups,
+} from "../find-overrides";
+
+function sheetOf(classes: [string, WatchedGroup[]][]): SheetGroups {
+  return { classes: new Map(classes), customProperties: new Map() };
+}
 
 const config: RetoucheConfig = {
   allow: [
@@ -50,10 +58,22 @@ describe("finding call-site overrides", () => {
       ["hover:text-red-500", ["text-color"]],
     ]);
   });
+
+  it("leaves the tint of icons inside the component alone", () => {
+    const found = findOverrides(compiled, {
+      className:
+        "[&_svg]:text-muted-foreground [&>svg:not(.size)]:text-lg [&>textarea]:text-lg [&:has(svg)]:font-medium",
+      component: "Text",
+    });
+    expect(found.map(({ label }) => label)).toStrictEqual([
+      "[&>textarea]:text-lg",
+      "[&:has(svg)]:font-medium",
+    ]);
+  });
 });
 
 describe("the app's own type scale, read from its stylesheets", () => {
-  const sheetGroups = new Map<string, WatchedGroup[]>([
+  const sheetGroups = sheetOf([
     ["text-caption", ["font-size"]],
     ["text-brand", ["text-color"]],
     ["font-book", ["font-weight"]],
@@ -131,8 +151,8 @@ describe("overrides the team has allowed", () => {
 
 describe("classes styled by the page's own stylesheets", () => {
   it("reads the type a stylesheet gives a class Tailwind does not know", () => {
-    const sheetGroups = new Map([
-      ["eyebrow", ["text-transform" as const, "letter-spacing" as const]],
+    const sheetGroups = sheetOf([
+      ["eyebrow", ["text-transform", "letter-spacing"]],
     ]);
     expect(
       findOverrides(
@@ -146,6 +166,60 @@ describe("classes styled by the page's own stylesheets", () => {
         label: "eyebrow",
         target: { kind: "class", token: "eyebrow" },
       },
+    ]);
+  });
+});
+
+describe("design system knobs: custom properties its stylesheets read", () => {
+  const knobs: SheetGroups = {
+    classes: new Map(),
+    customProperties: new Map<string, WatchedGroup[]>([
+      ["--button-font-size", ["font-size"]],
+      ["--button-foreground", ["text-color"]],
+    ]),
+  };
+
+  function labelsFound(props: { className?: string; style?: object }) {
+    return findOverrides(
+      compiled,
+      { ...props, component: "Button" },
+      knobs
+    ).map(({ groups, label }) => [label, groups]);
+  }
+
+  it("reports a knob set in an inline style, and none that only lays out", () => {
+    expect(
+      labelsFound({
+        style: { "--button-foreground": "red", "--sidebar-width": "2rem" },
+      })
+    ).toStrictEqual([["--button-foreground: red", ["text-color"]]]);
+  });
+
+  it("reports a knob set by an arbitrary property class", () => {
+    expect(
+      labelsFound({
+        className: "[--button-font-size:14px] [--button-gap:4px]",
+      })
+    ).toStrictEqual([["[--button-font-size:14px]", ["font-size"]]]);
+  });
+});
+
+describe("Tailwind builds with a prefix", () => {
+  it("reads a v4 prefix as a variant and a v3 prefix through the stylesheet", () => {
+    const found = findOverrides(
+      compiled,
+      {
+        className: "tw:text-lg tw:flex tw-font-bold tw-mt-4",
+        component: "Text",
+      },
+      sheetOf([
+        ["tw-font-bold", ["font-weight"]],
+        ["tw-mt-4", []],
+      ])
+    );
+    expect(found.map(({ groups, label }) => [label, groups])).toStrictEqual([
+      ["tw:text-lg", ["font-size"]],
+      ["tw-font-bold", ["font-weight"]],
     ]);
   });
 });
@@ -173,5 +247,39 @@ describe("props that are not a class string", () => {
         component: "Button",
       })
     ).toStrictEqual([]);
+  });
+});
+
+describe("what an inline style sets", () => {
+  it("ignores style values React never applies", () => {
+    expect(
+      findOverrides(compiled, {
+        component: "Text",
+        style: {
+          color: undefined,
+          fontSize: null,
+          fontWeight: false,
+          letterSpacing: "",
+        },
+      })
+    ).toStrictEqual([]);
+  });
+
+  it("reads every way a style object can set type", () => {
+    const found = findOverrides(compiled, {
+      component: "Text",
+      style: {
+        "font-size": 18,
+        font: "600 14px/20px Inter",
+        textDecorationThickness: 2,
+        WebkitTextFillColor: "transparent",
+      },
+    });
+    expect(found.map(({ groups }) => groups)).toStrictEqual([
+      ["font-size"],
+      ["font-style", "font-weight", "font-size", "line-height", "font-family"],
+      ["text-decoration"],
+      ["text-color"],
+    ]);
   });
 });

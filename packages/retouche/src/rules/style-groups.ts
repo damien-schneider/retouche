@@ -1,43 +1,57 @@
 import type { ClassGroup } from "./class-groups";
 
-const STYLE_KEY_GROUPS = new Map(
+const PROPERTY_GROUPS = new Map(
   Object.entries({
-    background: "background",
-    backgroundColor: "background",
-    backgroundImage: "background",
-    boxShadow: "shadow",
-    color: "text-color",
-    fontFamily: "font-family",
-    fontSize: "font-size",
-    fontStyle: "font-style",
-    fontVariantNumeric: "font-variant-numeric",
-    fontWeight: "font-weight",
-    letterSpacing: "letter-spacing",
-    lineHeight: "line-height",
-    MozOsxFontSmoothing: "font-smoothing",
-    opacity: "opacity",
-    outline: "ring",
-    outlineColor: "ring",
-    outlineWidth: "ring",
-    textDecoration: "text-decoration",
-    textDecorationColor: "text-decoration",
-    textDecorationLine: "text-decoration",
-    textShadow: "shadow",
-    textTransform: "text-transform",
-    textUnderlineOffset: "text-decoration",
-    WebkitFontSmoothing: "font-smoothing",
-  } satisfies Record<string, ClassGroup>)
+    "-moz-osx-font-smoothing": ["font-smoothing"],
+    "-webkit-font-smoothing": ["font-smoothing"],
+    "-webkit-text-fill-color": ["text-color"],
+    background: ["background"],
+    "background-color": ["background"],
+    "background-image": ["background"],
+    "box-shadow": ["shadow"],
+    color: ["text-color"],
+    font: [
+      "font-style",
+      "font-weight",
+      "font-size",
+      "line-height",
+      "font-family",
+    ],
+    "font-family": ["font-family"],
+    "font-size": ["font-size"],
+    "font-style": ["font-style"],
+    "font-variant": ["font-variant-numeric"],
+    "font-variant-numeric": ["font-variant-numeric"],
+    "font-weight": ["font-weight"],
+    "letter-spacing": ["letter-spacing"],
+    "line-height": ["line-height"],
+    opacity: ["opacity"],
+    outline: ["ring"],
+    "outline-color": ["ring"],
+    "outline-width": ["ring"],
+    "text-decoration": ["text-decoration"],
+    "text-decoration-color": ["text-decoration"],
+    "text-decoration-line": ["text-decoration"],
+    "text-decoration-style": ["text-decoration"],
+    "text-decoration-thickness": ["text-decoration"],
+    "text-shadow": ["shadow"],
+    "text-transform": ["text-transform"],
+    "text-underline-offset": ["text-decoration"],
+    "text-underline-position": ["text-decoration"],
+  } satisfies Record<string, ClassGroup[]>)
 );
 
-const BORDER_RADIUS = /^border\w*Radius$/;
-const BORDER_COLOR = /^border\w*Color$/;
-const KEBAB_LETTER = /-(?<letter>[a-z])/g;
+const BORDER_RADIUS = /^border(?:-[a-z]+)*-radius$/;
+const BORDER_COLOR = /^border(?:-[a-z]+)*-color$/;
+const CAPITAL = /[A-Z]/g;
+const VENDOR = /^(?:webkit|moz|ms)-/;
 
-export function styleGroupOf(property: string): ClassGroup | null {
-  const known = STYLE_KEY_GROUPS.get(property);
-  if (known !== undefined) {
-    return known;
-  }
+function cssProperty(key: string): string {
+  const kebab = key.replaceAll(CAPITAL, (letter) => `-${letter.toLowerCase()}`);
+  return VENDOR.test(kebab) ? `-${kebab}` : kebab;
+}
+
+function boxGroup(property: string): ClassGroup | null {
   if (property.startsWith("padding")) {
     return "padding";
   }
@@ -53,10 +67,19 @@ export function styleGroupOf(property: string): ClassGroup | null {
   return property.startsWith("border") ? "border" : null;
 }
 
-export function declarationGroupOf(property: string): ClassGroup | null {
-  return styleGroupOf(
-    property.replaceAll(KEBAB_LETTER, (_match: string, letter: string) =>
-      letter.toUpperCase()
-    )
-  );
+export function isCustomProperty(key: string): boolean {
+  return key.startsWith("--");
+}
+
+export function propertyGroupsOf(key: string): readonly ClassGroup[] {
+  if (isCustomProperty(key)) {
+    return [];
+  }
+  const property = cssProperty(key);
+  const known = PROPERTY_GROUPS.get(property);
+  if (known !== undefined) {
+    return known;
+  }
+  const box = boxGroup(property);
+  return box === null ? [] : [box];
 }

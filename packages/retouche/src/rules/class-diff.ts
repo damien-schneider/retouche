@@ -2,7 +2,7 @@ import { WATCHED_GROUPS, type WatchedGroup } from "./class-groups";
 import { parseClassToken } from "./class-token";
 import {
   type Override,
-  type SheetClassGroups,
+  type SheetGroups,
   watchedGroupsOf,
 } from "./find-overrides";
 
@@ -24,10 +24,7 @@ interface ClassifiedToken {
   variants: string;
 }
 
-function classify(
-  token: string,
-  sheetGroups: SheetClassGroups
-): ClassifiedToken {
+function classify(token: string, sheetGroups: SheetGroups): ClassifiedToken {
   return {
     groups: watchedGroupsOf(token, sheetGroups),
     token,
@@ -51,7 +48,7 @@ function replacedTokens(
 export function propertyChanges(options: {
   componentClasses: string[];
   overrides: Override[];
-  sheetGroups: SheetClassGroups;
+  sheetGroups: SheetGroups;
 }): PropertyChange[] {
   const componentTokens = options.componentClasses.map((token) =>
     classify(token, options.sheetGroups)

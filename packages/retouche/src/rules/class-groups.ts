@@ -1,4 +1,5 @@
-import { splitValueModifier } from "./class-token";
+import { arbitraryProperty, splitValueModifier } from "./class-token";
+import { propertyGroupsOf } from "./style-groups";
 
 export const WATCHED_GROUPS = [
   "font-size",
@@ -85,6 +86,7 @@ const BORDER_STYLES = new Set([
   "none",
 ]);
 const TABLE_BORDERS = new Set(["collapse", "separate"]);
+const BOX_DECORATION = new Set(["decoration-clone", "decoration-slice"]);
 
 const KEYWORD_GROUPS = new Map(
   Object.entries({
@@ -122,6 +124,7 @@ const PREFIX_GROUPS: [prefix: string, group: ClassGroup][] = [
   ["tracking-", "letter-spacing"],
   ["decoration-", "text-decoration"],
   ["underline-offset-", "text-decoration"],
+  ["placeholder-", "text-color"],
   ["text-shadow", "shadow"],
   ["bg-", "background"],
   ["rounded-", "radius"],
@@ -134,9 +137,11 @@ const PREFIX_GROUPS: [prefix: string, group: ClassGroup][] = [
   ["opacity-", "opacity"],
 ];
 
-const ARBITRARY_LENGTH =
-  /^(?:\[(?:length:|-?\.?\d|clamp\(|calc\(|min\(|max\()|\(length:)/;
-const ARBITRARY_NUMBER = /^(?:\[(?:number:)?\d+\]|\(number:)/;
+const ARBITRARY_SIZE =
+  /^(?:\[(?:(?:length|size|percentage|absolute-size|relative-size):|-?\.?\d|(?:clamp|calc|min|max)\(|(?:xx?-small|small|medium|large|x{1,3}-large|larger|smaller)\])|\((?:length|size|percentage):)/;
+const ARBITRARY_WEIGHT =
+  /^(?:\[(?:number:|weight:|-?\.?\d|(?:var|calc|min|max|clamp)\()|\((?!family-name:|generic-name:))/;
+const UNWATCHED_FONT = /^(?:stretch|features)-/;
 const BORDER_WIDTH = /^(?:\d+$|\[(?:length:|-?\.?\d)|\(length:)/;
 const BORDER_SIDE = /^[xytrblse](?:-|$)/;
 const PADDING = /^p[xytrblse]?-/;
@@ -150,7 +155,7 @@ function textGroups(
     return [];
   }
   const { base, modifier } = splitValueModifier(value);
-  if (FONT_SIZES.has(base) || ARBITRARY_LENGTH.test(base)) {
+  if (FONT_SIZES.has(base) || ARBITRARY_SIZE.test(base)) {
     return modifier === null ? ["font-size"] : ["font-size", "line-height"];
   }
   return declared ? [...declared] : ["text-color"];
@@ -160,10 +165,10 @@ function fontGroups(
   value: string,
   declared: readonly WatchedGroup[] | undefined
 ): ClassGroup[] {
-  if (FONT_WEIGHTS.has(value) || ARBITRARY_NUMBER.test(value)) {
+  if (FONT_WEIGHTS.has(value) || ARBITRARY_WEIGHT.test(value)) {
     return ["font-weight"];
   }
-  if (value.startsWith("stretch-")) {
+  if (UNWATCHED_FONT.test(value)) {
     return [];
   }
   return declared ? [...declared] : ["font-family"];
@@ -192,6 +197,13 @@ export function classGroupsOf(
   declared?: readonly WatchedGroup[]
 ): ClassGroup[] {
   const name = utility.startsWith("-") ? utility.slice(1) : utility;
+  const property = arbitraryProperty(name);
+  if (property !== null) {
+    return [...propertyGroupsOf(property)];
+  }
+  if (BOX_DECORATION.has(name)) {
+    return [];
+  }
   const keyword = KEYWORD_GROUPS.get(name);
   if (keyword !== undefined) {
     return [keyword];
