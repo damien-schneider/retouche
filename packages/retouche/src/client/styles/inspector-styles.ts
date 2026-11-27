@@ -3,10 +3,8 @@ import { HOVER_CAPABLE } from "./tokens";
 export const INSPECTOR_STYLES = `
 .dt-inspector { display: flex; flex-direction: column; gap: 14px; }
 .dt-inspector-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 32px; padding: 0 2px; }
-.dt-inspector-head .dt-num {
-  min-width: 22px; height: 22px; border-radius: var(--rt-pill); background: var(--rt-accent-solid);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%); color: var(--rt-accent-text); font-size: 11.5px;
-}
+.dt-inspector-head .dt-num { min-width: 0; height: auto; padding: 0; font-size: 17px; line-height: 24px; text-box: none; }
+.dt-inspector-head .dt-btn { margin-left: auto; }
 .dt-inspector-head h2 { min-width: 0; margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.02em; line-height: 24px; text-wrap: balance; overflow-wrap: anywhere; }
 .dt-inspector-head h2:focus { outline: none; }
 .dt-section { display: flex; flex-direction: column; gap: 8px; }
@@ -34,7 +32,6 @@ export const INSPECTOR_STYLES = `
 .dt-code-head { display: flex; align-items: center; gap: 4px; min-width: 0; margin-right: calc((14px - var(--head-h)) / 2); }
 .dt-code-head .icon-btn { width: var(--head-h); height: var(--head-h); }
 .dt-code-head .icon-btn svg { width: 14px; height: 14px; }
-.dt-code-head .icon-btn:active { scale: .96; }
 .dt-path {
   flex: 1; min-width: 0; margin: 0; overflow: hidden; font-size: 11px; letter-spacing: -.025em; line-height: 16px;
   text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left;
@@ -45,17 +42,13 @@ export const INSPECTOR_STYLES = `
 .dt-status { margin: 0; color: var(--rt-text-muted); font-size: 12px; }
 .dt-trace-step > :is(.dt-status, .dt-error) { padding: 4px 0; font-size: 12px; line-height: 16px; text-wrap: pretty; }
 .dt-prompt {
-  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; padding: 6px 12px;
-  border-radius: var(--rt-pill); box-shadow: inset 0 0 0 1px var(--rt-border); color: var(--rt-text); font-size: 12.5px; font-weight: 500; line-height: 16px; text-align: left; user-select: none;
-  transition: background-color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding-left: 2px;
+  color: var(--rt-text-muted); font-size: 12.5px; line-height: 16px;
 }
 .dt-prompt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dt-prompt-state { display: inline-grid; justify-items: end; color: var(--rt-text-muted); font-size: 12px; font-weight: 400; white-space: nowrap; }
-.dt-prompt-state > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 5px; transition: opacity 140ms var(--rt-ease), filter 140ms var(--rt-ease), scale 140ms var(--rt-ease); }
-.dt-prompt-state > [aria-hidden="true"] { opacity: 0; filter: blur(2px); scale: .9; }
-.dt-prompt-state svg { width: 14px; height: 14px; color: var(--rt-added); }
-.dt-prompt-state > [data-outcome="failed"], .dt-prompt-state > [data-outcome="failed"] svg { color: var(--rt-error-ink); }
-.dt-prompt:active { background: var(--rt-bg-pressed); }
+.dt-prompt .dt-copy { flex: none; height: 28px; padding: 0 10px; font-size: 12px; transition: background-color 120ms var(--rt-ease), opacity 140ms var(--rt-ease); }
+.dt-prompt .dt-copy svg { width: 14px; height: 14px; }
+.dt-prompt [data-outcome="failed"], .dt-prompt [data-outcome="failed"] svg { color: var(--rt-error-ink); }
 .dt-code-frame { position: relative; grid-column: 1 / -1; min-width: 0; }
 .dt-code {
   --gutter: 52px; --edge-shade: light-dark(rgb(0 0 0 / 8%), rgb(0 0 0 / 34%));
@@ -95,15 +88,15 @@ export const INSPECTOR_STYLES = `
   position: relative; display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 9px 0 6px;
   border-radius: var(--rt-pill); background: var(--rt-bg); box-shadow: var(--rt-shadow-low); color: var(--rt-text-muted);
   font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: 0; line-height: 1; white-space: nowrap;
-  transition: opacity 140ms var(--rt-ease), translate 140ms var(--rt-ease), color 120ms var(--rt-ease), background-color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  transition: opacity 140ms var(--rt-ease), translate 140ms var(--rt-ease), color 120ms var(--rt-ease), background-color 120ms var(--rt-ease);
 }
 .dt-expand-pill::after { content: ""; position: absolute; inset: -2px -4px; }
 .dt-expand-pill svg { width: 12px; height: 12px; }
 .dt-expand-pill:focus-visible { outline-offset: 1px; }
 ${HOVER_CAPABLE} {
-  .dt-prompt:hover { background: var(--rt-bg-hover); }
   .dt-expand-pill:hover { background: color-mix(in srgb, var(--rt-text) 5%, var(--rt-bg)); color: var(--rt-text); }
   .dt-code-frame:not(:hover) .dt-expand-pill:not(:focus-visible) { opacity: 0; transition-duration: 100ms; transition-timing-function: var(--rt-ease-exit); }
+  .dt-trace-step:not(:hover, :focus-within) .dt-prompt:not([data-outcome]) .dt-copy { opacity: 0; transition-duration: 100ms; transition-timing-function: var(--rt-ease-exit); }
   .dt-code-frame:not(:hover) [data-edge="above"] .dt-expand-pill:not(:focus-visible) { translate: 0 3px; }
   .dt-code-frame:not(:hover) [data-edge="below"] .dt-expand-pill:not(:focus-visible) { translate: 0 -3px; }
 }
@@ -117,7 +110,7 @@ ${HOVER_CAPABLE} {
 @keyframes dt-reach-end { from { opacity: 0; } }
 @media (pointer: coarse) {
   .dt-trace-step { --head-h: 44px; }
-  .dt-prompt { min-height: 44px; }
+  .dt-prompt .dt-copy { height: 44px; }
   .dt-expand-pill::after { inset: -12px -8px; }
 }
 `;

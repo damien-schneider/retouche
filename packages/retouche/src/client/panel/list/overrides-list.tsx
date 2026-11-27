@@ -11,6 +11,7 @@ import { presence } from "../../motion/presence";
 import { hoverTarget } from "../../shell/hover-target";
 import { PROPERTY_NAMES } from "../../shell/property-icons";
 import { readSheetClassGroups } from "../../stylesheets/sheet-class-groups";
+import { componentTag } from "../element-names";
 import { CORNER_LENS, type Lens, propertiesOf } from "../property-lenses";
 import { focusNeighbourRow } from "./row-keys";
 import { type BeforeClasses, useBeforeClasses } from "./use-before-classes";
@@ -177,7 +178,7 @@ function SiteGroups({
   return groups.map(([component, group]) => (
     <section aria-label={component} key={component} ref={presence}>
       <h3 className="dt-group">
-        {component}
+        {componentTag(component)}
         {groups.length > 1 && (
           <span className="dt-group-count">{group.length}</span>
         )}

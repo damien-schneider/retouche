@@ -30,6 +30,7 @@ export function Surface({
       </div>
       <div
         className="dt-surface glass"
+        data-centered={dock.isCentered}
         data-edge={dock.edge}
         data-pinned={dock.isPinned}
         data-side={dock.side}

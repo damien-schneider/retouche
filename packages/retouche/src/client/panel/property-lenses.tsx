@@ -77,7 +77,7 @@ function CornerLens({
         onClick={onPress}
         type="button"
       >
-        Corners
+        <span>Corners</span>
         <b>{count}</b>
       </button>
     </li>
@@ -105,7 +105,7 @@ function PropertyLens({
         <span className="dt-lens-icon">
           <PropertyIcon group={group} />
         </span>
-        {PROPERTY_NAMES[group]}
+        <span>{PROPERTY_NAMES[group]}</span>
         <b>{count}</b>
       </button>
     </li>
@@ -129,7 +129,7 @@ function AllLens({
         onClick={onPress}
         type="button"
       >
-        All
+        <span>All</span>
         <b>{count}</b>
       </button>
     </li>

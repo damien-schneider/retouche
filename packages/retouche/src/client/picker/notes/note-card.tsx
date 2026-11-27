@@ -9,6 +9,7 @@ import {
 import { onPageLayoutChange } from "../../dots/page-layout";
 import { presence } from "../../motion/presence";
 import { settledSize } from "../../motion/settled-size";
+import { elementTag } from "../../panel/element-names";
 import { ArrowUpIcon, CopyIcon, TrashIcon } from "../../shell/icons";
 import { startsInWidget } from "../../shell/widget-events";
 import { cardPlacement } from "../aim/card-position";
@@ -221,7 +222,7 @@ export function NoteCard(props: CardProps) {
   const formRef = useCardPlacement(props);
   useCardFocus(fieldRef, picker);
   const component = useComponentName(card.element);
-  const subject = `<${component ?? card.element.localName}>`;
+  const subject = elementTag(component, card.element.localName);
 
   return (
     <form

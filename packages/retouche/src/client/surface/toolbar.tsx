@@ -112,7 +112,7 @@ export function Toolbar({
       <button
         aria-label="Move Retouche"
         className="dt-grip"
-        title="Drag to a corner"
+        title="Drag to a corner or the middle of an edge"
         type="button"
         {...grip}
       >

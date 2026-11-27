@@ -196,7 +196,7 @@ function Marker({
         ref={buttonRef}
         type="button"
       >
-        {number}
+        <span>{number}</span>
       </button>
       <span aria-hidden="true" className="dt-marker-note">
         {note.text}

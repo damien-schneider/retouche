@@ -22,14 +22,14 @@ export const CONTENT_STYLES = `
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px;
   border-radius: var(--rt-pill); background: var(--rt-card); box-shadow: inset 0 0 0 1px var(--rt-border), 0 1px 1px rgb(0 0 0 / 3%);
   color: var(--rt-text); font-size: 13px; font-weight: 500; text-decoration: none; user-select: none;
-  transition: background-color 120ms var(--rt-ease), color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  transition: background-color 120ms var(--rt-ease), color 120ms var(--rt-ease);
 }
 .dt-btn[data-variant="primary"] { background: var(--rt-primary); box-shadow: 0 1px 2px rgb(0 0 0 / 12%); color: var(--rt-primary-text); }
 .dt-btn[aria-pressed="true"] { background: var(--rt-accent-solid); box-shadow: none; color: var(--rt-accent-text); }
 .dt-copy {
   display: inline-grid; justify-items: center; align-items: center; height: 32px; padding: 0 12px 0 10px;
   border-radius: var(--rt-pill); color: var(--rt-text); font-weight: 500; white-space: nowrap; user-select: none;
-  transition: background-color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  transition: background-color 120ms var(--rt-ease);
 }
 .dt-copy > span { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 6px; transition: opacity 140ms var(--rt-ease), filter 140ms var(--rt-ease), scale 140ms var(--rt-ease); }
 .dt-copy > [aria-hidden="true"] { opacity: 0; filter: blur(2px); scale: .9; }

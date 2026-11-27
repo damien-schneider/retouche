@@ -90,22 +90,22 @@ describe("pinning the panel beside the page", () => {
     render(<Page />);
     const panel = await openPanel();
 
-    expect(pinnedSide()).toBe("right");
+    expect(pinnedSide()).toBe("left");
 
     fireEvent.click(control(panel, /close/i));
     expect(pinnedSide()).toBeUndefined();
 
     fireEvent.click(openButton(panel));
-    expect(pinnedSide()).toBe("right");
+    expect(pinnedSide()).toBe("left");
   });
 
   it("follows the panel to the other side", async () => {
     render(<Page />);
     const panel = await openPanel();
 
-    fireEvent.keyDown(control(panel, /move panel/i), { key: "ArrowLeft" });
+    fireEvent.keyDown(control(panel, /move panel/i), { key: "ArrowRight" });
 
-    expect(pinnedSide()).toBe("left");
+    expect(pinnedSide()).toBe("right");
   });
 
   it("gives the room back when the overlay goes away", async () => {
@@ -139,17 +139,17 @@ describe("resizing the panel from the keyboard", () => {
     const handle = control(panel, /resize/i);
     const initial = panelWidth();
 
-    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
     const grown = panelWidth();
     expect(Number.parseFloat(grown)).toBeGreaterThan(
       Number.parseFloat(initial)
     );
 
-    fireEvent.keyDown(control(panel, /move panel/i), { key: "ArrowLeft" });
-    fireEvent.keyDown(handle, { key: "ArrowLeft" });
+    fireEvent.keyDown(control(panel, /move panel/i), { key: "ArrowRight" });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
     expect(panelWidth()).toBe(initial);
 
-    fireEvent.keyDown(handle, { key: "ArrowRight" });
+    fireEvent.keyDown(handle, { key: "ArrowLeft" });
     fireEvent.doubleClick(handle);
     expect(panelWidth()).toBe(initial);
   });
@@ -348,11 +348,11 @@ describe("the panel as a sheet on a narrow screen", () => {
     Element.prototype.setPointerCapture = () => {};
   });
 
-  it("keeps room at the end of the page only while it is open", async () => {
+  it("keeps room at the edge the bar sits on only while it is open", async () => {
     render(<Page />);
     const panel = await openPanel();
 
-    expect(sheetEdge()).toBe("bottom");
+    expect(sheetEdge()).toBe("top");
 
     fireEvent.click(control(panel, /close/i));
     expect(sheetEdge()).toBeUndefined();
@@ -371,31 +371,53 @@ describe("the panel as a sheet on a narrow screen", () => {
     const panel = await waitFor(overlay);
 
     expect(sheetHeight()).toBe(expanded);
-    fireEvent.keyDown(control(panel, /shrink panel/i), { key: "ArrowDown" });
+    fireEvent.keyDown(control(panel, /shrink panel/i), { key: "ArrowUp" });
     expect(sheetHeight()).toBe(half);
   });
 
-  it("closes when its handle is dragged down toward the screen edge", async () => {
+  it("closes when its handle is dragged toward the screen edge it hangs from", async () => {
     render(<Page />);
     const panel = await openPanel();
     const opened = sheetHeight();
 
-    dragHandle(control(panel, /expand panel/i), 760);
+    dragHandle(control(panel, /expand panel/i), 0);
 
     expect(isOpen(panel)).toBeFalsy();
     expect(stillHeld(panel)).toBeNull();
     expect(sheetHeight()).toBe(opened);
   });
 
-  it("drops from the top when the bar sits there, and closes upward", async () => {
+  it("rises from the bottom when the bar sits there, and closes downward", async () => {
     render(<Page />);
     const layer = await waitFor(overlay);
-    fireEvent.keyDown(control(layer, /move retouche/i), { key: "ArrowUp" });
+    fireEvent.keyDown(control(layer, /move retouche/i), { key: "ArrowDown" });
     fireEvent.click(openButton(layer));
 
-    expect(sheetEdge()).toBe("top");
+    expect(sheetEdge()).toBe("bottom");
 
-    dragHandle(control(layer, /expand panel/i), 0);
+    dragHandle(control(layer, /expand panel/i), 760);
     expect(isOpen(layer)).toBeFalsy();
+  });
+});
+
+describe("the bar in the middle of an edge", () => {
+  it("steps across its edge with the arrow keys and opens the panel on the side it last took", async () => {
+    render(<Page />);
+    const layer = await waitFor(overlay);
+    const grip = control(layer, /move retouche/i);
+    const sideOpened = () => {
+      fireEvent.click(openButton(layer));
+      const side = pinnedSide();
+      fireEvent.click(control(layer, /close/i));
+      return side;
+    };
+
+    expect(sideOpened()).toBe("left");
+    fireEvent.keyDown(grip, { key: "ArrowRight" });
+    expect(sideOpened()).toBe("right");
+    fireEvent.keyDown(grip, { key: "ArrowLeft" });
+    expect(sideOpened()).toBe("right");
+    fireEvent.keyDown(grip, { key: "ArrowLeft" });
+    expect(sideOpened()).toBe("left");
   });
 });

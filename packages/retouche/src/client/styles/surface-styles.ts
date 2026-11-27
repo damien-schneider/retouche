@@ -56,6 +56,8 @@ export const SURFACE_STYLES = `
 .dt-surface[data-edge="bottom"] { bottom: var(--rt-gap); align-items: flex-end; }
 .dt-surface[data-side="left"] { left: var(--rt-gap); }
 .dt-surface[data-side="right"] { right: var(--rt-gap); justify-content: flex-end; }
+.dt-surface[data-state="bar"][data-centered="true"][data-side="left"] { left: calc(50% - var(--rt-bar-w) / 2); }
+.dt-surface[data-state="bar"][data-centered="true"][data-side="right"] { right: calc(50% - var(--rt-bar-w) / 2); }
 .dt-surface[data-state="panel"] {
   --rt-morph: 280ms;
   width: ${floatingWidth("100%")}; height: calc(100% - ${SURFACE_GAP * 2}px); border-radius: var(--rt-radius-surface);
@@ -76,12 +78,12 @@ export const SURFACE_STYLES = `
   border-radius: var(--rt-pill); color: var(--rt-text-faint); cursor: grab; touch-action: none;
   transition: color 120ms var(--rt-ease);
 }
-.dt-grip:active:not(:disabled) { scale: 1; cursor: grabbing; color: var(--rt-text-muted); }
+.dt-grip:active:not(:disabled) { cursor: grabbing; color: var(--rt-text-muted); }
 .dt[data-theme="dark"] .dt-grip:not(:active) { color: color-mix(in srgb, var(--rt-text-faint), var(--rt-text-muted)); }
 .dt-open {
   position: relative; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 7px;
   border-radius: var(--rt-pill); color: var(--rt-text-muted);
-  transition: color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  transition: color 120ms var(--rt-ease);
 }
 .dt-open-label { padding-left: 3px; color: var(--rt-error-ink); font-size: 12px; font-weight: 550; line-height: 16px; }
 .dt-count {
@@ -128,7 +130,6 @@ ${HOVER_CAPABLE} {
 }
 .dt-surface[data-side="right"] + .dt-resize { right: var(--seam); }
 .dt-surface[data-side="left"] + .dt-resize { left: var(--seam); }
-.dt-resize:active:not(:disabled) { scale: 1; }
 .dt-resize:focus-visible { outline: none; }
 .dt-resize::before {
   content: ""; position: absolute; top: 50%; left: 50%; width: 14px; height: 28px; margin: -14px 0 0 -7px;
@@ -154,7 +155,7 @@ ${HOVER_CAPABLE} {
   border-radius: var(--rt-pill); background: var(--rt-text-faint); opacity: .7; clip-path: inset(0 4px round var(--rt-pill));
   transition: opacity 140ms var(--rt-ease), background-color 140ms var(--rt-ease), clip-path 200ms var(--rt-ease);
 }
-.dt-sheet-handle:active:not(:disabled) { scale: 1; cursor: grabbing; }
+.dt-sheet-handle:active:not(:disabled) { cursor: grabbing; }
 .dt-sheet-handle:focus-visible { outline: none; }
 .dt-sheet-handle:focus-visible::after, .dt-surface[data-resizing="true"] .dt-sheet-handle::after { background: var(--rt-accent); opacity: 1; }
 .dt-surface[data-resizing="true"] .dt-sheet-handle::after { clip-path: inset(0 round var(--rt-pill)); }

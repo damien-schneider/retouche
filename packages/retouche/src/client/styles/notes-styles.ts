@@ -53,7 +53,7 @@ const CARD_STYLES = `
 .dt-site-step {
   display: inline-flex; flex: none; align-items: center; gap: 5px; height: 26px; margin-left: auto; padding: 0 10px 0 8px;
   border-radius: var(--rt-pill); color: var(--rt-text-muted); font-size: 12px; font-weight: 500; white-space: nowrap;
-  transition: color 120ms var(--rt-ease), background-color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  transition: color 120ms var(--rt-ease), background-color 120ms var(--rt-ease);
 }
 .dt-site-step svg { width: 14px; height: 14px; }
 .dt-site-step + .icon-btn { margin-left: 0; }
@@ -85,7 +85,7 @@ ${HOVER_CAPABLE} {
   .dt-site-step:hover { background: var(--rt-bg-hover); color: var(--rt-text); }
 }
 .dt-note .dt-note-add:active:not(:disabled) { background: var(--rt-primary); }
-.dt-note kbd, .dt-tray kbd {
+.dt-note kbd, .dt-tray kbd, .dt-voice-hold kbd, .dt-voice-ticker kbd {
   display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 2px;
   border-radius: 4px; background: var(--rt-bg-hover); box-shadow: inset 0 -1px 0 var(--rt-border);
   color: var(--rt-text-muted); font: inherit; font-size: 10.5px; font-weight: 500; line-height: 1;
@@ -106,6 +106,7 @@ const TRAY_STYLES = `
 }
 .dt-tray-dock[data-panel="right"] { right: ${FLOATING_SPAN}; }
 .dt-tray-dock[data-panel="left"] { left: ${FLOATING_SPAN}; }
+.dt-tray-dock[data-bar-edge="bottom"][data-bar-centered="true"][data-panel="none"] { bottom: ${BAR_CLEARANCE}px; }
 @media (min-width: ${PIN_MIN_VIEWPORT}px) {
   .dt-tray-dock[data-panel="right"][data-pinned="true"] { right: ${PINNED_SPAN}; }
   .dt-tray-dock[data-panel="left"][data-pinned="true"] { left: ${PINNED_SPAN}; }

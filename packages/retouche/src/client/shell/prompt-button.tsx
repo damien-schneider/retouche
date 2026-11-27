@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 
 import { AlertIcon, CheckIcon } from "./icons";
 
@@ -21,6 +21,8 @@ export function PromptButton({
   title: string;
 }) {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const buttonId = useId();
+  const labelId = useId();
   const shown = outcome ?? "copied";
 
   const copy = async () => {
@@ -36,22 +38,26 @@ export function PromptButton({
   };
 
   return (
-    <button
-      className="dt-prompt"
-      onClick={() => {
-        void copy();
-      }}
-      title={title}
-      type="button"
-    >
-      <span className="dt-prompt-label">{children}</span>
-      <span className="dt-prompt-state">
+    <div className="dt-prompt" data-outcome={outcome ?? undefined}>
+      <span className="dt-prompt-label" id={labelId}>
+        {children}
+      </span>
+      <button
+        aria-labelledby={`${buttonId} ${labelId}`}
+        className="dt-copy"
+        id={buttonId}
+        onClick={() => {
+          void copy();
+        }}
+        title={title}
+        type="button"
+      >
         <span aria-hidden={outcome !== null}>Copy prompt</span>
         <span aria-hidden={outcome === null} data-outcome={shown}>
           {OUTCOMES[shown].icon}
           {OUTCOMES[shown].label}
         </span>
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }

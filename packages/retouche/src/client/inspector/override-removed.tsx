@@ -35,7 +35,7 @@ export function OverrideRemoved({
           }}
           type="button"
         >
-          Next override
+          <span>Next override</span>
         </button>
       ) : (
         <p>No overrides left on this page.</p>

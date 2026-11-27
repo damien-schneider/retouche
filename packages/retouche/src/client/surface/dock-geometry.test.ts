@@ -11,24 +11,38 @@ import {
 } from "./dock-geometry";
 
 const viewport = { height: 800, width: 1000 };
+const bar = 300;
 const still = { x: 0, y: 0 };
 
 describe("releasing the bar after a drag", () => {
   it("lands in the corner closest to where it was dropped", () => {
     expect(
-      nearestPlacement(landingPoint({ x: 120, y: 700 }, still), viewport)
-    ).toStrictEqual({ edge: "bottom", side: "left" });
+      nearestPlacement(landingPoint({ x: 120, y: 700 }, still), viewport, bar)
+    ).toStrictEqual({ edge: "bottom", isCentered: false, side: "left" });
     expect(
-      nearestPlacement(landingPoint({ x: 880, y: 90 }, still), viewport)
-    ).toStrictEqual({ edge: "top", side: "right" });
+      nearestPlacement(landingPoint({ x: 880, y: 90 }, still), viewport, bar)
+    ).toStrictEqual({ edge: "top", isCentered: false, side: "right" });
+  });
+
+  it("lands in the middle of the edge when dropped across its middle", () => {
+    expect(
+      nearestPlacement(landingPoint({ x: 420, y: 60 }, still), viewport, bar)
+    ).toMatchObject({ edge: "top", isCentered: true });
+    expect(
+      nearestPlacement(landingPoint({ x: 580, y: 740 }, still), viewport, bar)
+    ).toMatchObject({ edge: "bottom", isCentered: true });
   });
 
   it("carries a flick to the corner it was thrown at", () => {
     const thrownUpLeft = { x: -2, y: -2 };
 
     expect(
-      nearestPlacement(landingPoint({ x: 900, y: 700 }, thrownUpLeft), viewport)
-    ).toStrictEqual({ edge: "top", side: "left" });
+      nearestPlacement(
+        landingPoint({ x: 900, y: 700 }, thrownUpLeft),
+        viewport,
+        bar
+      )
+    ).toStrictEqual({ edge: "top", isCentered: false, side: "left" });
   });
 
   it("is thrown by the motion just before the release, not by an earlier flick", () => {

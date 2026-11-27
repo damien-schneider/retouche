@@ -7,6 +7,7 @@ import {
 import { flushSync } from "react-dom";
 
 import {
+  type Edge,
   landingPoint,
   nearestPlacement,
   type Placement,
@@ -15,6 +16,7 @@ import {
   recentSamples,
   rubberBand,
   type Sample,
+  type Side,
   throwVelocity,
   type Viewport,
 } from "../dock-geometry";
@@ -35,11 +37,13 @@ export interface GripProps {
   onPointerUp: (event: PointerEvent) => void;
 }
 
-const KEY_PLACEMENTS = new Map<string, Partial<Placement>>([
-  ["ArrowDown", { edge: "bottom" }],
-  ["ArrowLeft", { side: "left" }],
-  ["ArrowRight", { side: "right" }],
-  ["ArrowUp", { edge: "top" }],
+const KEY_EDGES = new Map<string, Edge>([
+  ["ArrowDown", "bottom"],
+  ["ArrowUp", "top"],
+]);
+const KEY_SIDES = new Map<string, Side>([
+  ["ArrowLeft", "left"],
+  ["ArrowRight", "right"],
 ]);
 
 function offsetOf(surface: HTMLElement): Point {
@@ -106,10 +110,14 @@ function thrownPlacement(
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2,
   };
-  return nearestPlacement(landingPoint(center, velocity), viewport());
+  return nearestPlacement(
+    landingPoint(center, velocity),
+    viewport(),
+    rect.width
+  );
 }
 
-// FLIP: land in the new corner at once, then the transition plays the offset back to zero.
+// FLIP: land in the new place at once, then the transition plays the offset back to zero.
 function glideTo(
   surface: HTMLElement,
   dock: Dock,
@@ -145,15 +153,37 @@ function land(
   glide();
 }
 
+function droppedPlacement(
+  thrown: Placement,
+  isOpen: boolean
+): Partial<Placement> {
+  if (isOpen) {
+    return { side: thrown.side };
+  }
+  if (thrown.isCentered) {
+    return { edge: thrown.edge, isCentered: true };
+  }
+  return thrown;
+}
+
 function keyedPlacement(
   key: string,
+  dock: Dock,
   isOpen: boolean
 ): Partial<Placement> | null {
-  const placement = KEY_PLACEMENTS.get(key);
-  if (placement === undefined || (isOpen && placement.edge !== undefined)) {
+  const edge = KEY_EDGES.get(key);
+  if (edge !== undefined) {
+    return isOpen ? null : { edge };
+  }
+  const side = KEY_SIDES.get(key);
+  if (side === undefined) {
     return null;
   }
-  return placement;
+  if (isOpen) {
+    return { side };
+  }
+  const leavesCorner = !dock.isCentered && dock.side !== side;
+  return leavesCorner ? { isCentered: true } : { isCentered: false, side };
 }
 
 export interface SnapDrag {
@@ -176,14 +206,14 @@ export function useSnapDrag(options: {
     if (!(surface && released)) {
       return;
     }
-    const { edge, side } = thrownPlacement(surface, released, event);
-    land(surface, dock, isOpen ? { side } : { edge, side });
+    const thrown = thrownPlacement(surface, released, event);
+    land(surface, dock, droppedPlacement(thrown, isOpen));
   };
 
   return {
     gripProps: {
       onKeyDown: (event) => {
-        const placement = keyedPlacement(event.key, isOpen);
+        const placement = keyedPlacement(event.key, dock, isOpen);
         const surface = surfaceRef.current;
         if (placement && surface) {
           event.preventDefault();

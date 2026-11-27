@@ -86,7 +86,7 @@ export function HoldToCompare({
       title="Shows the component without this call site's overrides while held"
       type="button"
     >
-      Hold to compare
+      <span>Hold to compare</span>
     </button>
   );
 }

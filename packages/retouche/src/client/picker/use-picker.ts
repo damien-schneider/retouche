@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { OverrideInstance } from "../fiber/scan-overrides";
+import { elementTag } from "../panel/element-names";
 import { COPY_FEEDBACK_MS } from "../shell/prompt-button";
 import type { LayerNavigation } from "../use-layer-navigation";
 import {
@@ -133,7 +134,7 @@ function copyActions({
       const sites = locatedSites(element);
       void copy(
         formatNote({ context, note: note.trim(), sites }),
-        `<${context.component ?? context.tag}>`
+        elementTag(context.component, context.tag)
       );
       notes.close();
       leave();

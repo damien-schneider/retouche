@@ -10,7 +10,7 @@ export const PICKER_STYLES = `
 .dt-pick-toggle[aria-pressed="true"] { color: var(--rt-accent-ink); }
 .dt-pick-label { display: none; }
 .dt-island .dt-pick-toggle { gap: 6px; width: auto; padding: 0 12px 0 10px; border-radius: var(--rt-pill); color: var(--rt-text); font-weight: 500; }
-.dt-island .dt-pick-toggle svg { color: var(--rt-text-muted); transition: color 120ms var(--rt-ease); }
+.dt-island .dt-pick-toggle svg { color: var(--rt-text-muted); transition: color 120ms var(--rt-ease), scale 120ms var(--rt-ease); }
 .dt-island .dt-pick-toggle[aria-pressed="true"] { background: color-mix(in srgb, var(--rt-accent) 12%, transparent); color: var(--rt-accent-ink); }
 .dt-island .dt-pick-toggle[aria-pressed="true"] svg { color: inherit; }
 .dt-island .dt-pick-label { display: inline; }
@@ -77,7 +77,6 @@ ${HOVER_CAPABLE} {
   .dt-marker-pin:hover { scale: 1.08; }
   .dt-marker:has(.dt-marker-pin:hover:not([aria-expanded="true"])) .dt-marker-note { opacity: 1; translate: 0 0; transition-timing-function: var(--rt-ease); transition-duration: 160ms; }
 }
-.dt-marker-pin:active { scale: .96; }
 @media (pointer: coarse) {
   .dt-marker-pin::after { content: ""; position: absolute; inset: -11px; }
 }

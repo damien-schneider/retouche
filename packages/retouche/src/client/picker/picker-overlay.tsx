@@ -45,6 +45,7 @@ export function PickerOverlay({
       </div>
       <div
         className="dt-tray-dock"
+        data-bar-centered={dock.isCentered}
         data-bar-edge={dock.edge}
         data-panel={isPanelOpen ? dock.side : "none"}
         data-pinned={dock.isPinned}

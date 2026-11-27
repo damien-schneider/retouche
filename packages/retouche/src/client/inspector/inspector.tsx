@@ -1,6 +1,9 @@
+import type { ReactNode } from "react";
+
 import type { OverrideInstance } from "../fiber/scan-overrides";
 import { canStripOverride } from "../fiber/strip-override";
 import { presence } from "../motion/presence";
+import { componentTag } from "../panel/element-names";
 import { ElementRenders } from "../picker/element/element-renders";
 import type { DevRouteState } from "../route/use-dev-route";
 import type { OverrideFacts } from "./agent-prompts";
@@ -41,10 +44,12 @@ export function RenderCount({ renders }: { renders: number }) {
 }
 
 function InspectorHead({
+  action,
   component,
   number,
   renders,
 }: {
+  action: ReactNode;
   component: string;
   number: number | undefined;
   renders: number;
@@ -52,8 +57,9 @@ function InspectorHead({
   return (
     <header className="dt-inspector-head">
       <span className="dt-num">{number}</span>
-      <h2 tabIndex={-1}>{component}</h2>
+      <h2 tabIndex={-1}>{componentTag(component)}</h2>
       <RenderCount renders={renders} />
+      {action}
     </header>
   );
 }
@@ -91,6 +97,11 @@ export function Inspector({
   return (
     <div className="dt-inspector" ref={presence}>
       <InspectorHead
+        action={
+          isMeasurable && (
+            <HoldToCompare instance={instance} onHoldChange={onHoldChange} />
+          )
+        }
         component={instance.component}
         number={number}
         renders={renders}
@@ -99,11 +110,7 @@ export function Inspector({
       {instance.node instanceof Element && (
         <ElementRenders element={instance.node} />
       )}
-      {isMeasurable ? (
-        <HoldToCompare instance={instance} onHoldChange={onHoldChange} />
-      ) : (
-        <MeasureHint instance={instance} />
-      )}
+      {!isMeasurable && <MeasureHint instance={instance} />}
       <CodeSection
         facts={facts}
         isHolding={isHolding}

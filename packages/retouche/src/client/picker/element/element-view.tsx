@@ -2,6 +2,7 @@ import { CornerFit } from "../../corners/corner-fit";
 import { CodeSection } from "../../inspector/code-section";
 import { useInstanceSites } from "../../inspector/use-instance-sites";
 import { presence } from "../../motion/presence";
+import { elementTag } from "../../panel/element-names";
 import type { DevRouteState } from "../../route/use-dev-route";
 import { useComponentName } from "../notes/element-context";
 import { ElementRenders } from "./element-renders";
@@ -22,7 +23,7 @@ export function ElementView({
   return (
     <div className="dt-inspector" ref={presence}>
       <header className="dt-inspector-head">
-        <h2 tabIndex={-1}>{owner ?? tag}</h2>
+        <h2 tabIndex={-1}>{elementTag(owner, element.localName)}</h2>
         {owner !== null && <span className="dt-chip">{tag}</span>}
       </header>
       <ElementTypography element={element} />

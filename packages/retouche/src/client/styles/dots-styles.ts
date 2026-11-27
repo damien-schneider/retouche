@@ -38,7 +38,6 @@ export const DOTS_STYLES = `
   transition: opacity 160ms var(--rt-ease), scale 160ms var(--rt-ease), visibility 0s;
 }
 ${AIMED}
-.dt-dot:active:not(:disabled) { scale: 1; }
 .dt-dot:focus-visible { outline-offset: -1px; }
 .dt-dot-arrow {
   position: absolute; width: ${ARROW.size}px; height: ${ARROW.size}px; overflow: visible;
@@ -92,6 +91,7 @@ ${chipUnfurled(":focus-visible")}
 ${HOVER_CAPABLE} {${chipUnfurled(":hover")}
 }
 .dt-dot:active .dt-dot-pin { scale: .96; transition-duration: 100ms; }
+.dt-dot:active > .dt-dot-chip { scale: none; }
 .dt-dot[aria-pressed="true"] { z-index: 1; }
 .dt-dot[aria-pressed="true"] :is(.dt-dot-pin, .dt-dot-arrow) { scale: 1.15; }
 .dt-page[data-selecting="true"] .dt-dot:not([aria-pressed="true"], :hover, :focus-visible, [data-hovered="true"]) :is(.dt-dot-pin, .dt-dot-arrow) { opacity: .5; }

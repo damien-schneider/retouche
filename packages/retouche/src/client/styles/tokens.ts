@@ -23,9 +23,10 @@ ${themeTokens(".dt")}
 }
 *, *::before, *::after { box-sizing: border-box; }
 .dt { font-family: var(--rt-font); font-size: 13px; line-height: 20px; letter-spacing: -.003em; color: var(--rt-text); }
-button { margin: 0; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; cursor: pointer; touch-action: manipulation; transition: scale 120ms var(--rt-ease); }
+button { margin: 0; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: not-allowed; opacity: .35; }
-button:active:not(:disabled) { scale: .96; }
+:where(button) > * { transition: scale 120ms var(--rt-ease); }
+:where(button:active:not(:disabled)) > * { scale: .96; }
 svg { flex-shrink: 0; }
 :focus-visible { outline: 2px solid var(--rt-accent); outline-offset: 2px; }
 h2:focus-visible { outline: none; }
@@ -36,7 +37,7 @@ code { font-family: var(--rt-font-mono); letter-spacing: 0; }
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--hit); height: var(--hit); flex: none; border-radius: var(--rt-pill); color: var(--rt-text-muted);
-  transition: color 120ms var(--rt-ease), scale 120ms var(--rt-ease);
+  transition: color 120ms var(--rt-ease);
 }
 ${HOVER_CAPABLE} {
   .icon-btn:not(:disabled):hover { background: var(--rt-bg-hover); color: var(--rt-text); }
@@ -91,7 +92,7 @@ export const REDUCED_MOTION_STYLES = `
     [data-edge="below"] > .dt-expand-reach:not(:hover, :focus-within) { animation-name: dt-reach-end !important; animation-range: calc(100% - 16px) 100% !important; }
   }
   .dt-expand-pill { transition: opacity 120ms linear, background-color 120ms linear, color 120ms linear !important; translate: none !important; }
-  button:active:not(:disabled) { scale: 1; }
+  :where(button:active:not(:disabled)) > * { scale: none; }
   .dt-outline, .dt-dot-chip, .dt-dot-chip::before, .dt-dot-chip span { transition: opacity 120ms linear !important; }
   .dt-toolbar, .dt-panel, .dt-dot, .dt-marker { transition: opacity 140ms linear !important; }
   .dt-dot, .dt-marker, .dt-dot-arrow { scale: none !important; }

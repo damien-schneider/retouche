@@ -45,7 +45,9 @@ function RenderedListToggle({
       onClick={onToggle}
       type="button"
     >
-      {length} {length === 1 ? "component" : "components"}
+      <span>
+        {length} {length === 1 ? "component" : "components"}
+      </span>
       <ChevronUpIcon />
     </button>
   );
@@ -77,7 +79,7 @@ export function RendersFooter({
           {areShown ? (
             <span className="dt-renders-seen">{RENDER_COUNT.format(seen)}</span>
           ) : (
-            "Highlight renders"
+            <span>Highlight renders</span>
           )}
         </button>
         <div className="dt-renders-end">

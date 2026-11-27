@@ -8,6 +8,7 @@ export type SheetDetent = (typeof SHEET_DETENTS)[number];
 
 export interface Placement {
   edge: Edge;
+  isCentered: boolean;
   side: Side;
 }
 
@@ -92,10 +93,17 @@ export function landingPoint(point: Point, velocity: Point): Point {
   };
 }
 
-export function nearestPlacement(point: Point, viewport: Viewport): Placement {
+export function nearestPlacement(
+  point: Point,
+  viewport: Viewport,
+  width: number
+): Placement {
+  const fromCenter = point.x - viewport.width / 2;
+  const cornerReach = viewport.width / 2 - SURFACE_GAP - width / 2;
   return {
     edge: point.y < viewport.height / 2 ? "top" : "bottom",
-    side: point.x < viewport.width / 2 ? "left" : "right",
+    isCentered: Math.abs(fromCenter) < cornerReach / 2,
+    side: fromCenter < 0 ? "left" : "right",
   };
 }
 

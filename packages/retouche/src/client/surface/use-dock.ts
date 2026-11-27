@@ -53,6 +53,7 @@ const PAGE_STYLES = `@media ${WIDE_SCREEN} {
 
 const storedDock = z.object({
   edge: z.enum(EDGES),
+  isCentered: z.boolean().default(false),
   isPinned: z.boolean(),
   sheet: z.enum(SHEET_DETENTS).default("half"),
   side: z.enum(SIDES),
@@ -72,10 +73,11 @@ export interface Dock extends StoredDock {
 
 const STORED_DOCK: StoredPreference<StoredDock> = {
   fallback: {
-    edge: "bottom",
+    edge: "top",
+    isCentered: true,
     isPinned: true,
     sheet: "half",
-    side: "right",
+    side: "left",
     width: PANEL_WIDTH.default,
   },
   key: "retouche-dock",
