@@ -1,6 +1,6 @@
 {
   "name": "retouche-dev",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Dots on every element whose call site overrides your design system's typography.",
   "keywords": [
     "design-system",
