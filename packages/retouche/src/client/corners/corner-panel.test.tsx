@@ -65,7 +65,7 @@ function Button() {
     <button
       className={BUTTON_CLASSES}
       data-place="button"
-      style={rounded(10)}
+      style={{ ...rounded(10), backgroundColor: "rgb(240, 240, 240)" }}
       type="button"
     >
       Save

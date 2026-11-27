@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { compileConfig } from "../../../rules/find-overrides";
 import {
+  addPageSheet,
   Button,
   CARD_PLACE,
   Card,
@@ -126,22 +127,6 @@ describe("rounded chips a page injects outside React", () => {
   });
 });
 
-describe("links in a card's corner", () => {
-  it("checks a link that paints nothing, since its focus ring follows its radius", () => {
-    const view = render(
-      <Card>
-        <a data-testid="button" href="/plans">
-          Plans
-        </a>
-      </Card>
-    );
-    placeChip(view, CARD_PLACE, { height: 20, left: 4, top: 4, width: 60 });
-    expect(measureCorners(cornerConfig)).toMatchObject([
-      { component: null, misfit: { radius: 0, wanted: { x: 10, y: 10 } } },
-    ]);
-  });
-});
-
 describe("cards painted in an opaque colour", () => {
   it("reports a button too round for the corner of a black card", () => {
     const view = render(
@@ -228,25 +213,36 @@ function Chip() {
   );
 }
 
+function renderRow() {
+  const view = render(
+    <a
+      className="row"
+      data-testid="card"
+      href="/sessions"
+      style={{ borderTopLeftRadius: "10px" }}
+    >
+      <Chip />
+    </a>
+  );
+  placeChip(
+    view,
+    { height: 40, left: 0, top: 0, width: 240 },
+    { height: 20, left: 6, top: 6, width: 20 }
+  );
+}
+
 describe("rows that only paint on hover", () => {
   it("reports a chip too round for a rounded row's corner while the pointer is away", () => {
-    const view = render(
-      <a
-        data-testid="card"
-        href="/sessions"
-        style={{ borderTopLeftRadius: "10px" }}
-      >
-        <Chip />
-      </a>
-    );
-    placeChip(
-      view,
-      { height: 40, left: 0, top: 0, width: 240 },
-      { height: 20, left: 6, top: 6, width: 20 }
-    );
+    addPageSheet(".row:hover { background-color: rgb(0 0 0 / 0.05) }");
+    renderRow();
     expect(measureCorners(cornerConfig)).toMatchObject([
       { misfit: { radius: 8, wanted: { x: 4, y: 4 } } },
     ]);
+  });
+
+  it("measures nothing against a rounded row that paints in no state", () => {
+    renderRow();
+    expect(measureCorners(cornerConfig)).toStrictEqual([]);
   });
 
   it("measures a chip in a square row against the card around it", () => {

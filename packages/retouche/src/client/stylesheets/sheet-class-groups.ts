@@ -79,7 +79,7 @@ function indexRules(rules: CSSRuleList, into: Map<string, WatchedGroup[]>) {
   }
 }
 
-function readableRules(sheet: CSSStyleSheet): CSSRuleList | null {
+export function readableRules(sheet: CSSStyleSheet): CSSRuleList | null {
   try {
     return sheet.cssRules;
   } catch {

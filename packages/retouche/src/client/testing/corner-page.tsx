@@ -1,5 +1,6 @@
 import type { RenderResult } from "@testing-library/react";
 import type { CSSProperties, ReactNode } from "react";
+import { onTestFinished } from "vitest";
 
 import { compileConfig } from "../../rules/find-overrides";
 
@@ -53,16 +54,20 @@ export function Card({ children }: { children: ReactNode }) {
 }
 
 export function Button({
+  className,
   radius,
   style,
 }: {
+  className?: string;
   radius: number;
   style?: CSSProperties;
 }) {
   return (
     <button
+      className={className}
       data-testid="button"
       style={{
+        backgroundColor: "rgb(240, 240, 240)",
         borderBottomLeftRadius: `${radius}px`,
         borderBottomRightRadius: `${radius}px`,
         borderTopLeftRadius: `${radius}px`,
@@ -74,4 +79,13 @@ export function Button({
       Save
     </button>
   );
+}
+
+export function addPageSheet(css: string): void {
+  const sheet = document.createElement("style");
+  sheet.textContent = css;
+  document.head.append(sheet);
+  onTestFinished(() => {
+    sheet.remove();
+  });
 }

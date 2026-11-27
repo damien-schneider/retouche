@@ -1,5 +1,4 @@
 import {
-  CORNER_SIDES,
   CORNERS,
   type CornerBox,
   type CornerMisfit,
@@ -15,6 +14,7 @@ import {
 import { animationsOf } from "../../motion/followers";
 import { componentOf } from "../../picker/notes/element-context";
 import { WIDGET_MARKER } from "../../shell/widget-events";
+import { type PaintScan, paintScan, type StyleOf } from "./corner-paint";
 
 export interface CornerFinding {
   component: string | null;
@@ -24,8 +24,6 @@ export interface CornerFinding {
   outer: Element;
 }
 
-type StyleOf = (element: Element) => CSSStyleDeclaration;
-
 interface Placement {
   drawn: readonly Corner[];
   element: Element;
@@ -33,26 +31,7 @@ interface Placement {
   styleOf: StyleOf;
 }
 
-function styleCache(): StyleOf {
-  const styles = new Map<Element, CSSStyleDeclaration>();
-  return (element) => {
-    const style = styles.get(element) ?? getComputedStyle(element);
-    styles.set(element, style);
-    return style;
-  };
-}
-
-const COLOR = /(?:rgba?|oklch|oklab|lab|lch|hsla?|color)\([^)]*\)|transparent/g;
 const SCROLLING = /auto|scroll/;
-const INTERACTIVE = [
-  "button",
-  "a[href]",
-  '[role="menuitem"]',
-  '[role="menuitemradio"]',
-  '[role="menuitemcheckbox"]',
-  '[role="option"]',
-  '[role="tab"]',
-].join(", ");
 const MOVING =
   /^(?:transform|translate|scale|rotate|top|right|bottom|left|inset.*|width|height|margin.*|offset(?:Anchor|Distance|Path|Position|Rotate))$/;
 const MATRIX = /^matrix(?:3d)?\((?<values>.*)\)$/;
@@ -72,53 +51,6 @@ const AXIS_OF: Record<Side, keyof Point> = {
   right: "x",
   top: "y",
 };
-
-function alphaOf(color: string): number {
-  const channels = color.slice(color.indexOf("(") + 1, -1);
-  const [, slashed] = channels.split("/");
-  const commas = channels.split(",");
-  const alpha = slashed ?? (commas.length === 4 ? commas.at(-1) : undefined);
-  return Number.parseFloat(alpha ?? "1");
-}
-
-function isTransparent(color: string): boolean {
-  return color === "transparent" || alphaOf(color) === 0;
-}
-
-function paintsShadow(shadow: string): boolean {
-  if (shadow === "none" || shadow === "") {
-    return false;
-  }
-  const colors = shadow.match(COLOR) ?? [];
-  return colors.length === 0 || colors.some((color) => !isTransparent(color));
-}
-
-function paintsSide(style: CSSStyleDeclaration, side: Side): boolean {
-  return (
-    Number.parseFloat(style.getPropertyValue(`border-${side}-width`)) > 0 &&
-    style.getPropertyValue(`border-${side}-style`) !== "none" &&
-    !isTransparent(style.getPropertyValue(`border-${side}-color`))
-  );
-}
-
-function fills(style: CSSStyleDeclaration): boolean {
-  const background = style.backgroundColor;
-  return (
-    (background !== "" && !isTransparent(background)) ||
-    (style.backgroundImage !== "none" && style.backgroundImage !== "") ||
-    paintsShadow(style.boxShadow)
-  );
-}
-
-function drawnCorners(style: CSSStyleDeclaration): readonly Corner[] {
-  if (fills(style)) {
-    return CORNERS;
-  }
-  return CORNERS.filter((corner) => {
-    const { x, y } = CORNER_SIDES[corner];
-    return paintsSide(style, x) || paintsSide(style, y);
-  });
-}
 
 function lengthOf(value: string, basis: number): number {
   const amount = Number.parseFloat(value) || 0;
@@ -190,19 +122,9 @@ function boxOf(element: Element, styleOf: StyleOf): CornerBox {
   };
 }
 
-function paintsOnHover(node: Element, style: CSSStyleDeclaration): boolean {
-  return (
-    node.matches(INTERACTIVE) &&
-    CORNERS.some(
-      (corner) =>
-        Number.parseFloat(style.getPropertyValue(`border-${corner}-radius`)) > 0
-    )
-  );
-}
-
 function containersOf(
   element: Element,
-  styleOf: StyleOf
+  drawnOf: PaintScan["drawnOf"]
 ): Map<Element, readonly Corner[]> {
   const containers = new Map<Element, readonly Corner[]>();
   let open: readonly Corner[] = CORNERS;
@@ -211,8 +133,7 @@ function containersOf(
     node && node !== document.body && open.length > 0;
     node = node.parentElement
   ) {
-    const style = styleOf(node);
-    const drawn = paintsOnHover(node, style) ? CORNERS : drawnCorners(style);
+    const drawn = drawnOf(node);
     const claimed = open.filter((corner) => drawn.includes(corner));
     if (claimed.length > 0) {
       containers.set(node, claimed);
@@ -251,7 +172,7 @@ function isNearViewport(element: Element): boolean {
 
 function candidateCorners(
   element: Element,
-  styleOf: StyleOf
+  { drawnOf, styleOf }: PaintScan
 ): readonly Corner[] {
   if (element.closest(`[${WIDGET_MARKER}]`) || !isNearViewport(element)) {
     return [];
@@ -260,7 +181,7 @@ function candidateCorners(
   if (style.visibility === "hidden" || style.position === "fixed") {
     return [];
   }
-  return element.matches(INTERACTIVE) ? CORNERS : drawnCorners(style);
+  return drawnOf(element);
 }
 
 function isFaded(style: CSSStyleDeclaration): boolean {
@@ -311,13 +232,14 @@ function misfitWithin(
 
 export function cornerFindingOf(
   element: Element,
-  styleOf: StyleOf = styleCache()
+  scan: PaintScan = paintScan()
 ): CornerFinding | null {
-  const drawn = candidateCorners(element, styleOf);
+  const { styleOf } = scan;
+  const drawn = candidateCorners(element, scan);
   if (drawn.length === 0) {
     return null;
   }
-  const containers = containersOf(element, styleOf);
+  const containers = containersOf(element, scan.drawnOf);
   const isUnreadable = (node: Element) =>
     isFaded(styleOf(node)) || isTilted(styleOf(node));
   if (containers.size === 0 || someUpTo(element, null, isUnreadable)) {
@@ -340,9 +262,9 @@ export function cornerFindingOf(
 }
 
 export function measureCorners(config: CompiledConfig): CornerFinding[] {
-  const styleOf = styleCache();
+  const scan = paintScan();
   return [...document.body.querySelectorAll("*")].flatMap((element) => {
-    const finding = cornerFindingOf(element, styleOf);
+    const finding = cornerFindingOf(element, scan);
     return finding && !allowsCorners(config, finding.component)
       ? [finding]
       : [];
