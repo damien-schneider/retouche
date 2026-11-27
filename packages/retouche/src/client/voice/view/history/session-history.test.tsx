@@ -26,6 +26,7 @@ const READY = readyRoute();
 function VoicePlace() {
   const voice = useVoice({
     components: [],
+    isShown: true,
     refreshRoute: vi.fn<RefreshRoute>(),
     route: READY,
   });

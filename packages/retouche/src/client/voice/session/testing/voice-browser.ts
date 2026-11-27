@@ -21,6 +21,7 @@ const microphone = {
 };
 const recognitions: FakeRecognition[] = [];
 const installs: (() => void)[] = [];
+const deviceChecks: string[] = [];
 
 function resultList(lines: readonly HeardLine[]) {
   const results = Object.fromEntries(
@@ -135,9 +136,14 @@ export function unplugMicrophone(): void {
   }
 }
 
+export function askedOnDevice(): readonly string[] {
+  return deviceChecks;
+}
+
 export function offerOnDevice(statuses: Record<string, string>): void {
   Object.assign(FakeRecognition, {
     available: async (options: { langs: string[] }) => {
+      deviceChecks.push(options.langs[0] ?? "");
       await Promise.resolve();
       return statuses[options.langs[0] ?? ""] ?? "unavailable";
     },
@@ -221,6 +227,7 @@ export function fakeVoiceBrowser(): void {
   recognitions.length = 0;
   forgetRecorders();
   installs.length = 0;
+  deviceChecks.length = 0;
   Reflect.deleteProperty(FakeRecognition, "available");
   Reflect.deleteProperty(FakeRecognition, "install");
   vi.stubGlobal("SpeechRecognition", FakeRecognition);

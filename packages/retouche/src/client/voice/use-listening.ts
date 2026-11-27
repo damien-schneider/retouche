@@ -26,10 +26,16 @@ interface ListeningChoice {
   offer: VoiceListeningOffer;
 }
 
-function useDeviceAvailability(language: string): DeviceAvailability | null {
+function useDeviceAvailability(
+  language: string,
+  isShown: boolean
+): DeviceAvailability | null {
   const [check, setCheck] = useState<DeviceCheck | null>(null);
 
   useEffect(() => {
+    if (!isShown) {
+      return;
+    }
     let isCurrent = true;
     const probe = async () => {
       const availability = await deviceAvailability(language);
@@ -41,7 +47,7 @@ function useDeviceAvailability(language: string): DeviceAvailability | null {
     return () => {
       isCurrent = false;
     };
-  }, [language]);
+  }, [isShown, language]);
 
   return check?.language === language ? check.availability : null;
 }
@@ -69,11 +75,12 @@ function fallback(
 }
 
 export function useListening(options: {
+  isShown: boolean;
   status: RouteStatus | null;
   stored: Listening & { language: string };
 }): ListeningChoice {
-  const { status, stored } = options;
-  const device = useDeviceAvailability(stored.language);
+  const { isShown, status, stored } = options;
+  const device = useDeviceAvailability(stored.language, isShown);
   const canRecord = canRecordSpeech();
   const transcribers = canRecord ? (status?.transcribers ?? []) : [];
   const possible: Record<SpeechHearing, boolean> = {

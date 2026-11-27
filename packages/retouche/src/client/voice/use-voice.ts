@@ -62,11 +62,11 @@ function blockerOf(
   return isSupported ? null : "unsupported";
 }
 
-function useVoicePreferences(route: DevRouteState) {
+function useVoicePreferences(route: DevRouteState, isShown: boolean) {
   const [stored, setStored] = useStoredPreference(VOICE_PREFERENCES);
   const status = route.kind === "ready" ? route.status : null;
   const agents = status?.agents ?? null;
-  const { listening, offer } = useListening({ status, stored });
+  const { listening, offer } = useListening({ isShown, status, stored });
   const agent =
     agents?.find(({ id }) => id === stored.agent) ??
     agents?.find(({ state }) => state !== "signed-out") ??
@@ -151,12 +151,13 @@ function useVoiceController(settings: VoiceSettings) {
 
 export function useVoice(options: {
   components: readonly string[];
+  isShown: boolean;
   refreshRoute: RefreshRoute;
   route: DevRouteState;
 }): Voice {
-  const { components, refreshRoute, route } = options;
+  const { components, isShown, refreshRoute, route } = options;
   const { agents, isSupported, offer, preferences, setStored } =
-    useVoicePreferences(route);
+    useVoicePreferences(route, isShown);
   const settings = { agents: agents ?? NO_AGENTS, components, preferences };
   const { controller, sessionActions, state } = useVoiceController(settings);
   const blocker = blockerOf(isSupported, route);

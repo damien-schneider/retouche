@@ -10,7 +10,12 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { overlay, Page, pointAt } from "../testing/layer-page";
-import { fakeVoiceBrowser, listening } from "./session/testing/voice-browser";
+import {
+  askedOnDevice,
+  fakeVoiceBrowser,
+  listening,
+  offerOnDevice,
+} from "./session/testing/voice-browser";
 import { serveVoiceRoute } from "./session/testing/voice-server";
 import { STOP_NAME } from "./view/live/voice-recording";
 import { START_NAME } from "./view/settings/voice-settings";
@@ -97,5 +102,22 @@ describe("a voice review started from the toolbar", () => {
     await wait(50);
 
     expect(within(root).getByRole("list", { name: LENSES_NAME })).toBeTruthy();
+  });
+});
+
+describe("Chrome's on-device recognition", () => {
+  it("is not asked about until the developer opens Session", async () => {
+    offerOnDevice({ "en-US": "available" });
+    render(<Page />);
+    await wait(50);
+    const beforeSession = askedOnDevice().length;
+
+    fireEvent.click(
+      within(overlay()).getByRole("button", { name: SESSION_NAME })
+    );
+    await wait(50);
+
+    expect(beforeSession).toBe(0);
+    expect(askedOnDevice()).toContain("en-US");
   });
 });

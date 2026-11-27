@@ -62,6 +62,7 @@ const APPLIED_F1: VoiceFollow = {
 function VoicePlace() {
   const voice = useVoice({
     components: [],
+    isShown: true,
     refreshRoute: vi.fn<RefreshRoute>(),
     route: FOLLOWABLE,
   });

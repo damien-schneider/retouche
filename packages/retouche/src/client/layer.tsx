@@ -320,6 +320,7 @@ export default function Layer(props: LayerProps) {
   const [route, refreshRoute] = useDevRoute();
   const voice = useVoice({
     components: state.picker.components,
+    isShown: state.navigation.isVoice,
     refreshRoute,
     route,
   });
