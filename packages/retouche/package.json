@@ -21,7 +21,7 @@
     "directory": "packages/retouche"
   },
   "bin": {
-    "retouche": "./dist/cli.js"
+    "retouche": "dist/cli.js"
   },
   "files": [
     "dist",
