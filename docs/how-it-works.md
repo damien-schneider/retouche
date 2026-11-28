@@ -24,7 +24,7 @@ To measure, Retouche re-renders the component through React's DevTools renderer 
 
 ## The dev route and the code view
 
-The dev route reads source files for the code view. The Vite plugin and the Next.js route handler share one handler, which refuses non-localhost hostnames, cross-origin requests, files outside the repository, and `node_modules`. It also answers only a page that has paired with the machine running the dev server: the overlay fetches a token from a listener bound to `127.0.0.1`, which no other machine on the network reaches, and sends it with every request. A Next.js dev server listens on the whole network by default, so a request forged from another machine is refused without the token. The Vite plugin also refuses non-loopback sockets.
+The dev route reads source files for the code view. The Vite plugin, the Next.js route handler and the Bun routes share one handler, which refuses non-localhost hostnames, cross-origin requests, files outside the repository, and `node_modules`. It also answers only a page that has paired with the machine running the dev server: the overlay fetches a token from a listener bound to `127.0.0.1`, which no other machine on the network reaches, and sends it with every request. A Next.js dev server listens on the whole network by default, so a request forged from another machine is refused without the token. The Vite plugin and the Bun routes also refuse non-loopback sockets.
 
 - When a library hook such as Base UI's `useRender` creates the component's element, the code view shows the component's call to it.
 - Code written inside an installed package, such as a design system from npm, is named by its package instead.
@@ -86,6 +86,6 @@ How sessions listen, link speech to what you point at, store their data and run 
 
 ## Supported setups
 
-Verified on React 19 client components with Vite, and on Next.js 16 with Turbopack, client and server components alike. Server components are detected from React's server debug info; their diff cannot be measured in the browser.
+Verified on React 19 client components with Vite and with `Bun.serve`, and on Next.js 16 with Turbopack, client and server components alike. Server components are detected from React's server debug info; their diff cannot be measured in the browser.
 
 Next's webpack dev server (`next dev --webpack`) is not supported: overrides are detected, but client call sites point at the compiled line and server components show no code. Frameworks other than React are out of scope.

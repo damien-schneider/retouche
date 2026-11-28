@@ -7,6 +7,7 @@ export default defineConfig({
   deps: { neverBundle: ["react", "react-dom", "vite", /^node:/] },
   dts: true,
   entry: {
+    bun: "src/server/bun.ts",
     cli: "src/cli.ts",
     config: "src/rules/define-config.ts",
     "hand-arrow": "src/hand-arrow.ts",

@@ -18,7 +18,7 @@ Or install it yourself:
 npm install -D retouche-dev
 ```
 
-Requires React 19, with Vite (TanStack Start and React Router included) or Next.js 16 (App Router on Turbopack). Manual setup, configuration and docs are on [GitHub](https://github.com/damien-schneider/retouche#manual-setup).
+Requires React 19, with Vite (TanStack Start and React Router included) Next.js 16 (App Router on Turbopack), or Bun's own `Bun.serve`. Manual setup, configuration and docs are on [GitHub](https://github.com/damien-schneider/retouche#manual-setup).
 
 The package is named `retouche-dev` because `retouche` belongs to another project. Its CLI is `retouche`.
 

@@ -11,6 +11,8 @@ import {
 } from "./guard/request-guard";
 import { errorResponse, jsonResponse, outcomeResponse } from "./json-response";
 import {
+  appEnvFolders,
+  appEnvs,
   type ResolvedServerOptions,
   type RouteEnv,
   resolveServerOptions,
@@ -158,5 +160,19 @@ export function createRouteHandler(
       const reason = error instanceof Error ? error.message : String(error);
       return errorResponse(`Retouche route failed: ${reason}`, 500);
     }
+  };
+}
+
+export function createProcessRouteHandler(
+  options: ServerOptions = {}
+): RouteHandler {
+  let handler: RouteHandler | null = null;
+  return async (request) => {
+    if (handler === null) {
+      const files = { folders: appEnvFolders(options), mode: "development" };
+      const { env, spawnEnv } = appEnvs(process.env, files, options);
+      handler = createRouteHandler(options, env, spawnEnv);
+    }
+    return await handler(request);
   };
 }
