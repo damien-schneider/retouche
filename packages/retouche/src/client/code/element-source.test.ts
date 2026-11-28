@@ -334,6 +334,7 @@ describe("elements a Server Component renders", () => {
         fileName:
           "about://React/Server/file:///repo/.next/server/chunks/ssr/app_page_tsx.js",
         line: 120,
+        mappedCode: null,
       },
     });
   });
@@ -355,6 +356,7 @@ describe("elements a Server Component renders", () => {
         fileName:
           "about://React/Prerender/file:///repo/.next/dev/server/chunks/ssr/app_(features)_home_10vcn17._.js?3",
         line: 1090,
+        mappedCode: null,
       },
     });
   });

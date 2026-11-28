@@ -37,6 +37,24 @@ interface TraceOptions {
   sites: InstanceSites;
 }
 
+type RouteFix = keyof typeof ROUTE_FIXES;
+
+function isWithoutRoute(
+  route: DevRouteState
+): route is Extract<DevRouteState, { kind: RouteFix }> {
+  return route.kind === "missing" || route.kind === "outdated";
+}
+
+function isMapped(site: SiteState): boolean {
+  return site.kind === "found" && site.request.mappedCode !== null;
+}
+
+function readsWithoutRoute({ callSite, component }: InstanceSites): boolean {
+  return [callSite, component].some(
+    (site) => site.kind === "loading" || isMapped(site)
+  );
+}
+
 export function SiteCode({
   marks,
   route,
@@ -46,7 +64,7 @@ export function SiteCode({
   route: DevRouteState;
   site: SiteState;
 }) {
-  if (route.kind === "missing" || route.kind === "outdated") {
+  if (isWithoutRoute(route) && !isMapped(site)) {
     return null;
   }
   if (site.kind === "loading") {
@@ -137,12 +155,13 @@ export function CodeSection(options: TraceOptions) {
   if (options.facts) {
     steps.push(configStep(options.facts, options.route));
   }
-  const { kind } = options.route;
-  const hasRouteFix = kind === "missing" || kind === "outdated";
+  const { route, sites } = options;
+  const fix =
+    isWithoutRoute(route) && !readsWithoutRoute(sites) ? route.kind : null;
   return (
     <section aria-label="Code" className="dt-section">
-      {hasRouteFix && <p className="dt-hint">{ROUTE_FIXES[kind]}</p>}
-      {(options.facts !== null || !hasRouteFix) && (
+      {fix && <p className="dt-hint">{ROUTE_FIXES[fix]}</p>}
+      {(options.facts !== null || fix === null) && (
         <ol className="dt-trace">
           {steps.map((step) => (
             <li

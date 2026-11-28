@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 
-import { jsxElementLines } from "../source/jsx-range";
+import { jsxElementLines } from "./jsx-range";
 
 const lines = (...source: string[]) => source.join("\n");
 

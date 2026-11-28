@@ -2,8 +2,8 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import { basename, dirname, extname, isAbsolute, join } from "node:path";
 
 import { isServerFrame, type SourceFile } from "../../protocol";
+import { elementPlace } from "../../source/jsx-range";
 import { failure, type RouteOutcome } from "../json-response";
-import { jsxElementLines } from "./jsx-range";
 import type { ProjectRoots } from "./project-roots";
 import { mapServerFrame, QUERY_OR_HASH } from "./server-frame";
 import { workspaceRelativePath } from "./workspace-path";
@@ -174,11 +174,6 @@ async function locateSourceFile(
   return failure(`Could not find ${fileName} in ${roots.workspaceRoot}.`, 404);
 }
 
-function columnWithinLine(code: string, line: number, column: number | null) {
-  const text = code.split("\n")[line - 1] ?? "";
-  return column !== null && column < text.length ? column : null;
-}
-
 async function namedRequest(
   frame: SourceRequest,
   roots: ProjectRoots
@@ -228,22 +223,12 @@ export async function readSourceFile(
   }
 
   const code = await readFile(realPath, "utf-8");
-  const column =
-    request.line === null
-      ? request.column
-      : columnWithinLine(code, request.line, request.column);
-  const elementLines =
-    request.line === null
-      ? null
-      : jsxElementLines(code, request.line, column ?? 0);
-
   return {
     ok: true,
     value: {
       absolutePath: realPath,
       code,
-      column,
-      elementLines,
+      ...elementPlace(code, request),
       line: request.line,
       path: relativePath,
     },

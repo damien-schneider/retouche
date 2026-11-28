@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { isServerFrame, type SourceFile } from "../../../protocol";
+import { readSourceFile } from "../../code/mapped/mapped-source";
 import { fiberOfNode, ownerName } from "../../fiber/react-fiber";
 import type { OverrideInstance } from "../../fiber/scan-overrides";
 import {
@@ -10,7 +11,6 @@ import {
 } from "../../inspector/use-instance-sites";
 import type { RenderReport } from "../../renders/record/render-changes";
 import { renderReportOf } from "../../renders/record/render-recorder";
-import { fetchSourceFile } from "../../route/dev-route";
 import {
   readTypography,
   rendersText,
@@ -109,7 +109,7 @@ async function resolveLocation(site: SiteState): Promise<SiteLocation | null> {
     return null;
   }
   try {
-    const file = await fetchSourceFile(site.request);
+    const file = await readSourceFile(site.request);
     return { file, line: file.line ?? site.request.line, path: file.path };
   } catch {
     return requestLocation(site);

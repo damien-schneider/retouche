@@ -25,6 +25,7 @@ export interface SourceRequest {
   column: number | null;
   fileName: string;
   line: number | null;
+  mappedCode: string | null;
 }
 
 export class DevRouteError extends Error {

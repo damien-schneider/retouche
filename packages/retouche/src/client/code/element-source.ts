@@ -24,6 +24,7 @@ import {
   writtenPlace,
 } from "../fiber/react-fiber";
 import type { SourceRequest } from "../route/dev-route";
+import { mappedCode } from "./mapped/mapped-source";
 import { nearestWrittenTag } from "./written/written-tag";
 
 const MAX_OWNER_DEPTH = 32;
@@ -71,6 +72,7 @@ function serverCreationSite(
     column: Number(match[3]) - 1,
     fileName: match[1],
     line: Number(match[2]),
+    mappedCode: null,
   };
 }
 
@@ -145,7 +147,11 @@ function recordedCreation(fiber: Fiber): Fiber | null {
   return creationFrame(fiber) === null ? recordedTwin(fiber) : fiber;
 }
 
-function siteOf(source: StackFrame, moduleUrl: string | undefined): CodeSite {
+function siteOf(
+  source: StackFrame,
+  moduleUrl: string | undefined,
+  mappedCode: string | null = null
+): CodeSite {
   if (source.fileName === undefined) {
     return MISSING_SITE;
   }
@@ -160,6 +166,7 @@ function siteOf(source: StackFrame, moduleUrl: string | undefined): CodeSite {
     column: source.columnNumber ?? null,
     fileName,
     line: source.lineNumber ?? null,
+    mappedCode,
   };
   return { kind: "found", request };
 }
@@ -240,7 +247,7 @@ async function writerSite(fiber: Fiber): Promise<CodeSite> {
       ? null
       : nearestWrittenTag(code, { line: original.lineNumber, name });
   const written = tag && { columnNumber: tag.column, lineNumber: tag.line };
-  return siteOf({ ...original, ...written }, fileName);
+  return siteOf({ ...original, ...written }, fileName, code);
 }
 
 async function clientCreationSite(creation: Fiber): Promise<CodeSite> {
@@ -249,9 +256,11 @@ async function clientCreationSite(creation: Fiber): Promise<CodeSite> {
     return await writerSite(creation);
   }
   const source = await getSource(fiber).catch(() => null);
-  return source === null
-    ? MISSING_SITE
-    : siteOf(source, getRawSource(fiber)?.fileName);
+  if (source === null) {
+    return MISSING_SITE;
+  }
+  const moduleUrl = getRawSource(fiber)?.fileName;
+  return siteOf(source, moduleUrl, await mappedCode(source, moduleUrl));
 }
 
 async function callerOfLibrary(creation: ReactOwner): Promise<CodeSite> {
@@ -263,11 +272,13 @@ async function callerOfLibrary(creation: ReactOwner): Promise<CodeSite> {
   }
   const frames = parseStack(formatOwnerStack(stack));
   const sources = await symbolicateStack(frames).catch(() => frames);
-  return (
-    sources
-      .map((source, index) => siteOf(source, frames[index]?.fileName))
-      .find((site) => site.kind === "found") ?? MISSING_SITE
+  const sites = await Promise.all(
+    sources.map(async (source, index) => {
+      const moduleUrl = frames[index]?.fileName;
+      return siteOf(source, moduleUrl, await mappedCode(source, moduleUrl));
+    })
   );
+  return sites.find((site) => site.kind === "found") ?? MISSING_SITE;
 }
 
 export async function creationSite(creation: ReactOwner): Promise<CodeSite> {

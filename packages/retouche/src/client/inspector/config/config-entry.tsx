@@ -14,6 +14,7 @@ const CONFIG_REQUEST: SourceRequest = {
   column: null,
   fileName: CONFIG_FILE,
   line: null,
+  mappedCode: null,
 };
 const ADDED: CodeMarks = { change: "added", scope: "element", tokens: [] };
 

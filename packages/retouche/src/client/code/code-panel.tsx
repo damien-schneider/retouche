@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 
 import type { EditorId, SourceFile } from "../../protocol";
-import { fetchSourceFile, type SourceRequest } from "../route/dev-route";
+import type { SourceRequest } from "../route/dev-route";
 import { EditorIcon } from "../shell/icons";
 import { editorUrl } from "./editor-url";
+import { readSourceFile } from "./mapped/mapped-source";
 import { SourcePath } from "./source-path";
 import { type CodeMarks, readSource } from "./source-reading";
 import { SourceView } from "./source-view";
@@ -22,7 +23,7 @@ const LOADING: SourceState = { kind: "loading" };
 
 async function readSourceState(request: SourceRequest): Promise<SourceState> {
   try {
-    const file = await fetchSourceFile(request);
+    const file = await readSourceFile(request);
     return { file, fileName: request.fileName, kind: "ready" };
   } catch (error) {
     const message =

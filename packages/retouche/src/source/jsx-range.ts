@@ -1,4 +1,4 @@
-import type { LineRange } from "../../protocol";
+import type { LineRange } from "../protocol";
 
 const FAILED = -1;
 const MAX_TAG_LOOKBACK = 2;
@@ -292,4 +292,22 @@ export function jsxElementLines(
     end: line + countNewlines(code, tagStart, elementEnd - 1),
     start: line,
   };
+}
+
+export interface ElementPlace {
+  column: number | null;
+  elementLines: LineRange | null;
+}
+
+export function elementPlace(
+  code: string,
+  at: { column: number | null; line: number | null }
+): ElementPlace {
+  if (at.line === null) {
+    return { column: at.column, elementLines: null };
+  }
+  const text = code.split("\n")[at.line - 1] ?? "";
+  const column =
+    at.column !== null && at.column < text.length ? at.column : null;
+  return { column, elementLines: jsxElementLines(code, at.line, column ?? 0) };
 }

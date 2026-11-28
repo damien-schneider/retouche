@@ -9,7 +9,7 @@ import {
 import type { ReactNode } from "react";
 import { type Mock, vi } from "vitest";
 
-import { ENDPOINTS, STATUS_MARKER } from "../../protocol";
+import { ENDPOINTS, ROUTE_BASE, STATUS_MARKER } from "../../protocol";
 import Layer from "../layer";
 
 const LENSES_NAME = /filter/i;
@@ -19,6 +19,7 @@ const OVERRIDE_LINE = 12;
 const SOURCE_LINES = 30;
 const CONFIG_FILE = "retouche.config.ts";
 const TEXT_FILE = "layer-page";
+const MAPPED_LINES = 400;
 
 export const config = { components: ["Text"] };
 
@@ -217,6 +218,34 @@ export function serveDevRoute(
       ? { editor: "vscode", marker: STATUS_MARKER }
       : file;
     return Response.json(body);
+  });
+}
+
+function inlineSourceMap(mapped: { line: string; path: string }): string {
+  const lines = Array.from({ length: MAPPED_LINES }, () => mapped.line);
+  const map = {
+    mappings: ["AAAA", ...lines.map(() => "AACA")].join(";"),
+    sources: [mapped.path],
+    sourcesContent: [lines.join("\n")],
+    version: 3,
+  };
+  return `//# sourceMappingURL=data:application/json;base64,${btoa(JSON.stringify(map))}`;
+}
+
+export function serveWithoutDevRoute(
+  mapped: { line: string; path: string } | null
+): void {
+  vi.stubGlobal("fetch", (url: string) => {
+    if (url.startsWith(ROUTE_BASE)) {
+      return new Response("<!doctype html><title>App</title>", {
+        headers: { "content-type": "text/html" },
+        status: 404,
+      });
+    }
+    const map = mapped === null ? "" : `\n${inlineSourceMap(mapped)}`;
+    return new Response(`export {};${map}`, {
+      headers: { "content-type": "text/javascript" },
+    });
   });
 }
 
