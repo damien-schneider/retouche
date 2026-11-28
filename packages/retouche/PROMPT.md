@@ -71,7 +71,7 @@ An `allow` entry is `{ component?: "Text", classes?: ["text-muted-*"], propertie
 - Spread `retoucheRoutes()` from `retouche-dev/bun` into the `routes` of `Bun.serve`, next to the route that serves the app's HTML: `routes: { ...retoucheRoutes(), "/": index }`.
 - The client entry the HTML loads (`<script type="module" src="./main.tsx">`): make `import "retouche-dev/instrument";` the very first import, before React.
 - Render `<Retouche config={config} />` from `retouche-dev` next to the app root, with `config` imported from `retouche.config.ts`.
-- The route answers only while `Bun.serve` runs in development, which Bun turns on unless `NODE_ENV` is `production` or `development: false` is set.
+- The route answers only while `Bun.serve` runs in development, which Bun turns on unless `NODE_ENV` is `production` or `development: false` is set. A binary built with `bun build --compile` stays in development unless it is built with `NODE_ENV=production`: if the app ships one, check that its build sets it.
 
 `<Retouche>` renders nothing in production builds, `retouche-dev/instrument` installs nothing there, and the route answers nothing outside development, so no environment guards are needed.
 

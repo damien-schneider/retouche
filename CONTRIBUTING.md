@@ -59,7 +59,7 @@ The package is published to npm as `retouche-dev` from the maintainer's machine,
 | `packages/retouche/src/client/shell` | Shadow-DOM portal, icons, hover targets, stored preferences, widget events |
 | `packages/retouche/src/client/theme` | The app's light or dark theme read from the page, the choice that overrides it, and its switch |
 | `packages/retouche/src/client/styles` | Overlay CSS as strings, injected into the shadow root |
-| `packages/retouche/src/server` | Dev route handler, Vite plugin, Next.js route, source reader, and in `voice/` the voice sessions kept in the user's data folder and their history route, the writers behind one backend (the Claude Code, Codex and Mastra Code CLIs, ACP agents and OpenAI-compatible endpoints), the speech-to-text keys, and in `voice/follow/` the feed `retouche next` and `retouche mcp` serve to a following agent |
+| `packages/retouche/src/server` | Dev route handler, Vite plugin, Next.js route, Bun routes, source reader, and in `voice/` the voice sessions kept in the user's data folder and their history route, the writers behind one backend (the Claude Code, Codex and Mastra Code CLIs, ACP agents and OpenAI-compatible endpoints), the speech-to-text keys, and in `voice/follow/` the feed `retouche next` and `retouche mcp` serve to a following agent |
 | `packages/retouche/src/protocol.ts` | The client and server wire contract |
 | `packages/retouche/PROMPT.md` | The setup prompt handed to agents |
 | `packages/retouche/templates` | Starter config |

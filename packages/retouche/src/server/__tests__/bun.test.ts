@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { REQUEST_HEADER, ROUTE_BASE } from "../../protocol";
-import { BUN_ROUTE, type BunRouteHandler, retoucheRoutes } from "../bun";
+import { type BunRouteHandler, retoucheRoutes } from "../bun";
 import { PAIR_TOKEN } from "./route-pairing";
 
 const sandbox = mkdtempSync(join(tmpdir(), "retouche-bun-"));
@@ -15,7 +15,7 @@ let serve: BunRouteHandler;
 
 beforeAll(() => {
   vi.stubEnv("XDG_DATA_HOME", join(sandbox, "data"));
-  serve = retoucheRoutes({ root: sandbox })[BUN_ROUTE];
+  serve = retoucheRoutes({ root: sandbox })["/api/retouche/*"];
 });
 
 afterAll(() => {

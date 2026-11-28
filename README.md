@@ -121,7 +121,7 @@ Bun.serve({
 });
 ```
 
-Make `import "retouche-dev/instrument";` the first import of the client entry that `index.html` loads, and render `<Retouche config={config} />` next to the app root, as for Vite. The route answers only while `Bun.serve` runs in development. Requires Bun 1.2.3 or later.
+Make `import "retouche-dev/instrument";` the first import of the client entry that `index.html` loads, and render `<Retouche config={config} />` next to the app root, as for Vite. The route answers only while `Bun.serve` runs in development; build a `bun build --compile` binary with `NODE_ENV=production`, or it stays in development. Requires Bun 1.2.3 or later.
 
 `retouche-dev/instrument` installs React's DevTools hook before React loads, in development only. Without it, dots and code still work; the measured diff, hold to compare and render highlights do not.
 
