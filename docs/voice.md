@@ -120,7 +120,7 @@ retouche({
 });
 ```
 
-On Next.js, pass the same options to the route: `export const { GET, POST } = createRoute({ voice: { … } })`, with `createRoute` from `retouche-dev/next`.
+On Next.js, pass the same options to the route: `export const { GET, POST } = createRoute({ voice: { … } })`, with `createRoute` from `retouche-dev/next`. On Bun, pass them to `retoucheRoutes({ voice: { … } })` from `retouche-dev/bun`.
 
 | Field | Purpose |
 | --- | --- |

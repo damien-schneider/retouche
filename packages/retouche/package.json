@@ -3,6 +3,7 @@
   "version": "0.1.2",
   "description": "Dots on every element whose call site overrides your design system's typography.",
   "keywords": [
+    "bun",
     "design-system",
     "devtools",
     "nextjs",
@@ -34,6 +35,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./bun": {
+      "types": "./dist/bun.d.ts",
+      "default": "./dist/bun.js"
     },
     "./config": {
       "types": "./dist/config.d.ts",

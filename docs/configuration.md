@@ -25,7 +25,7 @@ An invalid config pauses scanning and lists every issue in the panel.
 
 ## Dev server
 
-The dev route reads its settings from the options of `retouche()` or `createRoute()` from `retouche-dev/next`, or from `RETOUCHE_` variables in the dev server's environment or the app's env files (`.env.local` keeps them out of git).
+The dev route reads its settings from the options of `retouche()`, `createRoute()` from `retouche-dev/next` or `retoucheRoutes()` from `retouche-dev/bun`, or from `RETOUCHE_` variables in the dev server's environment or the app's env files (`.env.local` keeps them out of git).
 
 | Option | Variable | Purpose |
 | --- | --- | --- |
