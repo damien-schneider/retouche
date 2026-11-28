@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
+
 import { AUTHOR, REPOSITORY } from "../credits";
 import { cn } from "../ui/class-names";
 import { Icon } from "../ui/icon";
+import { fetchStars } from "./github-stars";
 import { SiteLogo } from "./logo/site-logo";
-
-const STARS = import.meta.env.GITHUB_STARS;
 
 const STAR_COUNT = new Intl.NumberFormat("en", { notation: "compact" });
 
@@ -18,19 +19,38 @@ export function SiteHeader() {
   );
 }
 
+function useStars(): number | null {
+  const [stars, setStars] = useState(import.meta.env.GITHUB_STARS);
+  useEffect(() => {
+    const controller = new AbortController();
+    const refresh = async () => {
+      const fresh = await fetchStars(controller.signal);
+      if (fresh !== null) {
+        setStars(fresh);
+      }
+    };
+    void refresh();
+    return () => {
+      controller.abort();
+    };
+  }, []);
+  return stars;
+}
+
 export function SiteCredits() {
+  const stars = useStars();
   return (
     <div className="absolute top-6 right-6 flex flex-col items-end whitespace-nowrap @2xl:right-8">
-      {STARS !== null && (
+      {stars !== null && (
         <a
-          aria-label={`Retouche on GitHub, ${STARS} ${STARS === 1 ? "star" : "stars"}`}
+          aria-label={`Retouche on GitHub, ${stars} ${stars === 1 ? "star" : "stars"}`}
           className={cn(CREDIT_LINK, "tabular-nums")}
           href={`https://github.com/${REPOSITORY}`}
           rel="noopener noreferrer"
           target="_blank"
         >
           <Icon className="mr-1.5 inline size-3.5 align-[-2px]" name="github" />
-          {STAR_COUNT.format(STARS)}
+          {STAR_COUNT.format(stars)}
         </a>
       )}
       <a

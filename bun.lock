@@ -24,6 +24,7 @@
         "react-dom": "^19.3.0",
         "sugar-high": "^2.7.0",
         "tailwind-merge": "^3.7.0",
+        "zod": "^4.6.5",
       },
       "devDependencies": {
         "@tailwindcss/vite": "^4.3.3",
@@ -37,14 +38,13 @@
         "tailwindcss": "^4.3.3",
         "turndown": "^7.2.5",
         "vite": "^8.3.0",
-        "zod": "^4.6.5",
       },
     },
     "packages/retouche": {
       "name": "retouche-dev",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "bin": {
-        "retouche": "./dist/cli.js",
+        "retouche": "dist/cli.js",
       },
       "dependencies": {
         "@agentclientprotocol/sdk": "^2.12.0",
